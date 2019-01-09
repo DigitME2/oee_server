@@ -1,0 +1,176 @@
+:root {
+  --main-bg-color: #AD1920;
+}
+
+div {
+    text-align: left;
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h1 {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h2 {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h3 {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h4 {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+a {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+
+body {
+    padding-top: 65px;
+}
+
+
+.centralForm {
+    position: relative;
+    z-index: 1;
+    background: #FFFFFF;
+    max-width: 360px;
+    margin: 0 auto 100px;
+    padding: 45px;
+    text-align: center;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+}
+.centralForm input {
+    font-family: "Roboto", sans-serif;
+    outline: 0;
+    background: #f2f2f2;
+    width: 100%;
+    border: 0;
+    margin: 0 0 15px;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+.centralForm input[type="submit"] {
+    text-transform: uppercase;
+    outline: 0;
+    width: 100%;
+    border: 0;
+    padding: 15px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.centralForm input[type="submit"]:hover, .form button:active, .form button:focus {
+    background: var(--main-bg-color);
+    color: #f2f2f2;
+}
+.centralForm .message {
+    margin: 15px 0 0;
+    color: #b3b3b3;
+    font-size: 12px;
+}
+.centralForm .message a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+
+
+/* -------base---------*/
+#navBar {
+    padding: 15px;
+    overflow: hidden;
+    background-color: var(--main-bg-color);
+    text-align: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+}
+
+#navBarLeft {
+    float: left;
+}
+
+#navBarTitle {
+    float: left;
+    display: inline;
+    padding: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+}
+
+#navBarRight {
+    float: right;
+}
+
+ul.navList {
+    list-style-type: none;
+    margin: 0;
+    padding-right: 20px;
+}
+
+ul.navList li {
+    float: right;
+}
+
+ul.navList a {
+    float: right;
+    display: inline;
+    border-right: 1px solid #bbb;
+    padding: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+}
+
+ul.navList li a:hover {
+    background-color: #f3fbf6;
+    color: var(--main-bg-color);
+}
+/* -------/base---------*/
+
+
+
+
+/* --- viewallmachines --*/
+
+.collapsible {
+  color: #444;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.collapsibleMachineWindow {
+  padding: 0 18px;
+  /*display: block;*/
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+.collapsible:after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: white;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+    content: "\2796"; /* Unicode character for "minus" sign (-) */
+}
+
+.close{
+    float: right;
+}
+
+/* -----/viewall ------*/

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <div id="adminPartTypesList" class="adminList">
+
+        <form>
+            <input type="hidden" name="action" value="newPartType">
+            <input type="submit" id="newPartTypeBtn" name="newPartType" value="New Part Type" formmethod="post"/>
+            <h2> Parts </h2>
+        </form>
+        {% for p in part_types %}
+            <div class="adminPartType">
+                {% if p != None %}
+                    {{ p.part_name }}
+                    <form method="post"
+                          style="display: inline;">
+                        <input type="hidden" name="action" value="copyPartType">
+                        <input type="hidden" name="partTypeId" value="{{ p.id }}">
+                        <input type="submit" name="deletePartType" value="Copy">
+                    </form>
+                    {# Only create a link allowing edits if there aren't any existing batches for the part type #}
+                    {% if p.batches|length == 0 %}
+                        <form action="{{ url_for('create_part_type') }}"
+                              method="get"
+                              style="display: inline;">
+                            <input type="hidden" name="action" value="editPartType">
+                            <input type="hidden" name="part_type_id" value="{{ p.id }}"/>
+                            <input type="submit" value="Edit">
+                        </form>
+
+                        <form method="post" onsubmit="return confirm('Delete part type {{ p.part_name }}?')"
+                              style="display: inline;">
+                            <input type="hidden" name="action" value="deletePartType">
+                            <input type="hidden" name="partTypeId" value="{{ p.id }}">
+                            <input type="submit" name="deletePartType" value="Delete">
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <br>
+        {% endfor %}
+    </div>
+
+    <div id="adminUserList" class="adminList">
+        <form action="newuser">
+            <input type="submit" id="newUserBtn" value="New User" formmethod="GET"/>
+        </form>
+        <h2>Users</h2>
+
+        {% for user in users %}
+            {{ user.username }}
+            <form action="{{ url_for('change_password') }}"
+                  method="get"
+                  style="display: inline;">
+                <input type="hidden" name="action" value="resetPassword">
+                <input type="hidden" name="user_id" value="{{ user.id }}"/>
+                <input type="submit" value="Change Password">
+            </form>
+            <br>
+        {% endfor %}
+
+    </div>
+    <br>
+    <br>
+    <div id="adminBatchesList" class="adminList">
+        {% for b in batches %}
+            {% if b != None %}
+                <form onsubmit="return confirm('Delete batch {{ b.batch_number }}?')">
+
+
+                    <a href="{{ url_for('admin_batch') + '?batch_id=' }}{{ b.id }}">
+                        Batch {{ b.batch_number }} - {{ b.part_type.part_name }} ({{ b.parts|length }} parts)
+                    </a>
+                    <input type="hidden" name="batchId" value="{{ b.id }}"/>
+                    <input type="hidden" name="action" value="deleteBatch">
+                    <input type="submit" name="deleteBatch" value="Delete batch" formmethod="post"/>
+
+                    <br>
+
+                </form>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+{% endblock %}

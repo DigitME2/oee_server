@@ -1,0 +1,26 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <body id="startJob">
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <div class="centralForm">
+        <form action="" method="post">
+            <p>
+                {{ form.job_no.label }}<br>
+                {{ form.job_no(size=32) }}<br>
+                {% for error in form.job_no.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ form.machine_number.label }}<br>
+                {{ form.machine_number(size=32) }}<br>
+                {% for error in form.machine_number.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>{{ form.submit() }}</p>
+        </form>
+    </div>
+    </body>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <h1>Create part type</h1>
+    <h2>{{part_type.part_name}}</h2>
+
+    <form action="" method="post">
+
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.part_name.label }}<br>
+            {{ form.part_name(size=32) }} {{ form.submit() }}
+            {% for error in form.part_name.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+               {{ form.csrf_token }}
+
+    </form>
+
+
+    <h2> Steps </h2>
+            <form action="{{ url_for('add_step') }}" method="post">
+            <input type="hidden" name="part_type_id" value="{{ part_type.id }}"/>
+            <input type="submit" value="Create Step"/>
+        </form>
+        <!--Create the list of existing steps-->
+        {% for s in steps %}
+            {% if p != None %}
+                <a href="{{url_for('edit_step')}}?part_type_id={{part_type.id}}&step_id={{s.id}}">
+                    {{s.step_number}} - {{s.step_title}}<br></a>
+            {% endif %}
+        {% endfor %}
+
+        <form action="{{ url_for('delete_step') }}" method="post">
+            <input type="hidden" name="part_type_id" value="{{ part_type.id }}"/>
+            <input type="submit" value="Delete Last Step"/>
+        </form>
+
+
+{% endblock %}

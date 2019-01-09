@@ -1,0 +1,7 @@
+{% extends "default/base.html" %}
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <body>
+        <h1>{{ user.username }} is logged in. <br> ID: {{ user.id }}</h1>
+    </body>
+{% endblock %}}
