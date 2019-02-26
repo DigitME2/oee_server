@@ -1,27 +1,12 @@
-{% extends "default/base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
 
-{% block content %}
-    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
-    <div id="adminUserList" class="adminList">
-        <form action="newuser">
-            <input type="submit" id="newUserBtn" value="New User" formmethod="GET"/>
-        </form>
-        <h2>Users</h2>
 
-        {% for user in users %}
-            {{ user.username }}
-            <form action="{{ url_for('change_password') }}"
-                  method="get"
-                  style="display: inline;">
-                <input type="hidden" name="action" value="resetPassword">
-                <input type="hidden" name="user_id" value="{{ user.id }}"/>
-                <input type="submit" value="Change Password">
-            </form>
-            <br>
-        {% endfor %}
 
-    </div>
-    <br>
-    <br>
-
-{% endblock %}
+</body>
+</html>

@@ -2,11 +2,9 @@ from app import db
 from app.login import bp
 from app.login.forms import LoginForm, RegisterForm, ChangePasswordForm
 from app.login.models import User, create_default_admin
-from flask import render_template, request, flash, redirect, url_for, abort
+from flask import render_template, request, flash, redirect, url_for
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
-
-from app.oee_monitoring.models import Job
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -35,6 +33,7 @@ def login():
 
 
 @bp.route('/logout')
+@login_required
 def logout():
     """ Logs the user out of the system. """
     logout_user()
@@ -56,6 +55,7 @@ def new_user():
 
 
 @bp.route('/changepassword', methods=['GET', 'POST'])
+@login_required
 def change_password():
     """ The page to change a user's password. The user is passed to this page."""
     user = User.query.get_or_404(request.args.get('user_id'))

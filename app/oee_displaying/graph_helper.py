@@ -1,16 +1,21 @@
-from plotly import __version__
 from plotly.offline import plot
-from plotly.graph_objs import Layout
 from datetime import datetime
-from app.oee_monitoring.models import Activity, Job, Machine
+from app.default.models import Activity, Job, Machine
 
 import plotly.figure_factory as ff
 
 
 def create_machine_gantt(machine, graph_start, graph_end):
     """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
+
+    # Get the machine's activities between the two times
+    activities = Activity.query \
+        .filter(Activity.machine_id == machine.id) \
+        .filter(Activity.timestamp_end >= graph_start) \
+        .filter(Activity.timestamp_start <= graph_end).all()
+
+    # Add each activity to a dictionary, to add to the graph
     df = []
-    activities = get_all_activity(machine, graph_start, graph_end)
     for activity in activities:
         # If the activity extends past the  start or end, crop it short
         if activity.timestamp_start < graph_start:
@@ -28,7 +33,8 @@ def create_machine_gantt(machine, graph_start, graph_end):
                        Activity_id=activity.id))
 
     graph_title = "{machine_name} OEE".format(machine_name=machine.name)
-    colours = {'uptime': 'rgb(0, 255, 128)', 'error1': 'rgb(255,64,0)', 'error2': 'rgb(255,0,0)', 'error3': 'rgb(255,255,0)'}
+    colours = {'uptime': 'rgb(0, 255, 128)', 'error1': 'rgb(255,64,0)', 'error2': 'rgb(255,0,0)',
+               'error3': 'rgb(255,255,0)'}
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,
@@ -52,7 +58,10 @@ def create_all_machines_gantt(graph_start, graph_end):
     machines = Machine.query.all()
     df = []
     for machine in machines:
-        activities = get_all_activity(machine, graph_start, graph_end)
+        activities = Activity.query \
+            .filter(Activity.machine_id == machine.id) \
+            .filter(Activity.timestamp_end >= graph_start) \
+            .filter(Activity.timestamp_start <= graph_end).all()
         for activity in activities:
             # Don't show values outside of graph time range
             if activity.timestamp_start < graph_start:
@@ -86,20 +95,3 @@ def create_all_machines_gantt(graph_start, graph_end):
     # Hide the range selector
     fig['layout']['xaxis']['rangeselector']['visible'] = False
     return plot(fig, output_type="div", include_plotlyjs=True)
-
-
-def get_all_activity(machine, graph_start, graph_end):
-    # Get all the machine's jobs between the two times
-    job_list = Job.query\
-        .filter(Job.machine_id == machine.id)\
-        .filter(Job.end_time >= graph_start)\
-        .filter(Job.start_time <= graph_end).all()
-    activities = []
-    for job in job_list:
-        # Get all the job's activities within the time provided
-        job_activities = Activity.query \
-            .filter(Activity.job_id == job.id) \
-            .filter(Activity.timestamp_end >= graph_start) \
-            .filter(Activity.timestamp_start <= graph_end).all()
-        activities.extend(job_activities)
-    return activities

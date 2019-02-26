@@ -6,6 +6,7 @@ from flask_login import LoginManager
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+login_manager.login_view = 'login'
 
 
 def create_app(config_class=Config):
@@ -16,13 +17,17 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
 
     from app.default import bp as default_bp
-    from app.login import bp as users_bp
     from app.errors import bp as errors_bp
+    from app.login import bp as users_bp
+    from app.oee_displaying import bp as oee_displaying_bp
     from app.oee_monitoring import bp as oee_monitoring_bp
+    from app.testing import bp as testing_bp
 
     app.register_blueprint(default_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(oee_monitoring_bp)
+    app.register_blueprint(testing_bp)
 
     return app
