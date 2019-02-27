@@ -21,6 +21,7 @@ def test():
 
 @bp.route('/createdata')
 def create_data():
+    db.create_all()
     """ Create fake random database data for testing"""
     uptimecode = ActivityCode(activity_code=1, description='uptime')
     db.session.add(uptimecode)
@@ -34,7 +35,7 @@ def create_data():
 
     for i in range(0, 5):
 
-        new_machine = Machine(name="machine " + str(i))
+        new_machine = Machine(machine_number=str(i+1), name="Bridgeport " + str(i+1))
         db.session.add(new_machine)
         db.session.commit()
 
@@ -53,17 +54,17 @@ def create_data():
         finish = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()
         time = start
         while time <= finish:
-            uptime_activity = Activity(user_id=1,
-                                       machine_id=i,
+            uptime_activity = Activity(machine_id=i,
                                        timestamp_start=time,
-                                       activity_code_id=1)
+                                       activity_code_id=1,
+                                       active=False)
             time += randrange(600, 14400)
             uptime_activity.timestamp_end = time
 
-            downtime_activity = Activity(user_id=1,
-                                         machine_id=i,
+            downtime_activity = Activity(machine_id=i,
                                          timestamp_start=time,
-                                         activity_code_id=randrange(2, 5))
+                                         activity_code_id=randrange(2, 5),
+                                         active=False)
             time += randrange(60, 1200)
             downtime_activity.timestamp_end = time
             db.session.add(uptime_activity)

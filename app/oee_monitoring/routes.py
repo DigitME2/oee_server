@@ -1,8 +1,8 @@
 from app import db
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm
-from app.default.models import Activity, Machine, Job
-from flask import render_template, redirect, url_for, request
+from app.default.models import Activity, ActivityCode, Machine, Job
+from flask import render_template, redirect, url_for, request, Response
 from flask_login import login_required, current_user
 from app.oee_displaying.graph_helper import create_machine_gantt
 
@@ -62,27 +62,47 @@ def end_job():
                            graph=graph)
 
 
-# TODO Below here is all nonsense / a work in progress
-@bp.route('/machineactivity', methods=['POST'])
+# TODO Finish this method
+@bp.route('/machineactivity', methods=['PUT'])
 def machine_activity():
-    """ Called to begin an activity eg uptime, downtime"""
-    machine_id = request.form['machine_id']
-    activity_type = request.form['activity']
+    """ Receives JSON data detailing a machine's activities and saves them to the database
+    Example format:
+    {
+        "machine_number": 1,
+
+        "activities": [
+            {
+                "activity_code": 1,
+                "timestamp_start": 1545710000,
+                "timestamp_end": 1545720000
+            },
+            {
+              "activity_code": 1,
+              "timestamp_start": 1545730000,
+              "timestamp_end": 1545740000
+            }
+        ]
+    }
+    """
+
+    json = request.get_json()
+
+    machine_number = json['machine_number']
+    machine = Machine.query.filter_by(machine_number=machine_number).first()
+
+    # Loop through the activities in the json body and add them to the database
+    for a in json['activities']:
+        code = a['activity_code']
+        activity_code = ActivityCode.query.filter_by(activity_code=code).first()
+        timestamp_start = a['timestamp_start']
+        timestamp_end = a['timestamp_end']
+        new_activity = Activity(activity_code_id=activity_code.id,
+                                machine_id=machine.id,
+                                timestamp_start=timestamp_start,
+                                timestamp_end=timestamp_end)
+        db.session.add(new_activity)
+        db.session.commit()
+
+    return Response(status=200)
 
 
-    job_id = request.form['job_id']
-    user_id = request.form['user_id']
-    activity_code_id = request.form['activity_code_id']
-    timestamp_start = time()
-    new_activity = Activity(job_id=job_id, user_id=user_id, activity_code_id=activity_code_id)
-
-
-@bp.route('/startactivity', methods=['POST'])
-def start_activity():
-    """ Called to begin an activity eg uptime, downtime"""
-    job_id = request.form['job_id']
-    user_id = request.form['user_id']
-    activity_code_id = request.form['activity_code_id']
-    timestamp_start = time()
-
-    new_activity = Activity(job_id=job_id, user_id=user_id, activity_code_id=activity_code_id)
