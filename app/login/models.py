@@ -9,12 +9,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     admin = db.Column(db.Boolean)
-    active_job_id = db.Column(db.Integer)
 
     jobs = db.relationship('Job')
-
-    def has_job(self):
-        return self.active_job_id is not None
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

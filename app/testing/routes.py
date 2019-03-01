@@ -7,6 +7,7 @@ from flask_login import current_user
 from app import db
 from app.testing import bp
 from app.default.models import Machine, ActivityCode, Job, Activity
+from app.login.models import User
 
 
 @bp.route('/test')
@@ -21,6 +22,7 @@ def test():
 
 @bp.route('/createdata')
 def create_data():
+    """ Creates fake data to use for testing purposes"""
     db.create_all()
     """ Create fake random database data for testing"""
     uptimecode = ActivityCode(activity_code=1, description='uptime')
@@ -35,6 +37,9 @@ def create_data():
 
     for i in range(0, 5):
 
+        user = User(username="user"+str(i))
+        user.set_password("password")
+
         new_machine = Machine(machine_number=str(i+1), name="Bridgeport " + str(i+1))
         db.session.add(new_machine)
         db.session.commit()
@@ -45,7 +50,7 @@ def create_data():
                       end_time=job_end.timestamp(),
                       job_number=str(i),
                       machine_id=i,
-                      user_id=current_user.id)
+                      user_id=i)
 
         db.session.add(new_job)
         db.session.commit()
@@ -56,15 +61,13 @@ def create_data():
         while time <= finish:
             uptime_activity = Activity(machine_id=i,
                                        timestamp_start=time,
-                                       activity_code_id=1,
-                                       active=False)
+                                       activity_code_id=1)
             time += randrange(600, 14400)
             uptime_activity.timestamp_end = time
 
             downtime_activity = Activity(machine_id=i,
                                          timestamp_start=time,
-                                         activity_code_id=randrange(2, 5),
-                                         active=False)
+                                         activity_code_id=randrange(2, 5))
             time += randrange(60, 1200)
             downtime_activity.timestamp_end = time
             db.session.add(uptime_activity)
