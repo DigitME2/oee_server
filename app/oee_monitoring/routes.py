@@ -1,11 +1,10 @@
 from app import db
 from app.oee_monitoring import bp
-from app.oee_monitoring.forms import StartForm, EndForm, CompleteJobForm
+from app.oee_monitoring.forms import StartForm
 from app.default.models import Activity, ActivityCode, Machine, Job
 from flask import render_template, redirect, url_for, request, Response
 from flask_login import login_required, current_user
 from app.oee_displaying.graph_helper import create_machine_gantt
-from wtforms.validators import NoneOf
 
 from time import time
 
@@ -13,43 +12,23 @@ from time import time
 @bp.route('/startjob', methods=['GET', 'POST'])
 @login_required
 def start_job():
+    # todo check if job is already in progress for user
     """ The page where a user will start a job"""
-
-    # Redirect if user has an active job
-    if Job.query.filter_by(user_id=current_user.id, active=True).first() is not None:
-        return redirect(url_for('oee_monitoring.job_in_progress'))
+    user = current_user
     form = StartForm()
-
-    # Get a list of existing job numbers to send to form for validation
-    machine_numbers = []
-    # for m in Machine.query.all():
-    #     machine_numbers.append(str(m.machine_number))
-    job_numbers = []
-    for j in Job.query.all():
-        job_numbers.append(str(j.job_number))
-    # Get a list of existing machines to send to form for validation
-    form = StartForm()
-    # form.job_number.validators.append(NoneOf(job_numbers))
-    # form.machine_number.choices = machine_numbers
-
     if form.validate_on_submit():
-        job_number = form.job_number.data
-        # TODO check the machine exists
-        machine_number = form.machine_number.data
-        machine = Machine.query.filter_by(machine_number=machine_number).first()
+        job_number = form.job_no
+        machine_number = form.machine_number
         start_time = time()
-        job = Job(start_time=start_time,
-                  user_id=current_user.id,
-                  job_number=job_number,
-                  machine_id=machine.id,
-                  active=True)
+        job = Job(start_time=start_time, user_id=user.id, job_number=job_number, machine_number=machine_number)
         db.session.add(job)
         db.session.commit()
-        return redirect(url_for('oee_monitoring.job_in_progress'))
+        redirect(url_for('job_in_progress'))
     nav_bar_title = "Start a new job"
     return render_template('oee_monitoring/startjob.html',
                            title="New Job",
                            form=form,
+                           user=user,
                            nav_bar_title=nav_bar_title)
 
 
@@ -57,17 +36,13 @@ def start_job():
 @login_required
 def job_in_progress():
     """ The page shown to a user while a job is active"""
-    job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    job = current_user.active_job
     if job is None:
-        return redirect(url_for('oee_monitoring.start_job'))
-
-    form = EndForm()
-    if form.validate_on_submit():
-        return redirect(url_for('oee_monitoring.end_job'))
-
+        print("No active job")
+        # todo (test code) need to correctly handle getting here without a job
+        job = Job.query.get_or_404(1)
     nav_bar_title = "Job in progress"
     return render_template('oee_monitoring/jobinprogress.html',
-                           form=form,
                            job=job,
                            nav_bar_title=nav_bar_title)
 
@@ -75,30 +50,19 @@ def job_in_progress():
 @bp.route('/endjob', methods=['GET', 'POST'])
 @login_required
 def end_job():
-    """ The page at the end of a job
-    This shows the user a summary of the machine's activities and requests reasons for certain activities"""
-
-    job = Job.query.filter_by(user_id=current_user.id, active=True).first()
-    if job is None:
-        return redirect(url_for('oee_monitoring.start_job'))
-
-    form = CompleteJobForm()
-    if form.validate_on_submit():
-        job.active = None
-        job.end_time = time()
-        db.session.commit()
-        return redirect(url_for('oee_monitoring.start_job'))
+    """ The page at the end of a job"""
+    job = current_user.active_job
     machine = Machine.query.get_or_404(job.machine_id)
     # Sum up all of the activity
     activities = job.activities
-    graph = create_machine_gantt(graph_start=job.start_time, graph_end=time(), machine=machine)
+    graph = create_machine_gantt(graph_start=job.start_time, graph_end=job.end_time, machine=machine)
     nav_bar_title = "Submit Job"
     return render_template('oee_monitoring/endjob.html',
                            nav_bar_title=nav_bar_title,
-                           form=form,
                            graph=graph)
 
 
+# TODO Finish this method
 @bp.route('/machineactivity', methods=['PUT'])
 def machine_activity():
     """ Receives JSON data detailing a machine's activities and saves them to the database

@@ -12,17 +12,12 @@ class Machine(db.Model):
 
 
 class Job(db.Model):
-    # Each user_id is only allowed one job with active=true Check constraint prevents false values for the active column
-    __table_args__ = (db.UniqueConstraint('user_id', 'active'), db.CheckConstraint('active'))
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.Integer, nullable=False)
     end_time = db.Column(db.Integer)
-    job_number = db.Column(db.String, nullable=False, unique=True)
+    job_number = db.Column(db.String, nullable=False)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    active = db.Column(db.Boolean)  # This should either be true or null
-
-    activities = db.relationship('Activity')
 
 
 class WorkOrder(db.Model):
@@ -36,7 +31,7 @@ class Activity(db.Model):
     activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), nullable=False)
     timestamp_start = db.Column(db.Integer, nullable=False)
     timestamp_end = db.Column(db.Integer)
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
+
 
 
 class ActivityCode(db.Model):

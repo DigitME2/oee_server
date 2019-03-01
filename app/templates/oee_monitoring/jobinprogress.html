@@ -5,10 +5,8 @@
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="centralForm">
         <form action="" method="post">
-            <p>
-                {{ form.csrf_token }}
-            </p>
-            <p>{{ form.submit() }}</p>
+            <p>Job in progress: {{ job.job_number }} </p>
+            <p><input type="submit" value="Finish Job"></p>
         </form>
     </div>
     </body>

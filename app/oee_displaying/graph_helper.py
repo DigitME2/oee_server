@@ -13,8 +13,6 @@ def create_machine_gantt(machine, graph_start, graph_end):
         .filter(Activity.machine_id == machine.id) \
         .filter(Activity.timestamp_end >= graph_start) \
         .filter(Activity.timestamp_start <= graph_end).all()
-    if len(activities) == 0:
-        return "No machine activity between these times"
 
     # Add each activity to a dictionary, to add to the graph
     df = []
