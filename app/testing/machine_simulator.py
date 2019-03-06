@@ -19,9 +19,10 @@ while 1:
     else:
         activity_code = rand
     activity = {
-      "activity_code": activity_code,
-      "timestamp_start": start,
-      "timestamp_end": end
+        "machine_number": machine_number,
+        "activity_code": activity_code,
+        "timestamp_start": start,
+        "timestamp_end": end
     }
     activities.append(activity)
     data = {
