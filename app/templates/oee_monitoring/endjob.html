@@ -8,7 +8,11 @@
     </div>
     <div class="centralForm">
         <form action="" method="post">
-            <p><input type="submit"></p>
+            <p>
+                {{ form.csrf_token }}
+                {{ form.error_code }}
+            </p>
+            <p>{{ form.submit() }}</p>
         </form>
     </div>
     </body>

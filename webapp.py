@@ -1,5 +1,3 @@
-from app import create_app, db
+from app import create_app
 
 app = create_app()
-db.create_all()
-db.session.commit()

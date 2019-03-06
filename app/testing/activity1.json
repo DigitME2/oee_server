@@ -1,16 +1,6 @@
 {
   "machine_number": 1,
-
-  "activities": [
-    {
-      "activity_code": 1,
-      "timestamp_start": 1500000000,
-      "timestamp_end": 1500000000
-    },
-    {
-      "activity_code": 1,
-      "timestamp_start": 1500000000,
-      "timestamp_end": 1500000000
-    }
-  ]
+  "activity_cde": 1,
+  "timestamp_start": 1500000000,
+  "timestamp_end": 1500000000
 }

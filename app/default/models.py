@@ -8,7 +8,7 @@ class Machine(db.Model):
     name = db.Column(db.String, unique=True)
 
     activities = db.relationship('Activity')
-    jobs = db.relationship('Job')
+    jobs = db.relationship('Job', backref='machine')
 
 
 class Job(db.Model):

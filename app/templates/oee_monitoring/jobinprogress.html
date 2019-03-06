@@ -4,6 +4,9 @@
     <body id="startJob">
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="centralForm">
+        Job {{ job.job_number }}
+        <br>
+        Machine {{ job.machine.machine_number }}
         <form action="" method="post">
             <p>Job in progress: {{ job.job_number }} </p>
             <p><input type="submit" value="Finish Job"></p>
