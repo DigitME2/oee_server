@@ -37,6 +37,8 @@ def create_data():
     """ Creates fake data to use for testing purposes"""
     db.create_all()
 
+    unexplainedcode = ActivityCode(activity_code=0, description='unexplained')
+    db.session.add(unexplainedcode)
     uptimecode = ActivityCode(activity_code=1, description='uptime')
     db.session.add(uptimecode)
     error1code = ActivityCode(activity_code=2, description='error1')
@@ -73,12 +75,17 @@ def create_data():
         while time <= finish:
             uptime_activity = Activity(machine_id=i,
                                        timestamp_start=time,
+                                       machine_state=1,
                                        activity_code_id=1)
             time += randrange(600, 14400)
             uptime_activity.timestamp_end = time
 
+            machine_state = randrange(0, 3)
+            if machine_state == 1:
+                machine_state = 0
             downtime_activity = Activity(machine_id=i,
                                          timestamp_start=time,
+                                         machine_state=machine_state,
                                          activity_code_id=randrange(2, 5))
             time += randrange(60, 1200)
             downtime_activity.timestamp_end = time

@@ -1,6 +1,10 @@
 from app import db
 from time import time
 
+UNEXPLAINED_DOWNTIME_CODE = 0
+UPTIME_CODE = 1
+ERROR_1_CODE = 2
+
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,7 +32,8 @@ class WorkOrder(db.Model):
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
-    activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), nullable=False)
+    machine_state = db.Column(db.String, nullable=False)
+    activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'))
     timestamp_start = db.Column(db.Integer, nullable=False)
     timestamp_end = db.Column(db.Integer)
 

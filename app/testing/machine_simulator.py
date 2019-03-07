@@ -11,26 +11,20 @@ while 1:
     activities = []
 
     start = time()
-    sleep(randrange(1, 10))
+    sleep(randrange(0, 10))
     end = time()
-    rand = randrange(1, 10)
-    if rand > 4:
-        activity_code = 1
+    rand = randrange(0, 10)
+    if rand > 2:
+        machine_state = 1
     else:
-        activity_code = rand
+        machine_state = rand
     activity = {
         "machine_number": machine_number,
-        "activity_code": activity_code,
+        "machine_state": machine_state,
         "timestamp_start": start,
         "timestamp_end": end
     }
-    activities.append(activity)
-    data = {
-        'machine_number': machine_number,
-        'activities': activities
-    }
+    print("Activity: ", json.dumps(activity))
 
-    print("Sending activity: ", activity)
-    print("Data: ", json.dumps(data))
-
-    r = requests.post('http://localhost:5000/machineactivity', headers=headers, json=json.dumps(data))
+    r = requests.post('http://localhost:5000/activity', headers=headers, json=json.dumps(activity))
+    print(r.status_code, r.content)

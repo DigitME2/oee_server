@@ -1,8 +1,34 @@
 from app import db
 from app.api import bp
-from app.default.models import Machine, ActivityCode, Activity
+from app.default.models import Machine, ActivityCode, Activity, UPTIME_CODE, UNEXPLAINED_DOWNTIME_CODE
 from flask import request, jsonify
 import json
+from time import time
+
+MACHINE_STATE_OFF = 0
+MACHINE_STATE_RUNNING = 1
+MACHINE_STATE_ERROR = 2
+
+
+def machine_state_to_activity_code(machine_state):
+    """ Assigns activity codes according to machine state"""
+    if machine_state == MACHINE_STATE_RUNNING:
+        return UPTIME_CODE
+    # Any other machine state will require an explanation from the operator
+    else:
+        return UNEXPLAINED_DOWNTIME_CODE
+
+
+def validate_timestamp(timestamp):
+    """ Makes sure a given timestamp is valid and makes sense"""
+
+    timeout = 604800
+
+    if (time() - timeout) > timestamp > time():
+        return False
+
+    else:
+        return True
 
 
 @bp.route('/activity', methods=['POST'])
@@ -11,7 +37,7 @@ def machine_activity():
     Example format:
     {
         "machine_number": 1,
-        "activity_code": 1,
+        "machine_state": 1,
         "timestamp_start": 1500000000,
         "timestamp_end": 1500000000
     }
@@ -35,12 +61,14 @@ def machine_activity():
     machine_number = data['machine_number']
     machine = Machine.query.filter_by(machine_number=machine_number).first()
 
-    if 'activity_code' not in data:
-        response = jsonify({"error": "No activity_code provided"})
+    if 'machine_state' not in data:
+        response = jsonify({"error": "No machine_state provided"})
         response.status_code = 400
         return response
-    code = data['activity_code']
-    activity_code = ActivityCode.query.filter_by(activity_code=code).first()
+    machine_state = data['machine_state']
+    # Use the machine state to calculate the default activity code
+    act_code = machine_state_to_activity_code(machine_state)
+    activity_code = ActivityCode.query.filter_by(activity_code=act_code).first()
 
     if 'timestamp_start' not in data:
         response = jsonify({"error": "No timestamp_start provided"})
@@ -54,9 +82,15 @@ def machine_activity():
         return response
     timestamp_end = data['timestamp_end']
 
+    if not validate_timestamp(timestamp_start) or not validate_timestamp(timestamp_end):
+        response = jsonify({"error": "Bad timestamp"})
+        response.status_code = 400
+        return response
+
     # Create and save the activity
-    new_activity = Activity(activity_code_id=activity_code.id,
-                            machine_id=machine.id,
+    new_activity = Activity(machine_id=machine.id,
+                            machine_state=machine_state,
+                            activity_code_id=activity_code.id,
                             timestamp_start=timestamp_start,
                             timestamp_end=timestamp_end)
     db.session.add(new_activity)
@@ -64,8 +98,10 @@ def machine_activity():
 
     # Recreate the data and send it back to the client for confirmation
     response = jsonify({"machine_number": machine.machine_number,
-                        "activity_code": activity_code.activity_code,
+                        "machine_state": new_activity.machine_state,
                         "timestamp_start": new_activity.timestamp_start,
                         "timestamp_end": new_activity.timestamp_end})
     response.status_code = 201
     return response
+
+

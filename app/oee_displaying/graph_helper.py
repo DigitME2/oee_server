@@ -33,7 +33,7 @@ def create_machine_gantt(machine, graph_start, graph_end):
                        Activity_id=activity.id))
 
     graph_title = "{machine_name} OEE".format(machine_name=machine.name)
-    colours = {'uptime': 'rgb(0, 255, 128)', 'error1': 'rgb(255,64,0)', 'error2': 'rgb(255,0,0)',
+    colours = {'unexplained': 'rgb(128, 128, 128)', 'uptime': 'rgb(0, 255, 128)', 'error1': 'rgb(255,64,0)', 'error2': 'rgb(255,0,0)',
                'error3': 'rgb(255,255,0)'}
     fig = ff.create_gantt(df,
                           title=graph_title,
@@ -83,7 +83,7 @@ def create_all_machines_gantt(graph_start, graph_end):
                            Finish=datetime.fromtimestamp(end),
                            Code=code))
     graph_title = "All machines OEE"
-    colours = {1: 'rgb(0, 200, 64)', 2: 'rgb(255,32,0)'}
+    colours = {0: 'rgb(255,32,0)', 1: 'rgb(0, 200, 64)', 2: 'rgb(255,32,0)'}
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,

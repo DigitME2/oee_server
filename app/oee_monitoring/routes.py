@@ -104,3 +104,6 @@ def end_job():
                            graph=graph)
 
 
+def get_flagged_activities(activities):
+    """ Filters a list of activities and returns a list that require explanation
+    from the operator"""
