@@ -6,15 +6,17 @@
     <div class="centralForm">
         <form action="" method="post">
             <p>
-                {{ form.job_no.label }}<br>
-                {{ form.job_no(size=32) }}<br>
-                {% for error in form.job_no.errors %}
+                {{ form.csrf_token }}
+                {{ form.job_number.label }}<br>
+                {{ form.job_number(size=32) }}<br>
+{#                TODO Stop the form from showing every unacceptable job number#}
+                {% for error in form.job_number.errors %}
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
             </p>
             <p>
                 {{ form.machine_number.label }}<br>
-                {{ form.machine_number(size=32) }}<br>
+                {{ form.machine_number }}<br>
                 {% for error in form.machine_number.errors %}
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}

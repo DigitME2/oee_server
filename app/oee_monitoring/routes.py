@@ -1,10 +1,11 @@
 from app import db
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm, CompleteJobForm
-from app.default.models import Activity, Machine, Job
+from app.oee_monitoring.helpers import get_flagged_activities, get_legible_downtime_time
+from app.default.models import Activity, ActivityCode, Machine, Job
+from app.oee_displaying.graph_helper import create_machine_gantt
 from flask import render_template, redirect, url_for
 from flask_login import login_required, current_user
-from app.oee_displaying.graph_helper import create_machine_gantt
 from wtforms.validators import NoneOf
 from time import time
 
@@ -87,23 +88,28 @@ def end_job():
         return redirect(url_for('oee_monitoring.start_job'))
     machine = Machine.query.get_or_404(current_job.machine_id)
 
-    # TODO Get a list of activities that require an explanation from the operator
+    # TODO request explanations from the user
 
     form = CompleteJobForm()
     if form.validate_on_submit():
+        # Set the job as finished
         current_job.active = None
         current_job.end_time = time()
         db.session.commit()
         return redirect(url_for('oee_monitoring.start_job'))
 
+    activity_codes = ActivityCode.query.all()
+
+    unexplained_activities = get_flagged_activities(current_job)
+    for a in unexplained_activities:
+        a.time_summary = get_legible_downtime_time(a.timestamp_start, a.timestamp_end)
+
+    # todo this graph should only show the job's activity, not use times.
     graph = create_machine_gantt(graph_start=current_job.start_time, graph_end=time(), machine=machine)
     nav_bar_title = "Submit Job"
     return render_template('oee_monitoring/endjob.html',
                            nav_bar_title=nav_bar_title,
                            form=form,
-                           graph=graph)
-
-
-def get_flagged_activities(activities):
-    """ Filters a list of activities and returns a list that require explanation
-    from the operator"""
+                           graph=graph,
+                           activity_codes=activity_codes,
+                           unexplained_activities=unexplained_activities)

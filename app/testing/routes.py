@@ -6,7 +6,7 @@ from flask_login import current_user
 
 from app import db
 from app.testing import bp
-from app.default.models import Machine, ActivityCode, Job, Activity
+from app.default.models import Machine, ActivityCode, Job, Activity, UPTIME_CODE, UNEXPLAINED_DOWNTIME_CODE
 from app.login.models import User
 from app.testing.forms import TestForm, NewBatchForm
 
@@ -21,7 +21,7 @@ def new_batch():
     """The page to create a new batch"""
     form = NewBatchForm()
     # Create list of part names to fill the part-type selection box
-    part_names = [1,2,3]
+    part_names = [1, 2, 3]
 
     form.part_type.choices = part_names
 
@@ -37,15 +37,15 @@ def create_data():
     """ Creates fake data to use for testing purposes"""
     db.create_all()
 
-    unexplainedcode = ActivityCode(activity_code=0, description='unexplained')
+    unexplainedcode = ActivityCode(code=UNEXPLAINED_DOWNTIME_CODE, short_description='unexplained')
     db.session.add(unexplainedcode)
-    uptimecode = ActivityCode(activity_code=1, description='uptime')
+    uptimecode = ActivityCode(code=UPTIME_CODE, short_description='uptime')
     db.session.add(uptimecode)
-    error1code = ActivityCode(activity_code=2, description='error1')
+    error1code = ActivityCode(code=2, short_description='error1')
     db.session.add(error1code)
-    error2code = ActivityCode(activity_code=3, description='error2')
+    error2code = ActivityCode(code=3, short_description='error2')
     db.session.add(error2code)
-    error3code = ActivityCode(activity_code=4, description='error3')
+    error3code = ActivityCode(code=4, short_description='error3')
     db.session.add(error3code)
     db.session.commit()
 
@@ -76,7 +76,7 @@ def create_data():
             uptime_activity = Activity(machine_id=i,
                                        timestamp_start=time,
                                        machine_state=1,
-                                       activity_code_id=1)
+                                       activity_code=UPTIME_CODE)
             time += randrange(600, 14400)
             uptime_activity.timestamp_end = time
 
@@ -86,7 +86,7 @@ def create_data():
             downtime_activity = Activity(machine_id=i,
                                          timestamp_start=time,
                                          machine_state=machine_state,
-                                         activity_code_id=randrange(2, 5))
+                                         activity_code=randrange(2, 5))
             time += randrange(60, 1200)
             downtime_activity.timestamp_end = time
             db.session.add(uptime_activity)

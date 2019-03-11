@@ -1,7 +1,8 @@
 from plotly.offline import plot
 from datetime import datetime
-from app.default.models import Activity, Job, Machine
+from app.default.models import Activity, Machine, UPTIME_CODE
 
+import pandas as pd
 import plotly.figure_factory as ff
 
 
@@ -13,6 +14,8 @@ def create_machine_gantt(machine, graph_start, graph_end):
         .filter(Activity.machine_id == machine.id) \
         .filter(Activity.timestamp_end >= graph_start) \
         .filter(Activity.timestamp_start <= graph_end).all()
+    if len(activities) == 0:
+        return "No machine activity between these times"
 
     # Add each activity to a dictionary, to add to the graph
     df = []
@@ -26,14 +29,18 @@ def create_machine_gantt(machine, graph_start, graph_end):
             end = graph_end
         else:
             end = activity.timestamp_end
-        df.append(dict(Task=activity.code.description,
+        df.append(dict(Task=activity.code.short_description,
                        Start=datetime.fromtimestamp(start),
                        Finish=datetime.fromtimestamp(end),
-                       Code=activity.code.description,
-                       Activity_id=activity.id))
+                       Code=activity.code.short_description,
+                       Activity_id=activity.id,
+                       hoverinfo="test"))
 
     graph_title = "{machine_name} OEE".format(machine_name=machine.name)
-    colours = {'unexplained': 'rgb(128, 128, 128)', 'uptime': 'rgb(0, 255, 128)', 'error1': 'rgb(255,64,0)', 'error2': 'rgb(255,0,0)',
+    colours = {'unexplained': 'rgb(128, 128, 128)',
+               'uptime': 'rgb(0, 255, 128)',
+               'error1': 'rgb(255,64,0)',
+               'error2': 'rgb(255,0,0)',
                'error3': 'rgb(255,255,0)'}
     fig = ff.create_gantt(df,
                           title=graph_title,
@@ -50,6 +57,7 @@ def create_machine_gantt(machine, graph_start, graph_end):
 
     # Hide the range selector
     fig['layout']['xaxis']['rangeselector']['visible'] = False
+    fig['layout']['annotations'] = [dict(x='2009-02-01', y=0, text="This is a label", showarrow=False, font=dict(color='white'))]
     return plot(fig, output_type="div", include_plotlyjs=True)
 
 
@@ -73,7 +81,8 @@ def create_all_machines_gantt(graph_start, graph_end):
             else:
                 end = activity.timestamp_end
 
-            if activity.activity_code_id == 1:
+            # This graph only deals with uptime and not-uptime
+            if activity.activity_code == UPTIME_CODE:
                 code = 1
             else:
                 code = 2
@@ -83,7 +92,7 @@ def create_all_machines_gantt(graph_start, graph_end):
                            Finish=datetime.fromtimestamp(end),
                            Code=code))
     graph_title = "All machines OEE"
-    colours = {0: 'rgb(255,32,0)', 1: 'rgb(0, 200, 64)', 2: 'rgb(255,32,0)'}
+    colours = {1: 'rgb(0, 200, 64)', 2: 'rgb(255,32,0)'}
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,

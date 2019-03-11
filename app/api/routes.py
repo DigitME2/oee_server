@@ -68,7 +68,7 @@ def machine_activity():
     machine_state = data['machine_state']
     # Use the machine state to calculate the default activity code
     act_code = machine_state_to_activity_code(machine_state)
-    activity_code = ActivityCode.query.filter_by(activity_code=act_code).first()
+    activity_code = ActivityCode.query.filter_by(code=act_code).first()
 
     if 'timestamp_start' not in data:
         response = jsonify({"error": "No timestamp_start provided"})
@@ -90,7 +90,7 @@ def machine_activity():
     # Create and save the activity
     new_activity = Activity(machine_id=machine.id,
                             machine_state=machine_state,
-                            activity_code_id=activity_code.id,
+                            activity_code=activity_code.code,
                             timestamp_start=timestamp_start,
                             timestamp_end=timestamp_end)
     db.session.add(new_activity)

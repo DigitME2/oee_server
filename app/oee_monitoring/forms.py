@@ -12,7 +12,7 @@ class StartForm(FlaskForm):
 
 
 class EndForm(FlaskForm):
-    submit = SubmitField('Finish')
+    submit = SubmitField('End Job')
 
 
 class CompleteJobForm(FlaskForm):

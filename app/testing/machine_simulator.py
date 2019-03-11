@@ -24,7 +24,7 @@ while 1:
         "timestamp_start": start,
         "timestamp_end": end
     }
-    print("Activity: ", json.dumps(activity))
+    print("POST: ", json.dumps(activity))
 
     r = requests.post('http://localhost:5000/activity', headers=headers, json=json.dumps(activity))
-    print(r.status_code, r.content)
+    print("Response: ", r.status_code, r.content)

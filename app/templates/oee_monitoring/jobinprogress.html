@@ -9,8 +9,12 @@
         Machine {{ job.machine.machine_number }}
         <form action="" method="post">
             <p>Job in progress: {{ job.job_number }} </p>
-            <p><input type="submit" value="Finish Job"></p>
-        </form>
+            <form action="" method="post">
+                <p>
+                    {{ form.csrf_token }}
+                    {{ form.submit() }}
+                </p>
+            </form>
     </div>
     </body>
 {% endblock %}

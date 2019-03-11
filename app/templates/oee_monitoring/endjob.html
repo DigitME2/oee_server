@@ -14,6 +14,22 @@
             </p>
             <p>{{ form.submit() }}</p>
         </form>
+
+        <div class="explainActivity">
+            <form action="" method="post">
+                {% for activity in unexplained_activities %}
+                    <label>
+                    {{ activity.time_summary }}
+                        <select>
+                            {% for ac in activity_codes %}
+                                <option>{{ ac.code }} - {{ ac.short_description }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <br>
+                {% endfor %}
+            </form>
+        </div>
     </div>
     </body>
 {% endblock %}
