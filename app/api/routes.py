@@ -1,22 +1,11 @@
 from app import db
 from app.api import bp
-from app.default.models import Machine, ActivityCode, Activity, UPTIME_CODE, UNEXPLAINED_DOWNTIME_CODE
+from app.default.models import Machine, Activity
 from flask import request, jsonify
 import json
 from time import time
 
-MACHINE_STATE_OFF = 0
-MACHINE_STATE_RUNNING = 1
-MACHINE_STATE_ERROR = 2
 
-
-def machine_state_to_activity_code(machine_state):
-    """ Assigns activity codes according to machine state"""
-    if machine_state == MACHINE_STATE_RUNNING:
-        return UPTIME_CODE
-    # Any other machine state will require an explanation from the operator
-    else:
-        return UNEXPLAINED_DOWNTIME_CODE
 
 
 def validate_timestamp(timestamp):
@@ -66,9 +55,6 @@ def machine_activity():
         response.status_code = 400
         return response
     machine_state = data['machine_state']
-    # Use the machine state to calculate the default activity code
-    act_code = machine_state_to_activity_code(machine_state)
-    activity_code = ActivityCode.query.filter_by(code=act_code).first()
 
     if 'timestamp_start' not in data:
         response = jsonify({"error": "No timestamp_start provided"})
@@ -90,7 +76,6 @@ def machine_activity():
     # Create and save the activity
     new_activity = Activity(machine_id=machine.id,
                             machine_state=machine_state,
-                            activity_code=activity_code.code,
                             timestamp_start=timestamp_start,
                             timestamp_end=timestamp_end)
     db.session.add(new_activity)

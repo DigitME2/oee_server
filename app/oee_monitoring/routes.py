@@ -1,10 +1,10 @@
 from app import db
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm, CompleteJobForm
-from app.oee_monitoring.helpers import get_flagged_activities, get_legible_downtime_time
+from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, assign_activity_codes
 from app.default.models import Activity, ActivityCode, Machine, Job
-from app.oee_displaying.graph_helper import create_machine_gantt
-from flask import render_template, redirect, url_for
+from app.oee_displaying.graph_helper import create_shift_end_gantt
+from flask import render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf
 from time import time
@@ -53,9 +53,12 @@ def start_job():
 @login_required
 def job_in_progress():
     """ The page shown to a user while a job is active"""
+    # todo if the job has an endtime, go to the end page
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
     if current_job is None:
         return redirect(url_for('oee_monitoring.start_job'))
+    if current_job.end_time is not None:
+        return redirect(url_for('oee_monitoring.end_job'))
 
     form = EndForm()
     if form.validate_on_submit():
@@ -64,9 +67,15 @@ def job_in_progress():
             .filter(Activity.machine_id == current_job.machine_id) \
             .filter(Activity.timestamp_end >= current_job.start_time) \
             .filter(Activity.timestamp_start <= time()).all()
+        # Assign activity codes
+        assign_activity_codes(activities)
+        # Flag activities that require an explanation from the operator
+        flag_activities(activities)
         # Assign all of the activity to the current job
         for a in activities:
             a.job_id = current_job.id
+
+        current_job.end_time = time()
         db.session.commit()
         return redirect(url_for('oee_monitoring.end_job'))
 
@@ -84,32 +93,46 @@ def end_job():
     This shows the user a summary of the machine's activities and requests reasons for certain activities"""
 
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    activities = current_job.activities
+    # Flag activities that require an explanation
+    activities = flag_activities(activities)
     if current_job is None:
         return redirect(url_for('oee_monitoring.start_job'))
     machine = Machine.query.get_or_404(current_job.machine_id)
 
-    # TODO request explanations from the user
-
-    form = CompleteJobForm()
-    if form.validate_on_submit():
-        # Set the job as finished
-        current_job.active = None
-        current_job.end_time = time()
+    if request.method == "POST":
+        for act in activities:
+            if act.explanation_required:
+                # The name of the downtime boxes is the ud_index, the value will be the activity code id selected
+                act.activity_code_id = int(request.form[str(act.ud_index)])
+        # todo record new activity codes
         db.session.commit()
+
+        # If all activities are explained, mark job as complete
+        all_explained = True
+        for act in activities:
+            if act.explanation_required:
+                all_explained = False
+
+        if all_explained:
+            # Set the job as no longer active
+            current_job.active = None
+            db.session.commit()
         return redirect(url_for('oee_monitoring.start_job'))
 
-    activity_codes = ActivityCode.query.all()
+    for act in activities:
+        if act.explanation_required:
+            act.time_summary = get_legible_downtime_time(act.timestamp_start, act.timestamp_end)
 
-    unexplained_activities = get_flagged_activities(current_job)
-    for a in unexplained_activities:
-        a.time_summary = get_legible_downtime_time(a.timestamp_start, a.timestamp_end)
-
-    # todo this graph should only show the job's activity, not use times.
-    graph = create_machine_gantt(graph_start=current_job.start_time, graph_end=time(), machine=machine)
+    graph = create_shift_end_gantt(activities=activities,
+                                   machine=machine)
     nav_bar_title = "Submit Job"
+    # Give each activity its index as an attribute, so it can be retrieved easily in the jinja template
+    # This must be done after creating a graph because the graph sorts the list
+    for act in activities:
+        act.index = activities.index(act)
     return render_template('oee_monitoring/endjob.html',
                            nav_bar_title=nav_bar_title,
-                           form=form,
                            graph=graph,
-                           activity_codes=activity_codes,
-                           unexplained_activities=unexplained_activities)
+                           activity_codes=ActivityCode.query.all(),
+                           activities=activities)

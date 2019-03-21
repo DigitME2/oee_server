@@ -1,26 +1,26 @@
 from plotly.offline import plot
 from plotly.graph_objs import Layout
 from datetime import datetime
-from app.default.models import Activity, Machine, UPTIME_CODE, UNEXPLAINED_DOWNTIME_CODE, ERROR_1_CODE
-
-import plotly
+from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, ActivityCode
 import plotly.figure_factory as ff
 
 
 def create_machine_gantt(machine, graph_start, graph_end):
     """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
 
-    # todo dont rely on hardcoded codes eg "unexplained"
+    if machine is None:
+        return "This machine does not exist"
 
     # Get the machine's activities between the two times
     activities = Activity.query \
         .filter(Activity.machine_id == machine.id) \
         .filter(Activity.timestamp_end >= graph_start) \
         .filter(Activity.timestamp_start <= graph_end).all()
+    act_codes = ActivityCode.query.all()
     if len(activities) == 0:
         return "No machine activity between these times"
-    if machine is None:
-        return "This machine does not exist"
+
+    activities.sort(key=sort_activities, reverse=True)
 
     # Add each activity to a dictionary, to add to the graph
     df = []
@@ -37,16 +37,17 @@ def create_machine_gantt(machine, graph_start, graph_end):
         df.append(dict(Task=activity.code.short_description,
                        Start=datetime.fromtimestamp(start),
                        Finish=datetime.fromtimestamp(end),
-                       Code=activity.activity_code,
+                       Code=activity.code.short_description,
                        Activity_id=activity.id,
                        hoverinfo="test"))
 
     graph_title = "{machine_name} OEE".format(machine_name=machine.name)
-    colours = {UNEXPLAINED_DOWNTIME_CODE: 'rgb(128, 128, 128)',
-               UPTIME_CODE: 'rgb(0, 255, 128)',
-               ERROR_1_CODE: 'rgb(255,64,0)',
-               4: 'rgb(255,0,0)',
-               5: 'rgb(255,255,0)'}
+
+    # Create the colours dictionary using codes' colours from the database
+    colours = {}
+    for act_code in act_codes:
+        colours[act_code.short_description] = act_code.graph_colour
+
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,
@@ -56,13 +57,22 @@ def create_machine_gantt(machine, graph_start, graph_end):
                           show_colorbar=True,
                           width=1800)
 
-    # layout = Layout()
-    # layout.xaxis.rangeselector.visible = False
-    # fig['layout'] = layout
+    # Create a layout object using the layout automatically created
+    layout = Layout(fig['layout'])
 
-    # Hide the range selector
-    fig['layout']['xaxis']['rangeselector']['visible'] = False
-    return plot(fig, output_type="div", include_plotlyjs=True)
+    layout.showlegend = False
+    layout.xaxis.rangeselector.visible = False
+    layout.xaxis.showline = True
+
+    layout.autosize = False
+    layout.margin = dict(l=50, r=50, b=50, t=50, pad=10)
+
+    # Pass the changed layout back to fig
+    fig['layout'] = layout
+
+    config = {'responsive': True}
+
+    return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
 def create_all_machines_gantt(graph_start, graph_end):
@@ -88,7 +98,7 @@ def create_all_machines_gantt(graph_start, graph_end):
                 end = activity.timestamp_end
 
             # This graph only deals with uptime and not-uptime
-            if activity.activity_code == UPTIME_CODE:
+            if activity.activity_code == UPTIME_CODE_ID:
                 code = 1
             else:
                 code = 2
@@ -121,7 +131,6 @@ def create_shift_end_gantt(machine, activities):
         return "No machine activity between these times"
     if machine is None:
         return "This machine does not exist"
-
 
     # Add each activity to a dictionary, to add to the graph
     # Do this in two separate loops so that the entries requiring explanation are first in the dictionary,
@@ -156,10 +165,11 @@ def create_shift_end_gantt(machine, activities):
                            Activity_id=act.id,
                            hoverinfo="test"))
 
-
-
-    colours = {True: 'rgb(255, 0, 0)',
-               False: 'rgb(0, 255, 128)'}
+    # Use the colours assigned to uptime and unexplained downtime
+    uptime_colour = ActivityCode.query.get(UPTIME_CODE_ID).graph_colour
+    unexplained_colour = ActivityCode.query.get(UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour
+    colours = {True: unexplained_colour,
+               False: uptime_colour}
     fig = ff.create_gantt(df,
                           title="",
                           group_tasks=True,
@@ -185,15 +195,10 @@ def create_shift_end_gantt(machine, activities):
 
     # Pass the changed layout back to fig
     fig['layout'] = layout
-
     config = {'responsive': True}
 
-
-
-
-    #fig['layout'].update(responsive=True, autosize=False, width=1200, height=300, margin=dict(l=110, r=50, b=50, t=50, pad=4))
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
 def sort_activities(act):
-    return act.explanation_required
+    return act.activity_code

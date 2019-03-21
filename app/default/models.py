@@ -1,8 +1,12 @@
 from app import db
 from time import time
 
-UNEXPLAINED_DOWNTIME_CODE = 0
-UPTIME_CODE = 1
+UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
+UPTIME_CODE_ID = 1  # The ID of the activity code that represents uptime
+
+MACHINE_STATE_OFF = 0
+MACHINE_STATE_RUNNING = 1
+MACHINE_STATE_ERROR = 2
 
 
 class Machine(db.Model):
@@ -31,20 +35,22 @@ class Job(db.Model):
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
-    machine_state = db.Column(db.String, nullable=False)
-    activity_code = db.Column(db.Integer, db.ForeignKey('activity_code.code'))
+    machine_state = db.Column(db.Integer, nullable=False)
+    explanation_required = db.Column(db.Boolean)
     timestamp_start = db.Column(db.Integer, nullable=False)
     timestamp_end = db.Column(db.Integer)
+    activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'))
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
 
 
 class ActivityCode(db.Model):
     """ Holds the codes to identify activities"""
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String, unique=True)  # By default, code 1 is uptime
+    code = db.Column(db.String, unique=True)
     short_description = db.Column(db.String)
     long_description = db.Column(db.String)
+    graph_colour = db.Column(db.String)
 
-    activities = db.relationship('Activity', backref='code')
+    activities = db.relationship('Activity', backref='activity_code')
 
 

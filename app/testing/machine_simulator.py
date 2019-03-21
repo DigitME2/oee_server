@@ -11,9 +11,9 @@ while 1:
     activities = []
 
     start = time()
-    sleep(randrange(0, 10))
+    sleep(randrange(0, 8))
     end = time()
-    rand = randrange(0, 10)
+    rand = randrange(0, 8)
     if rand > 2:
         machine_state = 1
     else:

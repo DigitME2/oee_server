@@ -1,22 +1,37 @@
-from app.default.models import Activity, UNEXPLAINED_DOWNTIME_CODE
+from app import db
+from app.default.models import UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, MACHINE_STATE_RUNNING
 from datetime import datetime
 import os
 
-DOWNTIME_EXPLANATION_THRESHOLD_S = 600
+DOWNTIME_EXPLANATION_THRESHOLD_S = 3  # todo set this to a reasonable number after testing
 
 
-def get_flagged_activities(current_job):
-    """ Filters a list of activities and returns a list that require explanation
-    from the operator"""
-    # Get all activities with an unexplained downtime code
-    activities = Activity.query.filter_by(job_id=current_job.id, activity_code=UNEXPLAINED_DOWNTIME_CODE).all()
-
-    # Filter activities
+def assign_activity_codes(activities):
+    """ Uses the machine state of an activity to assign a default activity code"""
     for act in activities:
-        duration_s = act.timestamp_end - act.timestamp_start
-        if duration_s > DOWNTIME_EXPLANATION_THRESHOLD_S:
-            activities.remove(act)
+        if act.machine_state == MACHINE_STATE_RUNNING:
+            act.activity_code_id = UPTIME_CODE_ID
+        else:
+            act.activity_code_id = UNEXPLAINED_DOWNTIME_CODE_ID
+    db.session.commit()
 
+
+def flag_activities(activities):
+    """ Filters a list of activities, adding explanation_required=True to those that require an explanation
+    for downtime above a defined threshold"""
+
+    ud_index_counter = 0
+    for act in activities:
+        # Only Flag activities with the downtime code and with a duration longer than the threshold
+        if act.activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID and \
+                (act.timestamp_end - act.timestamp_start) > DOWNTIME_EXPLANATION_THRESHOLD_S:
+            act.explanation_required = True
+            # Give the unexplained downtimes their own index
+            act.ud_index = ud_index_counter
+            ud_index_counter += 1
+        else:
+            act.explanation_required = False
+    db.session.commit()
     return activities
 
 

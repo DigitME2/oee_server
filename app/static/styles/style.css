@@ -78,6 +78,17 @@ body {
 }
 
 
+/* -------downtime explanation---------*/
+
+.downtimeSelectOptions {
+    width: 30%;
+    background: red;
+    float: left;
+}
+.downtimeSelectGraph {
+    margin-left: 15%;
+}
+
 
 /* -------base---------*/
 #navBar {
@@ -86,6 +97,7 @@ body {
     background-color: var(--main-bg-color);
     text-align: center;
     position: fixed;
+    z-index: 100;
     top: 0;
     width: 100%;
 }
