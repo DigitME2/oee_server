@@ -24,16 +24,6 @@ def index():
     return render_template('default/index.html', title='Index', user=user)
 
 
-@bp.route('/home')
-@login_required
-def home():
-    """ The default page for a logged-in user"""
-    db.create_all()
-    all_machines = Machine.query.all()
-    return render_template('default/home.html',
-                           machines=all_machines)
-
-
 @bp.route('/adminhome', methods=['GET'])
 @login_required
 def admin_home():

@@ -97,7 +97,7 @@ def create_all_machines_gantt(graph_start, graph_end):
                 end = activity.timestamp_end
 
             # This graph only deals with uptime and not-uptime
-            if activity.activity_code == UPTIME_CODE_ID:
+            if activity.activity_code_id == UPTIME_CODE_ID:
                 code = 1
             else:
                 code = 2
@@ -106,8 +106,11 @@ def create_all_machines_gantt(graph_start, graph_end):
                            Start=datetime.fromtimestamp(start),
                            Finish=datetime.fromtimestamp(end),
                            Code=code))
+    if len(df) == 0:
+        return "No machine activity"
     graph_title = "All machines OEE"
-    colours = {1: 'rgb(0, 200, 64)', 2: 'rgb(255,32,0)'}
+    colours = {1: ActivityCode.query.get(UPTIME_CODE_ID).graph_colour,
+               2: ActivityCode.query.get(UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour}
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,
@@ -194,4 +197,4 @@ def create_shift_end_gantt(machine, activities):
 
 
 def sort_activities(act):
-    return act.activity_code.id
+    return act.activity_code_id

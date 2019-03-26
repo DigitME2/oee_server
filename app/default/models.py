@@ -1,7 +1,9 @@
 from app import db
 
-UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
-UPTIME_CODE_ID = 1  # The ID of the activity code that represents uptime
+
+UPTIME_CODE_ID = 0  # The ID of the activity code that for uptime. Preferably 0 to keep it on the bottom of the graph
+UNEXPLAINED_DOWNTIME_CODE_ID = 1  # The ID of the activity code that represents unexplained downtime
+
 
 MACHINE_STATE_OFF = 0
 MACHINE_STATE_RUNNING = 1

@@ -3,7 +3,7 @@
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <h1>Home</h1>
 
-    <a href="{{ url_for('oee_monitoring.start_job') }}">Start new job</a>
+    <a href="{{ url_for('oee_monitoring.production') }}">Start new job</a>
     <br>
 
     {% for m in machines %}

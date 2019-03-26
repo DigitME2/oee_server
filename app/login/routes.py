@@ -2,7 +2,7 @@ from app import db
 from app.login import bp
 from app.login.forms import LoginForm, RegisterForm, ChangePasswordForm
 from app.login.models import User, create_default_users
-from flask import render_template, request, flash, redirect, url_for
+from flask import abort, render_template, request, flash, redirect, url_for
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
@@ -16,7 +16,7 @@ def login():
     if len(User.query.all()) == 0:
         create_default_users()
     if current_user.is_authenticated:
-        return redirect(url_for('oee_monitoring.home'))
+        return redirect(url_for('oee_monitoring.production'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -26,7 +26,7 @@ def login():
         login_user(user)
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('oee_monitoring.home')
+            next_page = url_for('oee_monitoring.production')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)
@@ -58,7 +58,9 @@ def new_user():
 @bp.route('/changepassword', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    """ The page to change a user's password. The user is passed to this page."""
+    """ The page to change a user's password. The user_id is passed to this page."""
+    if current_user.admin is not True:
+        abort(403)
     user = User.query.get_or_404(request.args.get('user_id'))
     form = ChangePasswordForm()
     if form.validate_on_submit():

@@ -6,7 +6,7 @@ from flask import abort, request, render_template
 from flask_login import login_required
 
 
-@bp.route('/machine')
+@bp.route('/graphs')
 @login_required
 def machine_graph():
     """ The page showing the OEE of a machine and reasons for downtime"""
@@ -37,16 +37,8 @@ def all_machines_graph():
 
 @bp.route('/updategraph', methods=['GET'])
 def update_graph():
-    try:
-        machine_id = request.args.get('machine_id')
-        if machine_id is None:
-            raise TypeError
-        # todo sometimes no id in args wasnt throwing the error and this solution isnt perfect
-    except TypeError:  # Thrown when parameter not in url
-        abort(404)
-        return
-    machine = Machine.query.get_or_404(machine_id)
 
+    # Get the date from the request and calculate the start and end time for the graph
     try:
         date_string = request.args.get('date')
         date = datetime.strptime(date_string, "%d-%m-%Y")
@@ -54,9 +46,23 @@ def update_graph():
         start_time = date.timestamp()
         end_time = (date + timedelta(days=1)).timestamp()
     except TypeError:  # Thrown when parameter not in url
-        # todo handle this exception properly (test code)
+        # todo handle this exception properly (this is test code)
         start_time = datetime(year=2018, month=12, day=25, hour=9, minute=0).timestamp()  # = 1545728400.0
         end_time = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()  # = 1545757200.0
 
-    graph = create_machine_gantt(graph_start=start_time, graph_end=end_time, machine=machine)
-    return graph
+    # Get the machine id from the request
+    try:
+        machine_id = request.args.get('machine_id')
+        if machine_id is None:
+            raise TypeError
+        # todo sometimes no id in args wasnt throwing the error and this solution isnt perfect
+
+    # If id=-1 is passed, create a graph of all machines
+        if int(machine_id) == -1:
+            return create_all_machines_gantt(graph_start=start_time, graph_end=end_time)
+        else:
+            machine = Machine.query.get_or_404(machine_id)
+            return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine=machine)
+    except TypeError:  # Thrown when parameter not in url
+        abort(404)
+        return

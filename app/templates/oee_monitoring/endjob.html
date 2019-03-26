@@ -14,6 +14,7 @@
                         {#                        One dropdown box for each unexplained activity, requesting a reason from the operator #}
                         <label>
                             {{ activity.time_summary }}
+                        <!--todo Get the unexplained downtime code and set it as default -->
                             <select class="downtimeReasonSelect"
                                     onchange="selectDowntimeReason(this, {{ activity.ud_index }})"
                                     {#                                    name is used by flask to assign the code once posted#}
@@ -47,7 +48,7 @@
             const layout = graph.layout;
             // Change the annotation text
             layout.annotations[downtimeIndex].text = dropdown.value;
-
+            //todo dont hardcode colours
             // Change the colour of the corresponding downtime
             switch (dropdown.selectedIndex) {
                 case 0:

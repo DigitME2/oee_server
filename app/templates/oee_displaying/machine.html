@@ -14,6 +14,7 @@
         <div class="graphSelectDiv" id="adminMachineSelect">
             <label>
                 <select class="graphSelect" id="machineSelect">
+                        <option value="-1">All Machines</option>
                     {% for m in machines %}
                         <option value="{{ m.id }}">{{ m.name }}</option>
                     {% endfor %}

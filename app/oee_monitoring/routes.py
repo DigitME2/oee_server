@@ -10,15 +10,23 @@ from wtforms.validators import NoneOf
 from time import time
 
 
-
-@bp.route('/startjob', methods=['GET', 'POST'])
+@bp.route('/production', methods=['GET', 'POST'])
 @login_required
+def production():
+    current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    # If the user doesn't have an active job, go to the start job page
+    if current_job is None:
+        return start_job()
+    else:
+        # If the user's current job doesn't have an end time, it is in progress
+        if current_job.end_time is None:
+            return job_in_progress()
+        else:
+            return end_job()
+
+
 def start_job():
     """ The page where a user will start a job"""
-
-    # Redirect if user has an active job
-    if Job.query.filter_by(user_id=current_user.id, active=True).first() is not None:
-        return redirect(url_for('oee_monitoring.job_in_progress'))
 
     form = StartForm()
     # Get a list of existing machines to create form dropdown
@@ -42,7 +50,7 @@ def start_job():
                   active=True)
         db.session.add(job)
         db.session.commit()
-        return redirect(url_for('oee_monitoring.job_in_progress'))
+        return redirect(url_for('oee_monitoring.production'))
     nav_bar_title = "Start a new job"
     return render_template('oee_monitoring/startjob.html',
                            title="New Job",
@@ -50,15 +58,10 @@ def start_job():
                            nav_bar_title=nav_bar_title)
 
 
-@bp.route('/jobinprogress', methods=['GET', 'POST'])
-@login_required
 def job_in_progress():
     """ The page shown to a user while a job is active"""
+
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
-    if current_job is None:
-        return redirect(url_for('oee_monitoring.start_job'))
-    if current_job.end_time is not None:
-        return redirect(url_for('oee_monitoring.end_job'))
 
     form = EndForm()
     if form.validate_on_submit():
@@ -77,7 +80,7 @@ def job_in_progress():
 
         current_job.end_time = time()
         db.session.commit()
-        return redirect(url_for('oee_monitoring.end_job'))
+        return redirect(url_for('oee_monitoring.production'))
 
     nav_bar_title = "Job in progress"
     return render_template('oee_monitoring/jobinprogress.html',
@@ -86,8 +89,6 @@ def job_in_progress():
                            nav_bar_title=nav_bar_title)
 
 
-@bp.route('/endjob', methods=['GET', 'POST'])
-@login_required
 def end_job():
     """ The page at the end of a job
     This shows the user a summary of the machine's activities and requests reasons for certain activities"""
@@ -97,7 +98,7 @@ def end_job():
     # Flag activities that require an explanation
     activities = flag_activities(activities)
     if current_job is None:
-        return redirect(url_for('oee_monitoring.start_job'))
+        return redirect(url_for('oee_monitoring.production'))
     machine = Machine.query.get_or_404(current_job.machine_id)
 
     if request.method == "POST":
@@ -116,7 +117,7 @@ def end_job():
             # Set the job as no longer active
             current_job.active = None
             db.session.commit()
-        return redirect(url_for('oee_monitoring.start_job'))
+        return redirect(url_for('oee_monitoring.production'))
 
     for act in activities:
         if act.explanation_required:
