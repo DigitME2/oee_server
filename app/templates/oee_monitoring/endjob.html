@@ -3,7 +3,6 @@
 {% block content %}
     <body id="startJob">
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
-    <input type="submit" value="test" onclick="test()">
     <div class="graph">
         {{ graph|safe }}
     </div>
@@ -69,8 +68,6 @@
          *  Change the annotation and colour of an activity on the graph when the page loads
          *  if dropdowns are already selected
          **/
-
-        // on load, alter the colour of the traces if dropdowns are already selected
         window.onload = function () {
             // Get all downtime dropdowns
             var dropdowns = document.getElementsByClassName("downtimeReasonSelect");
@@ -91,19 +88,6 @@
             });
 
         };
-
-        function test() {
-            const activity_codes = [];
-            {% for act_code in activity_codes %}
-                activity_codes.push("test");
-                 console.log({{ act_code.code }});
-            {% endfor %}
-            console.log(activity_codes);
-
-
-
-        }
-
 
     </script>
     </body>

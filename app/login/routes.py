@@ -1,7 +1,7 @@
 from app import db
 from app.login import bp
 from app.login.forms import LoginForm, RegisterForm, ChangePasswordForm
-from app.login.models import User, create_default_admin
+from app.login.models import User, create_default_users
 from flask import render_template, request, flash, redirect, url_for
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
@@ -12,9 +12,9 @@ def login():
     """The screen to log the user into the system."""
     # call create_all to create database tables if this is the first run
     db.create_all()
-    # If there are no users, create a default admin
+    # If there are no users, create a default admin and non-admin
     if len(User.query.all()) == 0:
-        create_default_admin()
+        create_default_users()
     if current_user.is_authenticated:
         return redirect(url_for('oee_monitoring.home'))
     form = LoginForm()
@@ -46,6 +46,7 @@ def new_user():
 
     form = RegisterForm()
     if form.validate_on_submit():
+        # noinspection PyArgumentList
         u = User(username=form.username.data)
         u.set_password(form.password.data)
         db.session.add(u)
@@ -67,4 +68,3 @@ def change_password():
         redirect(url_for('default.admin_home'))
     nav_bar_title = "Change password for " + str(user.username)
     return render_template("login/changepassword.html", nav_bar_title=nav_bar_title, user=user, form=form)
-

@@ -1,5 +1,5 @@
 :root {
-  --main-bg-color: #AD1920;
+    --main-bg-color: #AD1920;
 }
 
 div {
@@ -33,6 +33,15 @@ body {
 }
 
 
+.centralBody {
+    text-align: center;
+}
+
+.centralWrapper {
+    display: inline-block;
+}
+
+
 .centralForm {
     position: relative;
     z-index: 1;
@@ -43,6 +52,7 @@ body {
     text-align: center;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
 }
+
 .centralForm input {
     font-family: "Roboto", sans-serif;
     outline: 0;
@@ -54,6 +64,7 @@ body {
     box-sizing: border-box;
     font-size: 14px;
 }
+
 .centralForm input[type="submit"] {
     text-transform: uppercase;
     outline: 0;
@@ -63,19 +74,26 @@ body {
     font-size: 14px;
     cursor: pointer;
 }
+
 .centralForm input[type="submit"]:hover, .form button:active, .form button:focus {
     background: var(--main-bg-color);
     color: #f2f2f2;
 }
+
 .centralForm .message {
     margin: 15px 0 0;
     color: #b3b3b3;
     font-size: 12px;
 }
+
 .centralForm .message a {
     color: #4CAF50;
     text-decoration: none;
 }
+
+
+/* -------admin home---------*/
+
 
 
 /* -------downtime explanation---------*/
@@ -85,6 +103,7 @@ body {
     background: red;
     float: left;
 }
+
 .downtimeSelectGraph {
     margin-left: 15%;
 }
@@ -145,30 +164,60 @@ ul.navList li a:hover {
     background-color: #f3fbf6;
     color: var(--main-bg-color);
 }
+
 /* -------/base---------*/
 
 
+/* -----machine -----*/
+.graphSelectDiv {
+    float: left;
+    min-width: 200px;
+    padding: 20px;
+}
+
+
+/* ------loading symbol --*/
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(255, 255, 255, .8) url('/static/styles/ajax-loader.gif') 50% 50% no-repeat;
+}
+
+/* When the body has the loading class, turn
+   the scrollbar off */
+body.loading .modal {
+    overflow: hidden;
+    display: block;
+}
+
+/* -----/machine -----*/
 
 
 /* --- viewallmachines --*/
 
 .collapsible {
-  color: #444;
-  cursor: pointer;
-  padding: 18px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
+    color: #444;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
 }
 
 .collapsibleMachineWindow {
-  padding: 0 18px;
-  /*display: block;*/
-  overflow: hidden;
-  background-color: #f1f1f1;
+    padding: 0 18px;
+    /*display: block;*/
+    overflow: hidden;
+    background-color: #f1f1f1;
 }
+
 .collapsible:after {
     content: '\02795'; /* Unicode character for "plus" sign (+) */
     font-size: 13px;
@@ -181,7 +230,7 @@ ul.navList li a:hover {
     content: "\2796"; /* Unicode character for "minus" sign (-) */
 }
 
-.close{
+.close {
     float: right;
 }
 

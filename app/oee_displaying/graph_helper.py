@@ -18,7 +18,7 @@ def create_machine_gantt(machine, graph_start, graph_end):
         .filter(Activity.timestamp_start <= graph_end).all()
     act_codes = ActivityCode.query.all()
     if len(activities) == 0:
-        return "No machine activity between these times"
+        return "No machine activity"
 
     activities.sort(key=sort_activities, reverse=True)
 
@@ -34,12 +34,11 @@ def create_machine_gantt(machine, graph_start, graph_end):
             end = graph_end
         else:
             end = activity.timestamp_end
-        df.append(dict(Task=activity.code.short_description,
+        df.append(dict(Task=activity.activity_code.short_description,
                        Start=datetime.fromtimestamp(start),
                        Finish=datetime.fromtimestamp(end),
-                       Code=activity.code.short_description,
-                       Activity_id=activity.id,
-                       hoverinfo="test"))
+                       Code=activity.activity_code.short_description,
+                       Activity_id=activity.id))
 
     graph_title = "{machine_name} OEE".format(machine_name=machine.name)
 
@@ -125,45 +124,39 @@ def create_all_machines_gantt(graph_start, graph_end):
 def create_shift_end_gantt(machine, activities):
     """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
 
-    # todo dont rely on hardcoded codes eg "unexplained"
-
     if len(activities) == 0:
         return "No machine activity between these times"
     if machine is None:
         return "This machine does not exist"
 
     # Add each activity to a dictionary, to add to the graph
-    # Do this in two separate loops so that the entries requiring explanation are first in the dictionary,
-    # putting them on the upper level in the graph
+    # Do this in two separate loops so that the entries requiring explanation are first in the dictionary, putting
+    #  them on the upper level in the graph (in a roundabout way) There's probably be a better way to do this via plotly
     df = []
     annotations = []
     for act in activities:
         if act.explanation_required:
-            task = "Explanation<br>Required"
             start = act.timestamp_start
             end = act.timestamp_end
-            df.append(dict(Task=task,
+            df.append(dict(Task=act.explanation_required,
                            Start=datetime.fromtimestamp(start),
                            Finish=datetime.fromtimestamp(end),
                            Code=act.explanation_required,
-                           Activity_id=act.id,
-                           hoverinfo="test"))
-            # Javascript relies on the first character being the ud_index, so alter the script accordingly
+                           Activity_id=act.id))
             text = "{start}<br>Explanation<br>Required".format(
                 start=datetime.fromtimestamp(act.timestamp_start).strftime('%H:%M'))
             position = datetime.fromtimestamp((start + end) / 2)
             annotations.append(dict(x=position, y=1.7, text=text, showarrow=False, font=dict(color='black')))
+
     for act in activities:
         if not act.explanation_required:
-            task = "Uptime"
             start = act.timestamp_start
             end = act.timestamp_end
-            df.append(dict(Task=task,
+            df.append(dict(Task=act.explanation_required,
                            Start=datetime.fromtimestamp(start),
                            Finish=datetime.fromtimestamp(end),
                            Code=act.explanation_required,
-                           Activity_id=act.id,
-                           hoverinfo="test"))
+                           Activity_id=act.id))
 
     # Use the colours assigned to uptime and unexplained downtime
     uptime_colour = ActivityCode.query.get(UPTIME_CODE_ID).graph_colour
@@ -201,4 +194,4 @@ def create_shift_end_gantt(machine, activities):
 
 
 def sort_activities(act):
-    return act.activity_code
+    return act.activity_code.id

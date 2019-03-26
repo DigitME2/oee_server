@@ -1,6 +1,7 @@
 from flask import render_template, redirect, url_for
 from flask_login import current_user, login_required
-from app.default.models import Machine
+from app.default.models import Machine, Job
+from app.login.models import User
 
 # test code
 from app import db
@@ -37,8 +38,7 @@ def home():
 @login_required
 def admin_home():
     """ The default page for a logged-in user"""
-    return render_template('default/adminhome.html')
-
-
-
-
+    return render_template('default/adminhome.html',
+                           machines=Machine.query.all(),
+                           users=User.query.all(),
+                           jobs=Job.query.all())

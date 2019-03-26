@@ -1,6 +1,6 @@
 from app import db
 from app.oee_monitoring import bp
-from app.oee_monitoring.forms import StartForm, EndForm, CompleteJobForm
+from app.oee_monitoring.forms import StartForm, EndForm
 from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, assign_activity_codes
 from app.default.models import Activity, ActivityCode, Machine, Job
 from app.oee_displaying.graph_helper import create_shift_end_gantt
@@ -8,6 +8,7 @@ from flask import render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf
 from time import time
+
 
 
 @bp.route('/startjob', methods=['GET', 'POST'])
@@ -53,7 +54,6 @@ def start_job():
 @login_required
 def job_in_progress():
     """ The page shown to a user while a job is active"""
-    # todo if the job has an endtime, go to the end page
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
     if current_job is None:
         return redirect(url_for('oee_monitoring.start_job'))
@@ -105,15 +105,13 @@ def end_job():
             if act.explanation_required:
                 # The name of the downtime boxes is the ud_index, the value will be the activity code id selected
                 act.activity_code_id = int(request.form[str(act.ud_index)])
-        # todo record new activity codes
         db.session.commit()
 
-        # If all activities are explained, mark job as complete
+        # Check to see if all activities have been explained
         all_explained = True
         for act in activities:
             if act.explanation_required:
                 all_explained = False
-
         if all_explained:
             # Set the job as no longer active
             current_job.active = None

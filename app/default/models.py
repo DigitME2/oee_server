@@ -1,5 +1,4 @@
 from app import db
-from time import time
 
 UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
 UPTIME_CODE_ID = 1  # The ID of the activity code that represents uptime
