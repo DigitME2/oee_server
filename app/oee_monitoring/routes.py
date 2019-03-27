@@ -1,7 +1,7 @@
 from app import db
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
-from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, assign_activity_codes
+from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time
 from app.default.models import Activity, ActivityCode, Machine, Job
 from app.oee_displaying.graph_helper import create_shift_end_gantt
 from flask import render_template, request, redirect, url_for
@@ -70,8 +70,6 @@ def job_in_progress():
             .filter(Activity.machine_id == current_job.machine_id) \
             .filter(Activity.timestamp_end >= current_job.start_time) \
             .filter(Activity.timestamp_start <= time()).all()
-        # Assign activity codes
-        assign_activity_codes(activities)
         # Flag activities that require an explanation from the operator
         flag_activities(activities)
         # Assign all of the activity to the current job

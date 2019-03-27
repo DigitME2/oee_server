@@ -3,17 +3,7 @@ from app.default.models import UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, MAC
 from datetime import datetime
 import os
 
-DOWNTIME_EXPLANATION_THRESHOLD_S = 3  # todo set this to a reasonable number after testing
-
-
-def assign_activity_codes(activities):
-    """ Uses the machine state of an activity to assign a default activity code"""
-    for act in activities:
-        if act.machine_state == MACHINE_STATE_RUNNING:
-            act.activity_code_id = UPTIME_CODE_ID
-        else:
-            act.activity_code_id = UNEXPLAINED_DOWNTIME_CODE_ID
-    db.session.commit()
+DOWNTIME_EXPLANATION_THRESHOLD_S = 2  # todo set this to a reasonable number after testing
 
 
 def flag_activities(activities):

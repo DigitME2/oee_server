@@ -1,11 +1,12 @@
 from plotly.offline import plot
 from plotly.graph_objs import Layout
 from datetime import datetime
-from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, ActivityCode
+from app.default.models import Activity, Machine, ActivityCode
+from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, MACHINE_STATE_RUNNING
 import plotly.figure_factory as ff
 
 
-def create_machine_gantt(machine, graph_start, graph_end):
+def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
     """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
 
     if machine is None:
@@ -24,21 +25,25 @@ def create_machine_gantt(machine, graph_start, graph_end):
 
     # Add each activity to a dictionary, to add to the graph
     df = []
-    for activity in activities:
+    for act in activities:
+        # Skip activities without a job, if requested
+        if hide_jobless:
+            if not act.job_number.any():
+                break
         # If the activity extends past the  start or end, crop it short
-        if activity.timestamp_start < graph_start:
+        if act.timestamp_start < graph_start:
             start = graph_start
         else:
-            start = activity.timestamp_start
-        if activity.timestamp_end > graph_end:
+            start = act.timestamp_start
+        if act.timestamp_end > graph_end:
             end = graph_end
         else:
-            end = activity.timestamp_end
-        df.append(dict(Task=activity.activity_code.short_description,
+            end = act.timestamp_end
+        df.append(dict(Task=act.activity_code.short_description,
                        Start=datetime.fromtimestamp(start),
                        Finish=datetime.fromtimestamp(end),
-                       Code=activity.activity_code.short_description,
-                       Activity_id=activity.id))
+                       Code=act.activity_code.short_description,
+                       Activity_id=act.id))
 
     graph_title = "{machine_name} OEE".format(machine_name=machine.name)
 
@@ -69,6 +74,7 @@ def create_machine_gantt(machine, graph_start, graph_end):
     # Pass the changed layout back to fig
     fig['layout'] = layout
 
+
     config = {'responsive': True}
 
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
@@ -85,19 +91,19 @@ def create_all_machines_gantt(graph_start, graph_end):
             .filter(Activity.machine_id == machine.id) \
             .filter(Activity.timestamp_end >= graph_start) \
             .filter(Activity.timestamp_start <= graph_end).all()
-        for activity in activities:
+        for act in activities:
             # Don't show values outside of graph time range
-            if activity.timestamp_start < graph_start:
+            if act.timestamp_start < graph_start:
                 start = graph_start
             else:
-                start = activity.timestamp_start
-            if activity.timestamp_end > graph_end:
+                start = act.timestamp_start
+            if act.timestamp_end > graph_end:
                 end = graph_end
             else:
-                end = activity.timestamp_end
+                end = act.timestamp_end
 
-            # This graph only deals with uptime and not-uptime
-            if activity.activity_code_id == UPTIME_CODE_ID:
+            # This graph only deals with running and not running
+            if act.machine_state == MACHINE_STATE_RUNNING:
                 code = 1
             else:
                 code = 2

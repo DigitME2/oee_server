@@ -1,7 +1,7 @@
 from app.oee_displaying.graph_helper import create_machine_gantt, create_all_machines_gantt
 from app.oee_displaying import bp
 from app.default.models import Machine
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from flask import abort, request, render_template
 from flask_login import login_required
 
@@ -10,11 +10,14 @@ from flask_login import login_required
 @login_required
 def machine_graph():
     """ The page showing the OEE of a machine and reasons for downtime"""
-
+    start_time = datetime.combine(datetime.today(), time.min)
+    end_time = (start_time + timedelta(days=1))
+    graph = create_all_machines_gantt(graph_start=start_time.timestamp(), graph_end=end_time.timestamp())
     nav_bar_title = "Machine Activity"
     return render_template('oee_displaying/machine.html',
                            machines=Machine.query.all(),
-                           nav_bar_title=nav_bar_title)
+                           nav_bar_title=nav_bar_title,
+                           graph=graph)
 
 
 @bp.route('/allmachines', methods=['GET', 'POST'])
