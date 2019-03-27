@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 from random import randrange
 
 from flask import render_template, request, jsonify, abort
@@ -86,35 +87,40 @@ def create_data():
     error3code = ActivityCode(id=4, code="ER3", short_description='error3', graph_colour='rgb(255,255,0)')
     db.session.add(error3code)
     db.session.commit()
-    for i in range(0, 5):
+
+
+
+    for i in range(1, 6):
         # noinspection PyArgumentList
         user = User(username="user"+str(i))
         user.set_password("password")
 
-        new_machine = Machine(machine_number=str(i+1), name="Bridgeport " + str(i+1))
+        new_machine = Machine(machine_number=str(i), name="Machine " + str(i))
         db.session.add(new_machine)
         db.session.commit()
 
         job_start = datetime(year=2018, month=12, day=25, hour=9, minute=0)
         job_end = datetime(year=2018, month=12, day=25, hour=17, minute=0)
-        new_job = Job(start_time=job_start.timestamp(),
-                      end_time=job_end.timestamp(),
-                      job_number=str(i),
-                      machine_id=i,
-                      user_id=i)
 
-        db.session.add(new_job)
-        db.session.commit()
 
         start = datetime(year=2018, month=12, day=25, hour=9, minute=0).timestamp()
         finish = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()
         time = start
+        current_job = None
         while time <= finish:
+            # chance of changing active job
+            if randrange(0, 3) > 1:
+                current_job = change_job(current_job, time, i)
+            if current_job is None:
+                job_id = None
+            else:
+                job_id = current_job.id
             uptime_activity = Activity(machine_id=i,
                                        timestamp_start=time,
                                        machine_state=1,
-                                       activity_code_id=UPTIME_CODE_ID)
-            time += randrange(600, 14400)
+                                       activity_code_id=UPTIME_CODE_ID,
+                                       job_id=job_id)
+            time += randrange(400, 10000)
             uptime_activity.timestamp_end = time
 
             machine_state = randrange(0, 3)
@@ -123,11 +129,25 @@ def create_data():
             downtime_activity = Activity(machine_id=i,
                                          timestamp_start=time,
                                          machine_state=machine_state,
-                                         activity_code_id=randrange(2, 5))
-            time += randrange(60, 1200)
+                                         activity_code_id=randrange(2, 5),
+                                         job_id=job_id)
+            time += randrange(60, 2000)
             downtime_activity.timestamp_end = time
             db.session.add(uptime_activity)
             db.session.add(downtime_activity)
             db.session.commit()
 
     return "Created fake data"
+
+
+def change_job(current_job, time, machine_id):
+    if current_job is not None:
+        current_job.end_time = time
+
+    new_job = Job(start_time=time,
+                  job_number="X-" + str(randrange(1, 1000)),
+                  machine_id=machine_id,
+                  user_id=randrange(0,5))
+    db.session.add(new_job)
+    db.session.commit()
+    return new_job

@@ -7,7 +7,7 @@ from app.oee_displaying.graph_helper import create_shift_end_gantt
 from flask import render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf
-from time import time
+from time import time, sleep
 
 
 @bp.route('/production', methods=['GET', 'POST'])
@@ -104,6 +104,7 @@ def end_job():
             if act.explanation_required:
                 # The name of the downtime boxes is the ud_index, the value will be the activity code id selected
                 act.activity_code_id = int(request.form[str(act.ud_index)])
+                act.explanation_required = False
         db.session.commit()
 
         # Check to see if all activities have been explained

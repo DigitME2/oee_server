@@ -1,9 +1,22 @@
 from plotly.offline import plot
 from plotly.graph_objs import Layout
+from plotly.graph_objs.layout import Shape, Annotation
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
 from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, MACHINE_STATE_RUNNING
 import plotly.figure_factory as ff
+
+
+def apply_default_layout(layout):
+    layout.showlegend = False
+    layout.xaxis.rangeselector.visible = False
+    layout.xaxis.showline = True
+    layout.yaxis.tickfont = {
+        'size': 16
+    }
+    layout.autosize = False
+    layout.margin = dict(l=100, r=50, b=50, t=50, pad=10)
+    return layout
 
 
 def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
@@ -28,8 +41,8 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
     for act in activities:
         # Skip activities without a job, if requested
         if hide_jobless:
-            if not act.job_number.any():
-                break
+            if not act.job_id.any():
+                continue
         # If the activity extends past the  start or end, crop it short
         if act.timestamp_start < graph_start:
             start = graph_start
@@ -63,17 +76,13 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
 
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
+    layout = apply_default_layout(layout)
 
-    layout.showlegend = False
-    layout.xaxis.rangeselector.visible = False
-    layout.xaxis.showline = True
-
-    layout.autosize = False
-    layout.margin = dict(l=50, r=50, b=50, t=50, pad=10)
+    # Highlight jobs
+    layout = highlight_jobs(activities, layout)
 
     # Pass the changed layout back to fig
     fig['layout'] = layout
-
 
     config = {'responsive': True}
 
@@ -125,8 +134,10 @@ def create_all_machines_gantt(graph_start, graph_end):
                           bar_width=0.4,
                           width=1800)
 
-    # Hide the range selector
-    fig['layout']['xaxis']['rangeselector']['visible'] = False
+    # Create a layout object using the layout automatically created
+    layout = Layout(fig['layout'])
+    layout = apply_default_layout(layout)
+    fig['layout'] = layout
     return plot(fig, output_type="div", include_plotlyjs=True)
 
 
@@ -181,19 +192,9 @@ def create_shift_end_gantt(machine, activities):
                           show_colorbar=False,
                           width=1800)
 
-    # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
-
+    layout = apply_default_layout(layout)
     layout.annotations = annotations
-    layout.showlegend = False
-    layout.yaxis.showticklabels = False
-    layout.xaxis.rangeselector.visible = False
-    layout.xaxis.showline = True
-
-    layout.autosize = False
-    # layout.width = 1200
-    # layout.height = 300
-    layout.margin = dict(l=0, r=0, b=50, t=0, pad=0)
 
     # Pass the changed layout back to fig
     fig['layout'] = layout
@@ -202,5 +203,66 @@ def create_shift_end_gantt(machine, activities):
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
+def highlight_jobs(activities, layout):
+    """ Creates 'highlight' shapes to be shown on the graph"""
+    # Get all of the jobs from the activities
+    jobs = []
+    for act in activities:
+        if act.job is None:
+            continue
+        if act.job not in jobs:
+            jobs.append(act.job)
+
+    highlights = []
+    annotations = []
+    for j in jobs:
+        if j.end_time is None:
+            # If the job doesn't have an end time, use the latest activity end time as its end time
+            j.end_time = j.start_time
+            for act in j.activities:
+                if act.timestamp_end > j.end_time:
+                    j.end_time = act.timestamp_end
+
+        # Create a shape to highlight each job
+        h = Shape()
+        h.type = 'rect'
+        h.xref = 'x'
+        h.yref = 'paper'
+        h.x0 = datetime.fromtimestamp(j.start_time)
+        h.y0 = 0
+        h.x1 = datetime.fromtimestamp(j.end_time)
+        h.y1 = 0.9
+        h.fillcolor = '#C0C0C0'
+        h.opacity = 0.3
+        h.visible = True
+        h.line = {
+            'width': 1
+        }
+        highlights.append(h)
+
+        # Create an annotation at the top of the highlight saying the job number
+        a = Annotation()
+        a.text = "<b>Job {job_number}</b>".format(job_number=j.job_number)
+        a.font = {
+            "size": 16
+        }
+        a.x = datetime.fromtimestamp((j.start_time + j.end_time) / 2)
+        a.yref = 'paper'
+        a.y = 0.9
+        a.showarrow = False
+        a.font.color = 'black'
+        annotations.append(a)
+
+    layout.shapes = layout.shapes + tuple(highlights)
+    layout.annotations = annotations
+
+    return layout
+
+
 def sort_activities(act):
+    # Sort so uptime is always first in the list
+    if act.activity_code_id == UPTIME_CODE_ID:
+        return 0
+    if act.activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
+        return 1
     return act.activity_code_id

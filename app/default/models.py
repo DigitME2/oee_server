@@ -1,8 +1,7 @@
 from app import db
 
-
-UPTIME_CODE_ID = 0  # The ID of the activity code that for uptime. Preferably 0 to keep it on the bottom of the graph
-UNEXPLAINED_DOWNTIME_CODE_ID = 1  # The ID of the activity code that represents unexplained downtime
+UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
+UPTIME_CODE_ID = 1  # The ID of the activity code that for uptime. Preferably 0 to keep it on the bottom of the graph
 
 
 MACHINE_STATE_OFF = 0
@@ -30,7 +29,7 @@ class Job(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     active = db.Column(db.Boolean)  # This should either be true or null
 
-    activities = db.relationship('Activity')
+    activities = db.relationship('Activity', backref='job')
 
 
 class Activity(db.Model):
