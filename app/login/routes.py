@@ -26,7 +26,10 @@ def login():
         login_user(user)
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('oee_monitoring.production')
+            if user.admin:
+                next_page = url_for('oee_displaying.machine_graph')
+            else:
+                next_page = url_for('oee_monitoring.production')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)
