@@ -1,7 +1,6 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-    <body id="startJob">
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="centralForm">
         <form action="" method="post">
@@ -24,5 +23,4 @@
             <p>{{ form.submit() }}</p>
         </form>
     </div>
-    </body>
 {% endblock %}

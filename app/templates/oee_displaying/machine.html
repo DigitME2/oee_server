@@ -3,38 +3,33 @@
 {% block content %}
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Title</title>
-    </head>
-    <body class="centralBody">
-    <div class="centralWrapper">
-        <div class="graphSelectDiv" id="adminMachineSelect">
-            <label>
-                <select class="graphSelect" id="machineSelect">
-                        <option value="-1">All Machines</option>
-                    {% for m in machines %}
-                        <option value="{{ m.id }}">{{ m.name }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-        </div>
 
-        <div class="graphSelectDiv">
-            Date: <input type="text" id="datePicker" style="position: relative; z-index: 1000;">
-            <br>
+    <div class="centralBody">
+        <div class="centralWrapper">
+            <div class="graphSelectDiv" id="adminMachineSelect">
+                <label>
+                    <select class="graphSelect" id="machineSelect">
+                        <option value="-1">All Machines</option>
+                        {% for m in machines %}
+                            <option value="{{ m.id }}">{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+
+            <div class="graphSelectDiv">
+                Date: <input type="text" id="datePicker" style="position: relative; z-index: 1000;">
+                <br>
+            </div>
+            <div class="graphSelectDiv">
+                <input type="submit" value="Submit" id="createGraph">
+            </div>
         </div>
-        <div class="graphSelectDiv">
-            <input type="submit" value="Submit" id="createGraph">
+        <div class="graph" id="graph">
+            {{ graph|safe }}
         </div>
+        <div class="modal"></div>
     </div>
-    <div class="graph" id="graph">
-        {{ graph|safe }}
-    </div>
-    <div class="modal"></div>
-    </body>
 
 
     <script src="{{ url_for('static', filename='javascript/jquery-3.3.1.min.js') }}"

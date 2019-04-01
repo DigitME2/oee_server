@@ -1,0 +1,63 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <div class="centralBody">
+        <div class="centralWrapper">
+            <div id="adminUserList" class="adminList">
+                <div class="adminListItem">
+                    <h2 class="adminListHeader">Users</h2>
+                </div>
+                <div class="adminListItem">
+                    <form action="newuser" class="adminNewBtn">
+                        <input type="submit" id="newUserBtn" class="rightAlignButton" value="New User"
+                               formmethod="GET"/>
+                    </form>
+                </div>
+
+                {% for user in users %}
+                    <div class="adminListItem">{{ user.username }}</div>
+                    <div class="adminListItem">
+                        <form action="{{ url_for('admin.change_password') }}"
+                              method="get"
+                              style="display: inline;">
+                            <input type="hidden" name="action" value="resetPassword">
+                            <input type="hidden" name="user_id" value="{{ user.id }}"/>
+                            <input type="submit" class="rightAlignButton" value="Change Password">
+                        </form>
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div id="adminActivityCodeList" class="adminList">
+                <div class="adminListItem">
+                    <h2 class="adminListHeader">Activity Codes</h2>
+                </div>
+                <div class="adminListItem">
+                    <form action="newcode" class="adminNewBtn">
+                        <input type="submit" id="newCodeBtn" class="rightAlignButton" value="New Code"
+                               formmethod="GET"/>
+                    </form>
+                </div>
+
+                {% for ac in activity_codes %}
+                    <div class="adminListItem">
+                        {{ ac.code }}
+                    </div>
+                    <div class="adminListItem">
+                        <form action="{{ url_for('admin.edit_activity_code') }}"
+                              method="get"
+                              style="display: inline;">
+                            <input type="hidden" name="ac_id" value="{{ ac.id }}"/>
+                            <input type="submit" class="rightAlignButton" value="Edit">
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+

@@ -29,7 +29,7 @@ class Config(object):
 
     SQLALCHEMY_DATABASE_URI ="sqlite:///test.db" #TODO test code
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or "3chv8db8L3"
+    SECRET_KEY = os.environ.get('SECRET_KEY') or "EdOhMW901yTkiQHb"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath('app/static/images')
 

@@ -1,5 +1,6 @@
+<!doctype html>
 <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-<html>
+<html lang="en">
 <head>
     {% if title %}
         <title>{{ title }} - Prodapp</title>
@@ -8,6 +9,7 @@
     {% endif %}
 
 </head>
+
 <body>
 <div id="navBar">
     <div id="navBarLeft">
@@ -22,7 +24,7 @@
             {% endif %}
             {% if current_user.admin %}
                 <li><a href="{{ url_for('oee_monitoring.production') }}">Production</a></li>
-                <li><a href="{{ url_for('oee_monitoring.admin_home') }}">Admin</a></li>
+                <li><a href="{{ url_for('admin.admin_home') }}">Admin</a></li>
                 <li><a href="{{ url_for('oee_displaying.machine_graph') }}">Graphs</a></li>
             {% endif %}
 
@@ -34,14 +36,14 @@
     {% if messages %}
         <ul>
             {% for message in messages %}
-                <li>{{ message }}</li>
+                <li class="flashedMessage">{{ message }}</li>
             {% endfor %}
         </ul>
     {% endif %}
 {% endwith %}
-</body>
 
-</html>
+
 
 {% block content %}{% endblock %}
-
+</body>
+</html>

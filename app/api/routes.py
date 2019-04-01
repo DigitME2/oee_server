@@ -6,14 +6,13 @@ import json
 from time import time
 
 
-
-
 def validate_timestamp(timestamp):
-    """ Makes sure a given timestamp is valid and makes sense"""
+    """ Makes sure a given timestamp isn't too old and isn't in the future"""
 
     timeout = 604800
+    future_buffer = 120
 
-    if (time() - timeout) > timestamp > time():
+    if (time() - timeout) > timestamp > (time() + future_buffer):
         return False
 
     else:
@@ -23,6 +22,7 @@ def validate_timestamp(timestamp):
 @bp.route('/activity', methods=['POST'])
 def machine_activity():
     """ Receives JSON data detailing a machine's activity and saves it to the database
+    Assigns a simple activity code depending on machine state
     Example format:
     {
         "machine_number": 1,

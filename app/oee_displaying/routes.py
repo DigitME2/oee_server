@@ -20,24 +20,6 @@ def machine_graph():
                            graph=graph)
 
 
-@bp.route('/allmachines', methods=['GET', 'POST'])
-@login_required
-def all_machines_graph():
-    """ The page showing the OEE of all the machines"""
-    try:
-        # Get the values for the start and end time of the graph from the url
-        start = int(request.args.get('start'))
-        end = int(request.args.get('end'))
-    except TypeError:  # Thrown when parameter not in url
-        # todo handle this exception properly (test code)
-        start = datetime(year=2018, month=12, day=25, hour=9, minute=0).timestamp()  # = 1545728400.0
-        end = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()  # = 1545757200.0
-
-    graph = create_all_machines_gantt(graph_start=start, graph_end=end)
-    return render_template('oee_displaying/allmachines.html',
-                           graph=graph)
-
-
 @bp.route('/updategraph', methods=['GET'])
 def update_graph():
 

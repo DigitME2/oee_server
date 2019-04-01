@@ -7,7 +7,7 @@ from app.oee_displaying.graph_helper import create_shift_end_gantt
 from flask import render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf
-from time import time, sleep
+from time import time
 
 
 @bp.route('/production', methods=['GET', 'POST'])

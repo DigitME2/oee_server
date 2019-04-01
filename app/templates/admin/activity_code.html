@@ -1,0 +1,52 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="centralForm">
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    {{ warning }}
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.code.label }}<br>
+            {{ form.code(size=32) }}<br>
+            {% for error in form.code.errors %}
+                <h1>Error in code</h1>
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+
+        <p>
+            {{ form.short_description.label }}<br>
+            {{ form.short_description(size=32) }}<br>
+            {% for error in form.short_description.errors %}
+                <h1>Error in short_description</h1>
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+
+        <p>
+            {{ form.long_description.label }}<br>
+            {{ form.long_description(size=32) }}<br>
+            {% for error in form.long_description.errors %}
+                <h1>Error in long_description</h1>
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+
+        <p>
+            {{ form.graph_colour.label }}<br>
+            {{ form.graph_colour(size=32, class_="jscolor") }}<br>
+            {% for error in form.long_description.errors %}
+                <h1>Error in long_description</h1>
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+
+        <p>{{ form.submit() }}</p>
+
+    </form>
+
+
+    <script src="{{ url_for('static', filename='javascript/jscolor.js') }}"
+            type="text/javascript"></script>
+
+
+    </div>
+
+{% endblock %}

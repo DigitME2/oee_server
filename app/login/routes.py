@@ -1,8 +1,8 @@
 from app import db
 from app.login import bp
-from app.login.forms import LoginForm, RegisterForm, ChangePasswordForm
+from app.login.forms import LoginForm, RegisterForm
 from app.login.models import User, create_default_users
-from flask import abort, render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
@@ -26,6 +26,7 @@ def login():
         login_user(user)
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
+            # Send admins to a different page by default
             if user.admin:
                 next_page = url_for('oee_displaying.machine_graph')
             else:
@@ -58,18 +59,4 @@ def new_user():
     return render_template("login/newuser.html", title="Register", nav_bar_title=nav_bar_title, form=form)
 
 
-@bp.route('/changepassword', methods=['GET', 'POST'])
-@login_required
-def change_password():
-    """ The page to change a user's password. The user_id is passed to this page."""
-    if current_user.admin is not True:
-        abort(403)
-    user = User.query.get_or_404(request.args.get('user_id'))
-    form = ChangePasswordForm()
-    if form.validate_on_submit():
-        user.set_password(form.password.data)
-        db.session.add(user)
-        db.session.commit()
-        redirect(url_for('default.admin_home'))
-    nav_bar_title = "Change password for " + str(user.username)
-    return render_template("login/changepassword.html", nav_bar_title=nav_bar_title, user=user, form=form)
+

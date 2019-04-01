@@ -91,9 +91,46 @@ body {
     text-decoration: none;
 }
 
+.rightAlignButton {
+    float: right;
+    display: inline-block;
+}
+
 
 /* -------admin home---------*/
 
+.adminListHeader {
+    display: inline;
+    margin-right: 10px;
+    margin-bottom: 20px;
+}
+
+.adminList {
+    display: grid;
+    grid-template-columns: auto auto;
+    padding: 10px;
+    float: left;
+}
+.adminListItem {
+    padding: 8px;
+    text-align: left;
+    align-self: center;
+}
+/*.adminList {*/
+/*    float: left;*/
+/*    min-width: 200px;*/
+/*    margin-right: 75px;*/
+/*    vertical-align: middle;*/
+/*}*/
+
+/*.adminListItem {*/
+/*    margin-bottom: 30px;*/
+/*    vertical-align: middle;*/
+/*}*/
+
+.adminNewBtn {
+    display: inline;
+}
 
 
 /* -------downtime explanation---------*/
