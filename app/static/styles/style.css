@@ -3,7 +3,6 @@
 }
 
 div {
-    text-align: left;
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -46,14 +45,14 @@ body {
     position: relative;
     z-index: 1;
     background: #FFFFFF;
-    max-width: 360px;
+    max-width: 500px;
     margin: 0 auto 100px;
     padding: 45px;
     text-align: center;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
 }
 
-.centralForm input {
+.centralForm input, textarea {
     font-family: "Roboto", sans-serif;
     outline: 0;
     background: #f2f2f2;
@@ -63,6 +62,18 @@ body {
     padding: 15px;
     box-sizing: border-box;
     font-size: 14px;
+}
+
+.centralForm input[type="checkbox"] {
+    padding: 0;
+    margin: 0;
+    position: relative;
+
+    vertical-align: middle;
+}
+
+.formInUseCheckboxContainer{
+    display: inline;
 }
 
 .centralForm input[type="submit"] {
@@ -80,6 +91,7 @@ body {
     color: #f2f2f2;
 }
 
+
 .centralForm .message {
     margin: 15px 0 0;
     color: #b3b3b3;
@@ -91,9 +103,16 @@ body {
     text-decoration: none;
 }
 
+
 .rightAlignButton {
     float: right;
     display: inline-block;
+}
+
+.formGrid{
+    display: grid;
+    grid-template-columns: auto auto;
+    padding-right: 10px;
 }
 
 
@@ -111,11 +130,13 @@ body {
     padding: 10px;
     float: left;
 }
+
 .adminListItem {
     padding: 8px;
     text-align: left;
     align-self: center;
 }
+
 /*.adminList {*/
 /*    float: left;*/
 /*    min-width: 200px;*/
@@ -131,6 +152,16 @@ body {
 .adminNewBtn {
     display: inline;
 }
+
+/* ------/admin home -----------*/
+
+/* ---- edit activity code ---------*/
+
+.jscolor {
+    text-align: center;
+}
+
+/* ---- /edit activity code ---------*/
 
 
 /* -------downtime explanation---------*/
@@ -272,3 +303,4 @@ body.loading .modal {
 }
 
 /* -----/viewall ------*/
+

@@ -1,6 +1,6 @@
 from app import db
 from app.login import bp
-from app.login.forms import LoginForm, RegisterForm
+from app.login.forms import LoginForm
 from app.login.models import User, create_default_users
 from flask import render_template, request, flash, redirect, url_for
 from flask_login import current_user, login_user, logout_user, login_required
@@ -44,19 +44,7 @@ def logout():
     return redirect(url_for('login.login'))
 
 
-@bp.route('/newuser', methods=['GET', 'POST'])
-def new_user():
-    """ The screen to register a new user."""
 
-    form = RegisterForm()
-    if form.validate_on_submit():
-        # noinspection PyArgumentList
-        u = User(username=form.username.data)
-        u.set_password(form.password.data)
-        db.session.add(u)
-        db.session.commit()
-    nav_bar_title = "New User"
-    return render_template("login/newuser.html", title="Register", nav_bar_title=nav_bar_title, form=form)
 
 
 

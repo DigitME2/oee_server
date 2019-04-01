@@ -52,7 +52,7 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
             end = graph_end
         else:
             end = act.timestamp_end
-        df.append(dict(Task=act.activity_code.short_description,
+        df.append(dict(Task=act.activity_code.code,
                        Start=datetime.fromtimestamp(start),
                        Finish=datetime.fromtimestamp(end),
                        Code=act.activity_code.short_description,

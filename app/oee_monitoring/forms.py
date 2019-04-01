@@ -2,9 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, SelectField
 
 
-
 class StartForm(FlaskForm):
-
     machine_choices = []
     job_number = StringField('Job Number')
     machine_number = SelectField('Machine Number', choices=machine_choices)

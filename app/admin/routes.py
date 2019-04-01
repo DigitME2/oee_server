@@ -1,10 +1,11 @@
-from flask import render_template, url_for, redirect, request, abort, flash
+from flask import render_template, url_for, redirect, request, abort
 from flask_login import login_required, current_user
+from wtforms.validators import NoneOf
 
 from app import db
 from app.admin import bp
 from app.admin.helpers import admin_required
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm
 from app.default.models import Machine, ActivityCode, Job, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID
 from app.login.models import User
 
@@ -19,6 +20,23 @@ def admin_home():
                            users=User.query.all(),
                            activity_codes=ActivityCode.query.all(),
                            jobs=Job.query.all())
+
+
+@bp.route('/newuser', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def new_user():
+    """ The screen to register a new user."""
+
+    form = RegisterForm()
+    if form.validate_on_submit():
+        # noinspection PyArgumentList
+        u = User(username=form.username.data)
+        u.set_password(form.password.data)
+        db.session.add(u)
+        db.session.commit()
+    nav_bar_title = "New User"
+    return render_template("admin/newuser.html", title="Register", nav_bar_title=nav_bar_title, form=form)
 
 
 @bp.route('/changepassword', methods=['GET', 'POST'])
@@ -45,19 +63,30 @@ def change_password():
 def edit_activity_code():
     """The page to edit an activity code"""
 
-    try:
-        activity_code_id = int(request.args['ac_id'])
-    except:
-        return redirect(url_for('admin.admin_home'))
+    # If new=true then the request is for a new activity code to be created
+    if 'new' in request.args and request.args['new'] == "true":
+        # Create a new activity code
+        activity_code = ActivityCode()
+        message = "Create new activity code"
 
-    if activity_code_id == UPTIME_CODE_ID:
-        warning = "This code is automatically assigned when the machine is running"
-    elif activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
-        warning = "This code is the default downtime code assigned when the machine isn't running"
+    # Otherwise get the activity code to be edited
+    elif 'ac_id' in request.args:
+        try:
+            activity_code_id = int(request.args['ac_id'])
+            activity_code = ActivityCode.query.get(activity_code_id)
+        except:
+            return abort(400)
+            #todo make error codes work
+        if activity_code_id == UPTIME_CODE_ID:
+            message = "Warning: This code should always represent uptime"
+        elif activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
+            message = "Warning: This code should alway represent unexplained downtime"
+        else:
+            message = "Warning: Changes to these values will retroactively affect past readings with this activity code.<br> \
+            If this code is no longer needed, deselect \"In Use\" for this code and create another activity code."
     else:
-        warning = ""
+        return abort(400)
 
-    activity_code = ActivityCode.query.get_or_404(activity_code_id)
     form = ActivityCodeForm()
     if form.validate_on_submit():
         activity_code.code = form.code.data
@@ -68,12 +97,22 @@ def edit_activity_code():
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
+    # Fill out the form with existing values
+    form.in_use.data = activity_code.in_use
     form.code.data = activity_code.code
     form.short_description.data = activity_code.short_description
     form.long_description.data = activity_code.long_description
     form.graph_colour.data = activity_code.graph_colour
 
+    # Prevent duplicate codes from being created
+    codes = []
+    for ac in ActivityCode.query.all():
+        codes.append(str(ac.code))
+    if activity_code.code in codes:
+        codes.remove(activity_code.code)
+    form.code.validators.append(NoneOf(codes))
+
     return render_template("admin/activity_code.html",
                            form=form,
-                           warning=warning)
+                           message=message)
 

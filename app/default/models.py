@@ -50,6 +50,7 @@ class ActivityCode(db.Model):
     short_description = db.Column(db.String)
     long_description = db.Column(db.String)
     graph_colour = db.Column(db.String)
+    in_use = db.Column(db.Boolean, default=True)
 
     activities = db.relationship('Activity', backref='activity_code')
 

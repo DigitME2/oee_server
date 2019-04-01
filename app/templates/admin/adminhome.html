@@ -36,15 +36,17 @@
                     <h2 class="adminListHeader">Activity Codes</h2>
                 </div>
                 <div class="adminListItem">
-                    <form action="newcode" class="adminNewBtn">
-                        <input type="submit" id="newCodeBtn" class="rightAlignButton" value="New Code"
-                               formmethod="GET"/>
-                    </form>
+                    <form action="{{ url_for('admin.edit_activity_code') }}"
+                              method="get"
+                              style="display: inline;">
+                            <input type="hidden" name="new" value="true"/>
+                            <input type="submit" class="rightAlignButton" value="Create New">
+                        </form>
                 </div>
 
                 {% for ac in activity_codes %}
                     <div class="adminListItem">
-                        {{ ac.code }}
+                        {{ ac.code }} - {{ ac.short_description }}
                     </div>
                     <div class="adminListItem">
                         <form action="{{ url_for('admin.edit_activity_code') }}"
