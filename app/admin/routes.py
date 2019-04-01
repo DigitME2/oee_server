@@ -1,6 +1,6 @@
 from flask import render_template, url_for, redirect, request, abort
 from flask_login import login_required, current_user
-from wtforms.validators import NoneOf
+from wtforms.validators import NoneOf, DataRequired
 
 from app import db
 from app.admin import bp
@@ -110,7 +110,7 @@ def edit_activity_code():
         codes.append(str(ac.code))
     if activity_code.code in codes:
         codes.remove(activity_code.code)
-    form.code.validators.append(NoneOf(codes))
+    form.code.validators = [NoneOf(codes), DataRequired()]
 
     return render_template("admin/activity_code.html",
                            form=form,

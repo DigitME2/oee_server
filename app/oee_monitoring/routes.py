@@ -129,8 +129,13 @@ def end_job():
     # This must be done after creating a graph because the graph sorts the list
     for act in activities:
         act.index = activities.index(act)
+    # Create a dictionary of colours for javascript to change graph colours from the dropdown selection
+    colours = {}
+    for ac in ActivityCode.query.all():
+        colours[ac.id] = ac.graph_colour
     return render_template('oee_monitoring/endjob.html',
                            nav_bar_title=nav_bar_title,
                            graph=graph,
                            activity_codes=ActivityCode.query.all(),
-                           activities=activities)
+                           activities=activities,
+                           colours=colours)
