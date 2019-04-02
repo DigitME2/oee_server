@@ -1,8 +1,6 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-    <body id="endJob">
-    <input type="button" onclick="getColours()">
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="graph">
         {{ graph|safe }}
@@ -16,7 +14,7 @@
                         <label>
                             {{ activity.time_summary }}
                             <select class="downtimeReasonSelect"
-                                    onchange="selectDowntimeReason(this, {{ activity.ud_index }}, {{ activity.activity_code.graph_colour }})"
+                                    onchange="selectDowntimeReason(this, {{ activity.ud_index }})"
                                     {# name is used by flask to assign the code once posted#}
                                     name="{{ activity.ud_index }}"
                                     {# id is used by javascript to change the plot#}
@@ -33,77 +31,75 @@
             </form>
 
         </div>
-
-
-        <script>
-
-            var graph = document.getElementsByClassName("plotly-graph-div")[0];
-
-            function getColours() {
-                var colours = {};
-                {% for ac in activity_codes %}
-                    colours["{{ ac.id }}"] = "{{ ac.graph_colour }}";
-                {% endfor %}
-                return colours
-            }
-
-            /**
-             *  Change the annotation and colour of an activity on the graph according to a dropdown selection
-             **/
-
-            function selectDowntimeReason(dropdown, downtimeIndex) {
-
-                //var colours = getColours();
-
-                //const layout = graph.layout;
-                // Change the annotation text
-                //layout.annotations[downtimeIndex].text = dropdown.value;
-                //todo dont hardcode colours
-                // Change the colour of the corresponding downtime
-                //console.log(colours[dropdown.selectedIndex]);
-                //layout.shapes[downtimeIndex].fillcolor = colours[dropdown.selectedIndex];
-                {#switch (dropdown.selectedIndex) {#}
-                {#    case 0:#}
-                {#        layout.shapes[downtimeIndex].fillcolor = 'red';#}
-                {#        break;#}
-                {#    case 1:#}
-                {#        layout.shapes[downtimeIndex].fillcolor = 'rgb(0, 255, 128)';#}
-                {#        break;#}
-                {#    default:#}
-                {#        layout.shapes[downtimeIndex].fillcolor = 'rgb(128, 128, 128)';#}
-                {#        break;#}
-
-
-                //Plotly.relayout(graph, layout);
-            }
-
-            /**
-             *  Change the annotation and colour of an activity on the graph when the page loads
-             *  if dropdowns are already selected
-             **/
-            window.onload = function () {
-                // Get all downtime dropdowns
-                var dropdowns = document.getElementsByClassName("downtimeReasonSelect");
-                for (let i = 0; i < dropdowns.length; i++) {
-                    // Get the list index of the reason being listed, which is the last character of the ID
-                    var dropdownId = dropdowns[i].getAttribute("id");
-                    var downtimeIndex = dropdownId[dropdownId.length - 1];
-                    // Don't do anything if the dropdown is on the default (unexplained) code
-                    if (dropdowns[i].value !== "0") {
-                        selectDowntimeReason(dropdowns[i], downtimeIndex)
-                    }
-                }
-            };
-
-            window.onresize = function () {
-                Plotly.relayout(graph, {
-                    width: 0.95 * window.innerWidth
-                });
-
-            };
-
-        </script>
     </div>
+    <script>
 
-    </body>
+        var graph = document.getElementsByClassName("plotly-graph-div")[0];
+
+        //Map the activity code id to graph colour, to display the colour on the graph
+        var colours = {};
+        // Map the activity code id to code, to display the code on the graph
+        var IdToCode = {};
+        {% for ac in activity_codes %}
+            colours["{{ ac.id }}"] = "{{ ac.graph_colour }}";
+            IdToCode["{{ ac.id }}"] = "{{ ac.code }}";
+        {% endfor %}
+
+        /**
+         *  Change the annotation and colour of an activity on the graph according to a dropdown selection
+         **/
+
+        function selectDowntimeReason(dropdown, downtimeIndex) {
+
+            //var colours = getColours();
+
+            const layout = graph.layout;
+            // Change the annotation text
+            let ac_id = dropdown.value;
+            layout.annotations[downtimeIndex].text = IdToCode[ac_id];
+            // Change the colour of the corresponding downtime
+            console.log(colours[dropdown.selectedIndex]);
+            layout.shapes[downtimeIndex].fillcolor = colours[dropdown.selectedIndex];
+            {#switch (dropdown.selectedIndex) {#}
+            {#    case 0:#}
+            {#        layout.shapes[downtimeIndex].fillcolor = 'red';#}
+            {#        break;#}
+            {#    case 1:#}
+            {#        layout.shapes[downtimeIndex].fillcolor = 'rgb(0, 255, 128)';#}
+            {#        break;#}
+            {#    default:#}
+            {#        layout.shapes[downtimeIndex].fillcolor = 'rgb(128, 128, 128)';#}
+            {#        break;#}
+
+
+            Plotly.relayout(graph, layout);
+        }
+
+        /**
+         *  Change the annotation and colour of an activity on the graph when the page loads
+         *  if dropdowns are already selected
+         **/
+        window.onload = function () {
+            // Get all downtime dropdowns
+            var dropdowns = document.getElementsByClassName("downtimeReasonSelect");
+            for (let i = 0; i < dropdowns.length; i++) {
+                // Get the list index of the reason being listed, which is the last character of the ID
+                var dropdownId = dropdowns[i].getAttribute("id");
+                var downtimeIndex = dropdownId[dropdownId.length - 1];
+                // Don't do anything if the dropdown is on the default (unexplained) code
+                if (dropdowns[i].value !== "0") {
+                    selectDowntimeReason(dropdowns[i], downtimeIndex)
+                }
+            }
+        };
+
+        window.onresize = function () {
+            Plotly.relayout(graph, {
+                width: 0.95 * window.innerWidth
+            });
+
+        };
+
+    </script>
+
 {% endblock %}

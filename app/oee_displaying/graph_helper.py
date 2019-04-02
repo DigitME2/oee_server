@@ -1,6 +1,6 @@
 from plotly.offline import plot
 from plotly.graph_objs import Layout
-from plotly.graph_objs.layout import Shape, Annotation
+from plotly.graph_objs.layout import Shape, Annotation, XAxis
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
 from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, MACHINE_STATE_RUNNING
@@ -8,12 +8,26 @@ import plotly.figure_factory as ff
 
 
 def apply_default_layout(layout):
+    layout.xaxis.rangeselector.buttons = [
+                dict(count=1,
+                     label='1h',
+                     step='hour',
+                     stepmode='backward'),
+                dict(count=3,
+                     label='3h',
+                     step='hour',
+                     stepmode='backward'),
+                dict(count=6,
+                     label='6h',
+                     step='hour',
+                     stepmode='backward'),
+                dict(step='all')]
     layout.showlegend = False
-    layout.xaxis.rangeselector.visible = False
     layout.xaxis.showline = True
     layout.yaxis.tickfont = {
         'size': 16
     }
+    layout.dragmode = 'pan'
     layout.autosize = False
     layout.margin = dict(l=100, r=50, b=50, t=50, pad=10)
     return layout
@@ -196,6 +210,8 @@ def create_shift_end_gantt(machine, activities):
     layout = apply_default_layout(layout)
     layout.annotations = annotations
 
+    #todo disable ticks on y axis
+
     # Pass the changed layout back to fig
     fig['layout'] = layout
     config = {'responsive': True}
@@ -204,7 +220,7 @@ def create_shift_end_gantt(machine, activities):
 
 
 def highlight_jobs(activities, layout):
-    """ Creates 'highlight' shapes to be shown on the graph"""
+    """ Creates 'highlight' shapes to show the times of jobs on the graph"""
     # Get all of the jobs from the activities
     jobs = []
     for act in activities:
