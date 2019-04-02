@@ -103,6 +103,10 @@ body {
     text-decoration: none;
 }
 
+.formError {
+    color: red;
+    font-style: italic;
+}
 
 .rightAlignButton {
     float: right;
@@ -253,6 +257,7 @@ ul.navList li a:hover {
     left: 0;
     height: 100%;
     width: 100%;
+    /*noinspection CssUnknownTarget*/
     background: rgba(255, 255, 255, .8) url('/static/styles/ajax-loader.gif') 50% 50% no-repeat;
 }
 

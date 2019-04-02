@@ -9,23 +9,20 @@
                 {{ form.username.label }}<br>
                 {{ form.username(size=32) }}<br>
                 {% for error in form.username.errors %}
-                    <h1>Error in username</h1>
-                    <span style="color: red;">[{{ error }}]</span>
+                    <span class="formError">[{{ error }}]</span>
                 {% endfor %}
             <p>
                 {{ form.password.label }}<br>
                 {{ form.password(size=32) }}<br>
                 {% for error in form.password.errors %}
-                    <h1>Error in password</h1>
-                    <span style="color: red;">[{{ error }}]</span>
+                    <span class="formError">[{{ error }}]</span>
                 {% endfor %}
 
             <p>
                 {{ form.confirm_password.label }}<br>
                 {{ form.confirm_password(size=32) }}<br>
                 {% for error in form.confirm_password.errors %}
-                    <h1>Error in confirm_password</h1>
-                    <span style="color: red;">[{{ error }}]</span>
+                    <span class="formError">[{{ error }}]</span>
                 {% endfor %}
 
             <p>{{ form.submit() }}</p>

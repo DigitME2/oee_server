@@ -66,30 +66,35 @@ def edit_activity_code():
     # If new=true then the request is for a new activity code to be created
     if 'new' in request.args and request.args['new'] == "true":
         # Create a new activity code
-        activity_code = ActivityCode()
+        activity_code = ActivityCode(in_use=True)
         message = "Create new activity code"
 
     # Otherwise get the activity code to be edited
     elif 'ac_id' in request.args:
         try:
             activity_code_id = int(request.args['ac_id'])
-            activity_code = ActivityCode.query.get(activity_code_id)
-        except:
-            return abort(400)
-            #todo make error codes work
+            activity_code = ActivityCode.query.get_or_404(activity_code_id)
+        except ValueError:
+            error_message = "Error parsing ac_id : {code_id}".format(code_id=request.args['ac_id'])
+            return abort(400, error_message)
+        # Show a warning to the user depending on the code being edited.
         if activity_code_id == UPTIME_CODE_ID:
             message = "Warning: This code should always represent uptime"
         elif activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
             message = "Warning: This code should alway represent unexplained downtime"
         else:
-            message = "Warning: Changes to these values will retroactively affect past readings with this activity code.<br> \
-            If this code is no longer needed, deselect \"In Use\" for this code and create another activity code."
+            message = "Warning: Changes to these values will" \
+                      " retroactively affect past readings with this activity code.<br> \
+                      If this code is no longer needed, deselect \"In Use\" for this code " \
+                      "and create another activity code."
     else:
-        return abort(400)
+        error_message = "No activity code specified"
+        return abort(400, error_message)
 
     form = ActivityCodeForm()
     if form.validate_on_submit():
         activity_code.code = form.code.data
+        activity_code.in_use = form.in_use.data
         activity_code.short_description = form.short_description.data
         activity_code.long_description = form.long_description.data
         activity_code.graph_colour = '#' + form.graph_colour.data

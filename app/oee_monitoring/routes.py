@@ -1,7 +1,7 @@
-from app import db
+from app import db, DEBUG
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
-from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time
+from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, get_dummy_machine_activity
 from app.default.models import Activity, ActivityCode, Machine, Job
 from app.oee_displaying.graph_helper import create_shift_end_gantt
 from flask import render_template, request, redirect, url_for
@@ -38,7 +38,7 @@ def start_job():
     job_numbers = []
     for j in Job.query.all():
         job_numbers.append(str(j.job_number))
-    form.job_number.validators.append(NoneOf(job_numbers))
+    form.job_number.validators.append(NoneOf(job_numbers, message="Job number already exists"))
 
     if form.validate_on_submit():
         machine = Machine.query.filter_by(machine_number=form.machine_number.data).first()
@@ -77,6 +77,19 @@ def job_in_progress():
             a.job_id = current_job.id
 
         current_job.end_time = time()
+
+        # During debugging, change the job times and create fake activities
+        if DEBUG:
+            current_job.start_time = current_job.end_time - 10800
+            db.session.add(current_job)
+            activities = get_dummy_machine_activity(timestamp_end=current_job.end_time,
+                                                    timestamp_start=current_job.start_time,
+                                                    job_id=current_job.id,
+                                                    machine_id=current_job.machine_id)
+            for act in activities:
+                db.session.add(act)
+        # end debug code
+
         db.session.commit()
         return redirect(url_for('oee_monitoring.production'))
 
@@ -97,7 +110,6 @@ def end_job():
     activities = flag_activities(activities)
     if current_job is None:
         return redirect(url_for('oee_monitoring.production'))
-    machine = Machine.query.get_or_404(current_job.machine_id)
 
     if request.method == "POST":
         for act in activities:
@@ -122,8 +134,7 @@ def end_job():
         if act.explanation_required:
             act.time_summary = get_legible_downtime_time(act.timestamp_start, act.timestamp_end)
 
-    graph = create_shift_end_gantt(activities=activities,
-                                   machine=machine)
+    graph = create_shift_end_gantt(activities=activities)
     nav_bar_title = "Submit Job"
     # Give each activity its index as an attribute, so it can be retrieved easily in the jinja template
     # This must be done after creating a graph because the graph sorts the list
@@ -133,9 +144,11 @@ def end_job():
     colours = {}
     for ac in ActivityCode.query.all():
         colours[ac.id] = ac.graph_colour
+    # Filter out activity codes that aren't in use
+    activity_codes = ActivityCode.query.filter_by(in_use=True)
     return render_template('oee_monitoring/endjob.html',
                            nav_bar_title=nav_bar_title,
                            graph=graph,
-                           activity_codes=ActivityCode.query.all(),
+                           activity_codes=activity_codes,
                            activities=activities,
                            colours=colours)

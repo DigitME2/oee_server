@@ -9,9 +9,9 @@
                     <h2 class="adminListHeader">Users</h2>
                 </div>
                 <div class="adminListItem">
-                    <form action="newuser" class="adminNewBtn">
-                        <input type="submit" id="newUserBtn" class="rightAlignButton" value="New User"
-                               formmethod="GET"/>
+                    <form action="{{ url_for('admin.new_user') }}"
+                          method="get">
+                        <input type="submit" id="newUserBtn" class="rightAlignButton" value="New User"/>
                     </form>
                 </div>
 
@@ -19,8 +19,7 @@
                     <div class="adminListItem">{{ user.username }}</div>
                     <div class="adminListItem">
                         <form action="{{ url_for('admin.change_password') }}"
-                              method="get"
-                              style="display: inline;">
+                              method="get">
                             <input type="hidden" name="action" value="resetPassword">
                             <input type="hidden" name="user_id" value="{{ user.id }}"/>
                             <input type="submit" class="rightAlignButton" value="Change Password">
@@ -37,11 +36,11 @@
                 </div>
                 <div class="adminListItem">
                     <form action="{{ url_for('admin.edit_activity_code') }}"
-                              method="get"
-                              style="display: inline;">
-                            <input type="hidden" name="new" value="true"/>
-                            <input type="submit" class="rightAlignButton" value="Create New">
-                        </form>
+                          method="get"
+                          style="display: inline;">
+                        <input type="hidden" name="new" value="true"/>
+                        <input type="submit" class="rightAlignButton" value="Create New">
+                    </form>
                 </div>
 
                 {% for ac in activity_codes %}

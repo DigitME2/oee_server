@@ -18,7 +18,8 @@
             </div>
 
             <div class="graphSelectDiv">
-                Date: <input type="text" id="datePicker" style="position: relative; z-index: 1000;">
+                <label for="datePicker">Date: </label>
+                <input type="text" id="datePicker" style="position: relative; z-index: 1000;">
                 <br>
             </div>
             <div class="graphSelectDiv">
@@ -61,6 +62,7 @@
                     $body.removeClass("loading");
                 },
                 error: function (error) {
+                    console.log(error);
                     $('#graph').html("Error getting graph");
                     $body.removeClass("loading");
                 }
@@ -68,6 +70,5 @@
         });
     </script>
 
-    </html>
 
 {% endblock %}

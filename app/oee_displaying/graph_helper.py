@@ -1,6 +1,6 @@
 from plotly.offline import plot
 from plotly.graph_objs import Layout
-from plotly.graph_objs.layout import Shape, Annotation, XAxis
+from plotly.graph_objs.layout import Shape, Annotation
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
 from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, MACHINE_STATE_RUNNING
@@ -27,7 +27,6 @@ def apply_default_layout(layout):
     layout.yaxis.tickfont = {
         'size': 16
     }
-    layout.dragmode = 'pan'
     layout.autosize = False
     layout.margin = dict(l=100, r=50, b=50, t=50, pad=10)
     return layout
@@ -155,13 +154,11 @@ def create_all_machines_gantt(graph_start, graph_end):
     return plot(fig, output_type="div", include_plotlyjs=True)
 
 
-def create_shift_end_gantt(machine, activities):
-    """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
+def create_shift_end_gantt(activities):
+    """ Create a gantt chart of the activities provided. Intended to be used for one machine only"""
 
     if len(activities) == 0:
         return "No machine activity between these times"
-    if machine is None:
-        return "This machine does not exist"
 
     # Add each activity to a dictionary, to add to the graph
     # Do this in two separate loops so that the entries requiring explanation are first in the dictionary, putting
@@ -208,10 +205,9 @@ def create_shift_end_gantt(machine, activities):
 
     layout = Layout(fig['layout'])
     layout = apply_default_layout(layout)
+
     layout.annotations = annotations
-
-    #todo disable ticks on y axis
-
+    layout.yaxis.showticklabels = False
     # Pass the changed layout back to fig
     fig['layout'] = layout
     config = {'responsive': True}

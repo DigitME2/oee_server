@@ -18,7 +18,6 @@ class ActivityCodeForm(FlaskForm):
     long_description = StringField(widget=TextArea())
     graph_colour = StringField(validators=[DataRequired()])
     submit = SubmitField('Save')
-    #todo no repeats on code
 
 
 class RegisterForm(FlaskForm):

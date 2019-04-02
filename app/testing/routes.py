@@ -8,66 +8,24 @@ from app import db
 from app.testing import bp
 from app.default.models import Machine, ActivityCode, Job, Activity, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID
 from app.login.models import User
-from app.testing.forms import TestForm, NewBatchForm
-from app.oee_displaying.graph_helper import create_machine_gantt
-from plotly.offline import plot
-from plotly.graph_objs import Layout
+
 from datetime import datetime
 from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, ActivityCode
-import plotly.figure_factory as ff
+
 
 
 @bp.route('/test')
 def test():
-    start = datetime(year=2018, month=12, day=25, hour=9, minute=0).timestamp()
-    end = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()
-    machine = Machine.query.get(1)
-    graph = create_machine_gantt(graph_start=start, graph_end=end, machine=machine)
-    return render_template('testing/test.html', graph=graph)
+    try:
+        thing = ActivityCode.query.get(int("hello"))
+    except ValueError:
+        return abort(400, "wrong")
+    return render_template('testing/test.html', thing=thing)
 
 def sort_activities(act):
     return act.activity_code.id
 
 
-@bp.route('/updategraph', methods=['GET'])
-def update_graph():
-    try:
-        machine_id = request.args.get('machine_id')
-        if machine_id is None:
-            raise TypeError
-        # todo sometimes no id in args wasnt throwing the error and this solution isnt perfect
-    except TypeError:  # Thrown when parameter not in url
-        abort(404)
-        return
-    machine = Machine.query.get_or_404(machine_id)
-
-    try:
-        # Get the values for the start and end time of the graph from the url
-        start = int(request.args.get('start'))
-        end = int(request.args.get('end'))
-    except TypeError:  # Thrown when parameter not in url
-        # todo handle this exception properly (test code)
-        start = datetime(year=2018, month=12, day=25, hour=9, minute=0).timestamp()  # = 1545728400.0
-        end = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()  # = 1545757200.0
-
-    graph = create_machine_gantt(graph_start=start, graph_end=end, machine=machine)
-    return graph
-
-
-@bp.route('/newbatch', methods=['GET', 'POST'])
-def new_batch():
-    """The page to create a new batch"""
-    form = NewBatchForm()
-    # Create list of part names to fill the part-type selection box
-    part_names = [1, 2, 3]
-
-    form.part_type.choices = part_names
-
-    # Create a new batch, and new parts when form is submitted
-
-    nav_bar_title = "Create new batch"
-    return render_template('testing/newbatch.html', form=form,
-                           nav_bar_title=nav_bar_title)
 
 
 @bp.route('/createdata')
@@ -91,7 +49,6 @@ def create_data():
 
 
     for i in range(1, 6):
-        # noinspection PyArgumentList
         user = User(username="user"+str(i))
         user.set_password("password")
 

@@ -1,4 +1,3 @@
-import getpass
 import os
 
 
@@ -27,7 +26,7 @@ class Config(object):
     #     port=DATABASE_PORT,
     #     database=DATABASE_NAME)
 
-    SQLALCHEMY_DATABASE_URI ="sqlite:///test.db" #TODO test code
+    SQLALCHEMY_DATABASE_URI = "sqlite:///prod.db"
 
     SECRET_KEY = os.environ.get('SECRET_KEY') or "EdOhMW901yTkiQHb"
     SQLALCHEMY_TRACK_MODIFICATIONS = False

@@ -2,8 +2,10 @@ from config import Config
 from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+import os
 
-
+DEBUG = os.environ.get('DEBUG') or False
+USE_SECONDS = os.environ.get('USE_SECONDS') or False  # Use seconds in the graphs and measurements. Useful in debugging
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'

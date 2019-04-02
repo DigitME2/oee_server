@@ -1,9 +1,13 @@
-from app import db
-from app.default.models import UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, MACHINE_STATE_RUNNING
+from random import randrange
+from app import db, DEBUG, USE_SECONDS
+from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, Activity, MACHINE_STATE_OFF, \
+    MACHINE_STATE_RUNNING
 from datetime import datetime
-import os
 
-DOWNTIME_EXPLANATION_THRESHOLD_S = 2  # todo set this to a reasonable number after testing
+if USE_SECONDS:
+    DOWNTIME_EXPLANATION_THRESHOLD_S = 2
+else:
+    DOWNTIME_EXPLANATION_THRESHOLD_S = 600
 
 
 def flag_activities(activities):
@@ -32,11 +36,39 @@ def get_legible_downtime_time(timestamp_start, timestamp_end):
     s = "{start_time} for {length_minutes} minutes".format(start_time=start, length_minutes=str(length_m))
 
     # Measures downtime in seconds instead of minutes for testing purposes
-    if os.environ.get("FLASK_DEBUG", default=False) == "1":
-        # todo delete this, not needed for production
+    if USE_SECONDS:
         start = datetime.fromtimestamp(timestamp_start).strftime('%H:%M:%S')
         s = "{start_time} for {length_seconds} seconds".format(
             start_time=start,
             length_seconds=int(timestamp_end - timestamp_start))
 
     return s
+
+
+def get_dummy_machine_activity(timestamp_start, timestamp_end, job_id, machine_id):
+    """ Creates fake activities for one machine between two timestamps"""
+    time = timestamp_start
+    activities = []
+    while time <= timestamp_end:
+        uptime_activity = Activity(machine_id=machine_id,
+                                   timestamp_start=time,
+                                   machine_state=MACHINE_STATE_RUNNING,
+                                   activity_code_id=UPTIME_CODE_ID,
+                                   job_id=job_id)
+        time += randrange(400, 3000)
+        uptime_activity.timestamp_end = time
+        activities.append(uptime_activity)
+
+        downtime_activity = Activity(machine_id=machine_id,
+                                     timestamp_start=time,
+                                     machine_state=MACHINE_STATE_OFF,
+                                     activity_code_id=UNEXPLAINED_DOWNTIME_CODE_ID,
+                                     job_id=job_id)
+        time += randrange(60, 1000)
+        downtime_activity.timestamp_end = time
+        activities.append(downtime_activity)
+
+    return activities
+
+
+

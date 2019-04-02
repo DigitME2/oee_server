@@ -1,6 +1,7 @@
 {% extends "default/base.html" %}
 
 {% block content %}
+    <!--suppress ALL -->
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="graph">
         {{ graph|safe }}
@@ -27,11 +28,13 @@
                         <br>
                     {% endif %}
                 {% endfor %}
+                <br>
                 <input type="submit" value="Complete Job">
             </form>
 
         </div>
     </div>
+    <!--suppress ES6ModulesDependencies -->
     <script>
 
         var graph = document.getElementsByClassName("plotly-graph-div")[0];
@@ -60,18 +63,9 @@
             // Change the colour of the corresponding downtime
             console.log(colours[dropdown.selectedIndex]);
             layout.shapes[downtimeIndex].fillcolor = colours[dropdown.selectedIndex];
-            {#switch (dropdown.selectedIndex) {#}
-            {#    case 0:#}
-            {#        layout.shapes[downtimeIndex].fillcolor = 'red';#}
-            {#        break;#}
-            {#    case 1:#}
-            {#        layout.shapes[downtimeIndex].fillcolor = 'rgb(0, 255, 128)';#}
-            {#        break;#}
-            {#    default:#}
-            {#        layout.shapes[downtimeIndex].fillcolor = 'rgb(128, 128, 128)';#}
-            {#        break;#}
 
 
+            // noinspection ES6ModulesDependencies (plotly.js is sent to template by flask)
             Plotly.relayout(graph, layout);
         }
 
@@ -94,6 +88,7 @@
         };
 
         window.onresize = function () {
+            // noinspection ES6ModulesDependencies (plotly.js is sent to template by flask)
             Plotly.relayout(graph, {
                 width: 0.95 * window.innerWidth
             });
