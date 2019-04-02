@@ -13,9 +13,9 @@
                 {% endfor %}
             </p>
             <p>
-                {{ form.machine_number.label }}<br>
-                {{ form.machine_number }}<br>
-                {% for error in form.machine_number.errors %}
+                {{ form.machine.label }}<br>
+                {{ form.machine }}<br>
+                {% for error in form.machine.errors %}
                     <span class="formError">[{{ error }}]</span>
                 {% endfor %}
             </p>

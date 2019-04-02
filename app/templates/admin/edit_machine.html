@@ -9,45 +9,30 @@
             {{ form.hidden_tag() }}
             <div class="formGrid">
                 <div class="formGriditem">
-                    {{ form.code.label }}
+                    {{ form.id.label }}
                 </div>
                 <div class="formGriditem">
-                    {{ form.in_use.label }}
+                    {{ form.active.label }}
                 </div>
                 <div class="formGriditem">
-                    {{ form.code(size=32) }}
+                    {{ form.id(size=32, disabled="true") }}
                 </div>
                 <div class="formGriditem">
-                    {{ form.in_use(size=32) }}
+                    {{ form.active(size=32) }}
                 </div>
 
-                {% for error in form.code.errors %}
+                {% for error in form.name.errors %}
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
             </div>
-
             <p>
-                {{ form.short_description.label }}<br>
-                {{ form.short_description(size=32) }}<br>
-                {% for error in form.short_description.errors %}
+                {{ form.name.label }}<br>
+                {{ form.name(size=32, autocomplete="off") }}<br>
+                {% for error in form.name.errors %}
                     <span class="formError">[{{ error }}]</span>
                 {% endfor %}
 
             <p>
-                {{ form.long_description.label }}<br>
-                {{ form.long_description(size=32) }}<br>
-                {% for error in form.long_description.errors %}
-                    <span class="formError">[{{ error }}]</span>
-                {% endfor %}
-
-            <p>
-                {{ form.graph_colour.label }}<br>
-                {{ form.graph_colour(size=32, class_="jscolor") }}<br>
-                {% for error in form.long_description.errors %}
-                    <span class="formError">[{{ error }}]</span>
-                {% endfor %}
-            <p>
-
 
             <p>{{ form.submit() }}</p>
 
@@ -56,8 +41,6 @@
 
         <script src="{{ url_for('static', filename='javascript/jscolor.js') }}"
                 type="text/javascript"></script>
-
-
     </div>
 
 {% endblock %}

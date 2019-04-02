@@ -5,7 +5,7 @@ from wtforms.validators import NoneOf, DataRequired
 from app import db
 from app.admin import bp
 from app.admin.helpers import admin_required
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm
 from app.default.models import Machine, ActivityCode, Job, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID
 from app.login.models import User
 
@@ -57,7 +57,7 @@ def change_password():
     return render_template("admin/changepassword.html", nav_bar_title=nav_bar_title, user=user, form=form)
 
 
-@bp.route('/activitycode', methods=['GET', 'POST'])
+@bp.route('/editactivitycode', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_activity_code():
@@ -66,7 +66,7 @@ def edit_activity_code():
     # If new=true then the request is for a new activity code to be created
     if 'new' in request.args and request.args['new'] == "true":
         # Create a new activity code
-        activity_code = ActivityCode(in_use=True)
+        activity_code = ActivityCode(active=True)
         message = "Create new activity code"
 
     # Otherwise get the activity code to be edited
@@ -85,7 +85,7 @@ def edit_activity_code():
         else:
             message = "Warning: Changes to these values will" \
                       " retroactively affect past readings with this activity code.<br> \
-                      If this code is no longer needed, deselect \"In Use\" for this code " \
+                      If this code is no longer needed, deselect \"In Active\" for this code " \
                       "and create another activity code."
     else:
         error_message = "No activity code specified"
@@ -94,7 +94,7 @@ def edit_activity_code():
     form = ActivityCodeForm()
     if form.validate_on_submit():
         activity_code.code = form.code.data
-        activity_code.in_use = form.in_use.data
+        activity_code.active = form.active.data
         activity_code.short_description = form.short_description.data
         activity_code.long_description = form.long_description.data
         activity_code.graph_colour = '#' + form.graph_colour.data
@@ -103,7 +103,7 @@ def edit_activity_code():
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values
-    form.in_use.data = activity_code.in_use
+    form.active.data = activity_code.active
     form.code.data = activity_code.code
     form.short_description.data = activity_code.short_description
     form.long_description.data = activity_code.long_description
@@ -117,7 +117,66 @@ def edit_activity_code():
         codes.remove(activity_code.code)
     form.code.validators = [NoneOf(codes), DataRequired()]
 
-    return render_template("admin/activity_code.html",
+    return render_template("admin/edit_activity_code.html",
+                           form=form,
+                           message=message)
+
+
+@bp.route('/editmachine', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_machine():
+    """The page to edit an activity code"""
+
+    # If new=true then the request is for a new activity code to be created
+    if 'new' in request.args and request.args['new'] == "true":
+        # Create a new activity code
+        machine = Machine(name="")
+        # Add and flush now to retrieve an id for the new entry
+        db.session.add(machine)
+        db.session.flush()
+        message = "Create new machine"
+
+    # Otherwise get the activity code to be edited
+    elif 'machine_id' in request.args:
+        try:
+            machine_id = int(request.args['machine_id'])
+            machine = Machine.query.get_or_404(machine_id)
+        except ValueError:
+            error_message = "Error parsing machine_id : {machine_id}".format(machine_id=request.args['machine_id'])
+            return abort(400, error_message)
+        # Show a warning to the user
+        message = "Warning: This machine (ID {machine_id}) will keep all of its past activity.\n" \
+                  "If the machine is no longer needed, deselect \"Active\" for this machine" \
+                  " and create another machine instead.".format(machine_id=machine_id)
+    else:
+        error_message = "No machine_id specified"
+        return abort(400, error_message)
+
+    form = MachineForm()
+    if form.validate_on_submit():
+        # Save the new values on submit
+        machine.name = form.name.data
+        machine.active = form.active.data
+        db.session.add(machine)
+        db.session.commit()
+        return redirect(url_for('admin.admin_home'))
+
+    # Fill out the form with existing values
+    form.id.data = machine.id
+    form.name.data = machine.name
+    form.active.data = machine.active
+
+    # Prevent duplicate machine names from being created
+    names = []
+    for m in Machine.query.all():
+        names.append(str(m.name))
+    # Don't prevent saving it with the same name
+    if machine.name in names:
+        names.remove(machine.name)
+    form.name.validators = [NoneOf(names), DataRequired()]
+
+    return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)
 

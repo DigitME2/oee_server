@@ -6,7 +6,7 @@ from app.default.models import Activity, ActivityCode, Machine, Job
 from app.oee_displaying.graph_helper import create_shift_end_gantt
 from flask import render_template, request, redirect, url_for
 from flask_login import login_required, current_user
-from wtforms.validators import NoneOf
+from wtforms.validators import NoneOf, DataRequired
 from time import time
 
 
@@ -30,18 +30,18 @@ def start_job():
 
     form = StartForm()
     # Get a list of existing machines to create form dropdown
-    machine_numbers = []
-    for m in Machine.query.all():
-        machine_numbers.append((str(m.machine_number), str(m.machine_number)))
-    form.machine_number.choices = machine_numbers
+    machine_names = []
+    for m in Machine.query.filter_by(active=True).all():
+        machine_names.append((str(m.id), str(m.name)))
+    form.machine.choices = machine_names
     # Get a list of existing job numbers to send to form for validation
     job_numbers = []
     for j in Job.query.all():
         job_numbers.append(str(j.job_number))
-    form.job_number.validators.append(NoneOf(job_numbers, message="Job number already exists"))
+    form.job_number.validators = [NoneOf(job_numbers, message="Job number already exists"), DataRequired()]
 
     if form.validate_on_submit():
-        machine = Machine.query.filter_by(machine_number=form.machine_number.data).first()
+        machine = Machine.query.get_or_404(form.machine.data)
         start_time = time()
         job = Job(start_time=start_time,
                   user_id=current_user.id,
@@ -145,7 +145,7 @@ def end_job():
     for ac in ActivityCode.query.all():
         colours[ac.id] = ac.graph_colour
     # Filter out activity codes that aren't in use
-    activity_codes = ActivityCode.query.filter_by(in_use=True)
+    activity_codes = ActivityCode.query.filter_by(active=True)
     return render_template('oee_monitoring/endjob.html',
                            nav_bar_title=nav_bar_title,
                            graph=graph,

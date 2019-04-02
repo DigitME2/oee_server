@@ -131,7 +131,7 @@ body {
 .adminList {
     display: grid;
     grid-template-columns: auto auto;
-    padding: 10px;
+    padding: 10px 25px 10px 10px;
     float: left;
 }
 

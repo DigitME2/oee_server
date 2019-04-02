@@ -52,7 +52,7 @@ def create_data():
         user = User(username="user"+str(i))
         user.set_password("password")
 
-        new_machine = Machine(machine_number=str(i), name="Machine " + str(i))
+        new_machine = Machine(name="Machine " + str(i))
         db.session.add(new_machine)
         db.session.commit()
 

@@ -25,7 +25,7 @@ def machine_activity():
     Assigns a simple activity code depending on machine state
     Example format:
     {
-        "machine_number": 1,
+        "machine_id": 1,
         "machine_state": 1,
         "timestamp_start": 1500000000,
         "timestamp_end": 1500000000
@@ -43,12 +43,11 @@ def machine_activity():
         data = json.loads(data)
 
     # Get all of the arguments, respond with an error if not provided
-    if 'machine_number' not in data:
-        response = jsonify({"error": "No machine_number provided"})
+    if 'machine_id' not in data:
+        response = jsonify({"error": "No machine_id provided"})
         response.status_code = 400
         return response
-    machine_number = data['machine_number']
-    machine = Machine.query.filter_by(machine_number=machine_number).first()
+    machine = Machine.query.get_or_404(data['machine_id'])
 
     if 'machine_state' not in data:
         response = jsonify({"error": "No machine_state provided"})
@@ -88,7 +87,7 @@ def machine_activity():
     db.session.commit()
 
     # Recreate the data and send it back to the client for confirmation
-    response = jsonify({"machine_number": machine.machine_number,
+    response = jsonify({"machine_id": machine.id,
                         "machine_state": new_activity.machine_state,
                         "timestamp_start": new_activity.timestamp_start,
                         "timestamp_end": new_activity.timestamp_end})

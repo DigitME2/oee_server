@@ -12,11 +12,18 @@ class ChangePasswordForm(FlaskForm):
 
 
 class ActivityCodeForm(FlaskForm):
-    in_use = BooleanField()
+    active = BooleanField()
     code = StringField(validators=[DataRequired()])
     short_description = StringField(validators=[DataRequired()])
     long_description = StringField(widget=TextArea())
     graph_colour = StringField(validators=[DataRequired()])
+    submit = SubmitField('Save')
+
+
+class MachineForm(FlaskForm):
+    active = BooleanField()
+    id = StringField()
+    name = StringField(validators=[DataRequired()])
     submit = SubmitField('Save')
 
 

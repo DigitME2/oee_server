@@ -11,8 +11,8 @@ MACHINE_STATE_ERROR = 2
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    machine_number = db.Column(db.Integer, unique=True, nullable=False)
-    name = db.Column(db.String, unique=True)
+    name = db.Column(db.String, unique=True, nullable=False)
+    active = db.Column(db.Boolean, default=True)
 
     activities = db.relationship('Activity')
     jobs = db.relationship('Job', backref='machine')
@@ -50,7 +50,7 @@ class ActivityCode(db.Model):
     short_description = db.Column(db.String)
     long_description = db.Column(db.String)
     graph_colour = db.Column(db.String)
-    in_use = db.Column(db.Boolean, default=True)
+    active = db.Column(db.Boolean, default=True)
 
     activities = db.relationship('Activity', backref='activity_code')
 
