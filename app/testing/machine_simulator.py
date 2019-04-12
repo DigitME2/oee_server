@@ -5,7 +5,7 @@ from time import time, sleep
 from app.default.models import MACHINE_STATE_RUNNING
 
 
-machine_number = 1
+machine_id = 1
 headers = {'Content-type': 'application/json'}
 
 while 1:
@@ -19,7 +19,7 @@ while 1:
         end = time()
 
         activity = {
-            "machine_number": machine_number,
+            "machine_id": machine_id,
             "machine_state": machine_state,
             "timestamp_start": start,
             "timestamp_end": end

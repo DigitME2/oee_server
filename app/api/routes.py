@@ -11,6 +11,10 @@ def validate_timestamp(timestamp):
 
     timeout = 604800
     future_buffer = 120
+    try:
+        timestamp = float(timestamp)
+    except:
+        return False
 
     if (time() - timeout) > timestamp > (time() + future_buffer):
         return False
@@ -53,7 +57,12 @@ def machine_activity():
         response = jsonify({"error": "No machine_state provided"})
         response.status_code = 400
         return response
-    machine_state = data['machine_state']
+    try:
+        machine_state = int(data['machine_state'])
+    except ValueError:
+        response = jsonify({"error": "Could not understand machine_state"})
+        response.status_code = 400
+        return response
 
     if 'timestamp_start' not in data:
         response = jsonify({"error": "No timestamp_start provided"})
@@ -72,7 +81,7 @@ def machine_activity():
         response.status_code = 400
         return response
 
-    if machine_state == MACHINE_STATE_RUNNING:
+    if int(machine_state) == MACHINE_STATE_RUNNING:
         activity_id = UPTIME_CODE_ID
     else:
         activity_id = UNEXPLAINED_DOWNTIME_CODE_ID

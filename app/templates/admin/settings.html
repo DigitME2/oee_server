@@ -1,0 +1,18 @@
+{% extends "default/base.html" %}
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <div class="centralForm">
+        <form action="" method="post">
+            {{ form.hidden_tag() }}
+            <p>
+                {{ form.explanation_threshold.label }}<br>
+                {{ form.explanation_threshold(size=32) }}<br>
+                {% for error in form.explanation_threshold.errors %}
+                    <span class="formError">[{{ error }}]</span>
+                {% endfor %}
+
+            <p>{{ form.submit() }}</p>
+        </form>
+    </div>
+
+{% endblock %}

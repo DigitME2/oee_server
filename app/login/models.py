@@ -32,15 +32,19 @@ def load_user(user_id):
 
 
 def create_default_users():
+
     if User.query.filter_by(username="admin").first() is not None:
         return
     # noinspection PyArgumentList
     default_admin = User(username="admin", admin=True)
-    default_admin.set_password("password")
+    default_admin.set_password("digitme2")
+
     if User.query.filter_by(username="user").first() is not None:
         return
     # noinspection PyArgumentList
     default_user = User(username="user", admin=False)
-    default_user.set_password("password")
+    default_user.set_password("digitme2")
+
     db.session.add(default_admin)
+    db.session.add(default_user)
     db.session.commit()

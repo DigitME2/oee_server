@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, PasswordField, StringField, SubmitField
+from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, EqualTo
 from wtforms.widgets import TextArea
 
@@ -33,3 +33,8 @@ class RegisterForm(FlaskForm):
                                                      EqualTo('confirm_password', message="Passwords do not match")])
     confirm_password = PasswordField('Confirm Password')
     submit = SubmitField('Register')
+
+
+class SettingsForm(FlaskForm):
+    explanation_threshold = IntegerField('Explanation Threshold (Seconds)', validators=[DataRequired()])
+    submit = SubmitField('Save')

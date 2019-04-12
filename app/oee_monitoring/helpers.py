@@ -1,13 +1,8 @@
 from random import randrange
-from app import db, DEBUG, USE_SECONDS
+from app import db
 from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, Activity, MACHINE_STATE_OFF, \
-    MACHINE_STATE_RUNNING
+    MACHINE_STATE_RUNNING, Settings
 from datetime import datetime
-
-if USE_SECONDS:
-    DOWNTIME_EXPLANATION_THRESHOLD_S = 2
-else:
-    DOWNTIME_EXPLANATION_THRESHOLD_S = 600
 
 
 def flag_activities(activities):
@@ -15,10 +10,11 @@ def flag_activities(activities):
     for downtime above a defined threshold"""
 
     ud_index_counter = 0
+    downtime_explanation_threshold_s = Settings.query.get_or_404(1).threshold
     for act in activities:
         # Only Flag activities with the downtime code and with a duration longer than the threshold
         if act.activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID and \
-                (act.timestamp_end - act.timestamp_start) > DOWNTIME_EXPLANATION_THRESHOLD_S:
+                (act.timestamp_end - act.timestamp_start) > downtime_explanation_threshold_s:
             act.explanation_required = True
             # Give the unexplained downtimes their own index
             act.ud_index = ud_index_counter
@@ -35,8 +31,8 @@ def get_legible_downtime_time(timestamp_start, timestamp_end):
     length_m = int((timestamp_end - timestamp_start) / 60)
     s = "{start_time} for {length_minutes} minutes".format(start_time=start, length_minutes=str(length_m))
 
-    # Measures downtime in seconds instead of minutes for testing purposes
-    if USE_SECONDS:
+    # Show in seconds if the run time is less than a minute
+    if (timestamp_end - timestamp_start) < 60:
         start = datetime.fromtimestamp(timestamp_start).strftime('%H:%M:%S')
         s = "{start_time} for {length_seconds} seconds".format(
             start_time=start,

@@ -5,8 +5,8 @@ from wtforms.validators import NoneOf, DataRequired
 from app import db
 from app.admin import bp
 from app.admin.helpers import admin_required
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm
-from app.default.models import Machine, ActivityCode, Job, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm
+from app.default.models import Machine, ActivityCode, Job, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, Settings
 from app.login.models import User
 
 
@@ -15,11 +15,28 @@ from app.login.models import User
 @admin_required
 def admin_home():
     """ The default page for a logged-in user"""
+    # Create default database entries
     return render_template('admin/adminhome.html',
                            machines=Machine.query.all(),
                            users=User.query.all(),
                            activity_codes=ActivityCode.query.all(),
                            jobs=Job.query.all())
+
+
+@bp.route('/settings', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def settings():
+    current_settings = Settings.query.get_or_404(1)
+    form = SettingsForm()
+    if form.validate_on_submit():
+        current_settings.threshold = form.explanation_threshold.data
+        db.session.add(current_settings)
+        db.session.commit()
+        return redirect(url_for('admin.admin_home'))
+    form.explanation_threshold.data = current_settings.threshold
+    return render_template('admin/settings.html',
+                           form=form)
 
 
 @bp.route('/newuser', methods=['GET', 'POST'])
@@ -35,6 +52,7 @@ def new_user():
         u.set_password(form.password.data)
         db.session.add(u)
         db.session.commit()
+        return redirect(url_for('admin.admin_home'))
     nav_bar_title = "New User"
     return render_template("admin/newuser.html", title="Register", nav_bar_title=nav_bar_title, form=form)
 
@@ -52,7 +70,7 @@ def change_password():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        redirect(url_for('admin.admin_home'))
+        return redirect(url_for('admin.admin_home'))
     nav_bar_title = "Change password for " + str(user.username)
     return render_template("admin/changepassword.html", nav_bar_title=nav_bar_title, user=user, form=form)
 
@@ -146,9 +164,10 @@ def edit_machine():
             error_message = "Error parsing machine_id : {machine_id}".format(machine_id=request.args['machine_id'])
             return abort(400, error_message)
         # Show a warning to the user
-        message = "Warning: This machine (ID {machine_id}) will keep all of its past activity.\n" \
-                  "If the machine is no longer needed, deselect \"Active\" for this machine" \
-                  " and create another machine instead.".format(machine_id=machine_id)
+        message = "Warning: This machine (ID {machine_id}) retains a reference to all of its past activity. " \
+                  "It's recommended not to change which machine this ID refers to." \
+                  "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."\
+            .format(machine_id=machine_id)
     else:
         error_message = "No machine_id specified"
         return abort(400, error_message)

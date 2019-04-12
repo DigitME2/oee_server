@@ -4,8 +4,17 @@ from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 import os
 
-DEBUG = os.environ.get('DEBUG') or False
-USE_SECONDS = os.environ.get('USE_SECONDS') or False  # Use seconds in the graphs and measurements. Useful in debugging
+if os.environ.get('DEBUG') == 'True':
+    DEBUG = True
+else:
+    DEBUG = False
+
+# Use seconds in the graphs and measurements. Useful in debugging
+if os.environ.get('USE_SECONDS') == 'True':
+    USE_SECONDS = True
+else:
+    USE_SECONDS = False
+
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
@@ -14,7 +23,6 @@ login_manager.login_view = 'login.login'
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-
     db.init_app(app)
     login_manager.init_app(app)
 
