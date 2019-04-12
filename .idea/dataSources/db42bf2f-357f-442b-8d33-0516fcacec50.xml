@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataSource name="test">
-  <database-model serializer="dbm" dbms="SQLITE" family-id="SQLITE" format-version="4.14">
+  <database-model serializer="dbm" dbms="SQLITE" family-id="SQLITE" format-version="4.15">
     <root id="1">
       <ServerVersion>3.25.1</ServerVersion>
     </root>
@@ -11,271 +11,28 @@
     <collation id="3" parent="1" name="BINARY"/>
     <collation id="4" parent="1" name="NOCASE"/>
     <collation id="5" parent="1" name="RTRIM"/>
-    <table id="6" parent="2" name="activity"/>
-    <table id="7" parent="2" name="activity_code"/>
-    <table id="8" parent="2" name="job"/>
-    <table id="9" parent="2" name="machine"/>
-    <table id="10" parent="2" name="sqlite_master">
+    <table id="6" parent="2" name="sqlite_master">
       <System>1</System>
     </table>
-    <table id="11" parent="2" name="user"/>
-    <column id="12" parent="6" name="id">
-      <Position>1</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="13" parent="6" name="machine_id">
-      <Position>2</Position>
-      <DataType>VARCHAR|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="14" parent="6" name="machine_state">
-      <Position>3</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="15" parent="6" name="explanation_required">
-      <Position>4</Position>
-      <DataType>BOOLEAN|0s</DataType>
-    </column>
-    <column id="16" parent="6" name="timestamp_start">
-      <Position>5</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="17" parent="6" name="timestamp_end">
-      <Position>6</Position>
-      <DataType>INTEGER|0s</DataType>
-    </column>
-    <column id="18" parent="6" name="activity_code_id">
-      <Position>7</Position>
-      <DataType>INTEGER|0s</DataType>
-    </column>
-    <column id="19" parent="6" name="job_id">
-      <Position>8</Position>
-      <DataType>INTEGER|0s</DataType>
-    </column>
-    <key id="20" parent="6">
-      <ColNames>id</ColNames>
-      <Primary>1</Primary>
-    </key>
-    <foreign-key id="21" parent="6">
-      <ColNames>machine_id</ColNames>
-      <RefTableName>machine</RefTableName>
-      <RefColNames>id</RefColNames>
-    </foreign-key>
-    <foreign-key id="22" parent="6">
-      <ColNames>activity_code_id</ColNames>
-      <RefTableName>activity_code</RefTableName>
-      <RefColNames>id</RefColNames>
-    </foreign-key>
-    <foreign-key id="23" parent="6">
-      <ColNames>job_id</ColNames>
-      <RefTableName>job</RefTableName>
-      <RefColNames>id</RefColNames>
-    </foreign-key>
-    <check id="24" parent="6">
-      <Predicate>explanation_required IN (0, 1)</Predicate>
-    </check>
-    <column id="25" parent="7" name="id">
-      <Position>1</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="26" parent="7" name="code">
-      <Position>2</Position>
-      <DataType>VARCHAR|0s</DataType>
-    </column>
-    <column id="27" parent="7" name="short_description">
-      <Position>3</Position>
-      <DataType>VARCHAR|0s</DataType>
-    </column>
-    <column id="28" parent="7" name="long_description">
-      <Position>4</Position>
-      <DataType>VARCHAR|0s</DataType>
-    </column>
-    <column id="29" parent="7" name="graph_colour">
-      <Position>5</Position>
-      <DataType>VARCHAR|0s</DataType>
-    </column>
-    <index id="30" parent="7" name="sqlite_autoindex_activity_code_1">
-      <NameSurrogate>1</NameSurrogate>
-      <ColNames>code</ColNames>
-      <ColumnCollations></ColumnCollations>
-      <Unique>1</Unique>
-    </index>
-    <key id="31" parent="7">
-      <ColNames>id</ColNames>
-      <Primary>1</Primary>
-    </key>
-    <key id="32" parent="7">
-      <ColNames>code</ColNames>
-      <UnderlyingIndexName>sqlite_autoindex_activity_code_1</UnderlyingIndexName>
-    </key>
-    <column id="33" parent="8" name="id">
-      <Position>1</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="34" parent="8" name="start_time">
-      <Position>2</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="35" parent="8" name="end_time">
-      <Position>3</Position>
-      <DataType>INTEGER|0s</DataType>
-    </column>
-    <column id="36" parent="8" name="job_number">
-      <Position>4</Position>
-      <DataType>VARCHAR|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="37" parent="8" name="machine_id">
-      <Position>5</Position>
-      <DataType>VARCHAR|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="38" parent="8" name="user_id">
-      <Position>6</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="39" parent="8" name="active">
-      <Position>7</Position>
-      <DataType>BOOLEAN|0s</DataType>
-    </column>
-    <index id="40" parent="8" name="sqlite_autoindex_job_1">
-      <NameSurrogate>1</NameSurrogate>
-      <ColNames>user_id
-active</ColNames>
-      <ColumnCollations></ColumnCollations>
-      <Unique>1</Unique>
-    </index>
-    <key id="41" parent="8">
-      <ColNames>id</ColNames>
-      <Primary>1</Primary>
-    </key>
-    <key id="42" parent="8">
-      <ColNames>user_id
-active</ColNames>
-      <UnderlyingIndexName>sqlite_autoindex_job_1</UnderlyingIndexName>
-    </key>
-    <foreign-key id="43" parent="8">
-      <ColNames>machine_id</ColNames>
-      <RefTableName>machine</RefTableName>
-      <RefColNames>id</RefColNames>
-    </foreign-key>
-    <foreign-key id="44" parent="8">
-      <ColNames>user_id</ColNames>
-      <RefTableName>user</RefTableName>
-      <RefColNames>id</RefColNames>
-    </foreign-key>
-    <check id="45" parent="8">
-      <Predicate>active</Predicate>
-    </check>
-    <check id="46" parent="8">
-      <Predicate>active IN (0, 1)</Predicate>
-    </check>
-    <column id="47" parent="9" name="id">
-      <Position>1</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="48" parent="9" name="machine_number">
-      <Position>2</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="49" parent="9" name="name">
-      <Position>3</Position>
-      <DataType>VARCHAR|0s</DataType>
-    </column>
-    <index id="50" parent="9" name="sqlite_autoindex_machine_1">
-      <NameSurrogate>1</NameSurrogate>
-      <ColNames>machine_number</ColNames>
-      <ColumnCollations></ColumnCollations>
-      <Unique>1</Unique>
-    </index>
-    <index id="51" parent="9" name="sqlite_autoindex_machine_2">
-      <NameSurrogate>1</NameSurrogate>
-      <ColNames>name</ColNames>
-      <ColumnCollations></ColumnCollations>
-      <Unique>1</Unique>
-    </index>
-    <key id="52" parent="9">
-      <ColNames>id</ColNames>
-      <Primary>1</Primary>
-    </key>
-    <key id="53" parent="9">
-      <ColNames>machine_number</ColNames>
-      <UnderlyingIndexName>sqlite_autoindex_machine_1</UnderlyingIndexName>
-    </key>
-    <key id="54" parent="9">
-      <ColNames>name</ColNames>
-      <UnderlyingIndexName>sqlite_autoindex_machine_2</UnderlyingIndexName>
-    </key>
-    <column id="55" parent="10" name="type">
+    <column id="7" parent="6" name="type">
       <Position>1</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="56" parent="10" name="name">
+    <column id="8" parent="6" name="name">
       <Position>2</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="57" parent="10" name="tbl_name">
+    <column id="9" parent="6" name="tbl_name">
       <Position>3</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="58" parent="10" name="rootpage">
+    <column id="10" parent="6" name="rootpage">
       <Position>4</Position>
       <DataType>int|0s</DataType>
     </column>
-    <column id="59" parent="10" name="sql">
+    <column id="11" parent="6" name="sql">
       <Position>5</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="60" parent="11" name="id">
-      <Position>1</Position>
-      <DataType>INTEGER|0s</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="61" parent="11" name="username">
-      <Position>2</Position>
-      <DataType>VARCHAR(64)|0s</DataType>
-    </column>
-    <column id="62" parent="11" name="email">
-      <Position>3</Position>
-      <DataType>VARCHAR(120)|0s</DataType>
-    </column>
-    <column id="63" parent="11" name="password_hash">
-      <Position>4</Position>
-      <DataType>VARCHAR(128)|0s</DataType>
-    </column>
-    <column id="64" parent="11" name="admin">
-      <Position>5</Position>
-      <DataType>BOOLEAN|0s</DataType>
-    </column>
-    <column id="65" parent="11" name="active_job_id">
-      <Position>6</Position>
-      <DataType>INTEGER|0s</DataType>
-    </column>
-    <index id="66" parent="11" name="ix_user_username">
-      <ColNames>username</ColNames>
-      <ColumnCollations></ColumnCollations>
-      <Unique>1</Unique>
-    </index>
-    <index id="67" parent="11" name="ix_user_email">
-      <ColNames>email</ColNames>
-      <ColumnCollations></ColumnCollations>
-      <Unique>1</Unique>
-    </index>
-    <key id="68" parent="11">
-      <ColNames>id</ColNames>
-      <Primary>1</Primary>
-    </key>
-    <check id="69" parent="11">
-      <Predicate>admin IN (0, 1)</Predicate>
-    </check>
   </database-model>
 </dataSource>
