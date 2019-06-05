@@ -1,10 +1,10 @@
-from app import db, DEBUG
+from app import db
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
 from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, get_dummy_machine_activity
 from app.default.models import Activity, ActivityCode, Machine, Job
-from app.oee_displaying.graph_helper import create_shift_end_gantt
-from flask import render_template, request, redirect, url_for
+from app.oee_displaying.graph_helper import create_job_end_gantt
+from flask import render_template, request, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf, DataRequired
 from time import time
@@ -23,6 +23,7 @@ def production():
             return job_in_progress()
         else:
             return end_job()
+    #TODO Stop user from completing job if all reasons aren't listed
 
 
 def start_job():
@@ -34,7 +35,7 @@ def start_job():
     for m in Machine.query.filter_by(active=True).all():
         machine_names.append((str(m.id), str(m.name)))
     form.machine.choices = machine_names
-    # Get a list of existing job numbers to send to form for validation
+    # Get a list of existing job numbers to use for form validation
     job_numbers = []
     for j in Job.query.all():
         job_numbers.append(str(j.job_number))
@@ -50,6 +51,7 @@ def start_job():
                   active=True)
         db.session.add(job)
         db.session.commit()
+        current_app.logger.debug(f"{current_user} started new job: {job}")
         return redirect(url_for('oee_monitoring.production'))
     nav_bar_title = "Start a new job"
     return render_template('oee_monitoring/startjob.html',
@@ -79,7 +81,7 @@ def job_in_progress():
         current_job.end_time = time()
 
         # During debugging, change the job times and create fake activities
-        if DEBUG:
+        if os.environ.get('DEMO'):
             current_job.start_time = current_job.end_time - 10800
             db.session.add(current_job)
             activities = get_dummy_machine_activity(timestamp_end=current_job.end_time,
@@ -104,6 +106,8 @@ def end_job():
     """ The page at the end of a job
     This shows the user a summary of the machine's activities and requests reasons for certain activities"""
 
+    # todo Find a solution for the open activity when the job is created, extending before the start time
+
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
     activities = current_job.activities
     # Flag activities that require an explanation
@@ -112,6 +116,7 @@ def end_job():
         return redirect(url_for('oee_monitoring.production'))
 
     if request.method == "POST":
+
         for act in activities:
             if act.explanation_required:
                 # The name of the downtime boxes is the ud_index, the value will be the activity code id selected
@@ -128,13 +133,14 @@ def end_job():
             # Set the job as no longer active
             current_job.active = None
             db.session.commit()
+            current_app.logger.debug(f"{current_user} finished job {current_job}")
         return redirect(url_for('oee_monitoring.production'))
 
     for act in activities:
         if act.explanation_required:
             act.time_summary = get_legible_downtime_time(act.timestamp_start, act.timestamp_end)
 
-    graph = create_shift_end_gantt(activities=activities)
+    graph = create_job_end_gantt(job=current_job)
     nav_bar_title = "Submit Job"
     # Give each activity its index as an attribute, so it can be retrieved easily in the jinja template
     # This must be done after creating a graph because the graph sorts the list

@@ -2,7 +2,7 @@ from app import db
 from app.login import bp
 from app.login.forms import LoginForm
 from app.login.models import User, create_default_users
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, current_app
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
@@ -24,6 +24,7 @@ def login():
             flash("Invalid username or password")
             return redirect(url_for('login.login'))
         login_user(user)
+        current_app.logger.info(f"Logged in {user}")
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             # Send admins to a different page by default
@@ -40,6 +41,7 @@ def login():
 @login_required
 def logout():
     """ Logs the user out of the system. """
+    current_app.logger.info(f"Logging out {current_user}")
     logout_user()
     return redirect(url_for('login.login'))
 

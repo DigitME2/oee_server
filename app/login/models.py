@@ -1,7 +1,9 @@
-from app import db, login_manager
+from app import db, login_manager, stream_handler, file_handler
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import logging
 
+logger = logging.getLogger('flask.app')
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -17,13 +19,14 @@ class User(db.Model, UserMixin):
         return self.active_job_id is not None
 
     def set_password(self, password):
+        logger.info(f"Password changed for {self}")
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
-        return '<User {}>'.format(self.username)
+        return f"<User '{self.username}' (ID {self.id})>"
 
 
 @login_manager.user_loader
@@ -48,3 +51,4 @@ def create_default_users():
     db.session.add(default_admin)
     db.session.add(default_user)
     db.session.commit()
+    logger.info(f"Created default users:\n{default_admin}\n{default_user}\n on first startup")

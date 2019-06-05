@@ -87,7 +87,7 @@
 
                 {% for m in machines %}
                     <div class="adminListItem">
-                        {{ m.name }}
+                        {{ m.name }} (ID:{{ m.id }})
                     </div>
                     <div class="adminListItem">
                         <form action="{{ url_for('admin.edit_machine') }}"

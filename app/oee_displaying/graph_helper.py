@@ -71,7 +71,7 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
                        Code=act.activity_code.short_description,
                        Activity_id=act.id))
 
-    graph_title = "{machine_name} OEE".format(machine_name=machine.name)
+    graph_title = f"{machine_name} OEE"
 
     # Create the colours dictionary using codes' colours from the database
     colours = {}
@@ -154,21 +154,32 @@ def create_all_machines_gantt(graph_start, graph_end):
     return plot(fig, output_type="div", include_plotlyjs=True)
 
 
-def create_shift_end_gantt(activities):
-    """ Create a gantt chart of the activities provided. Intended to be used for one machine only"""
+def create_job_end_gantt(job):
+    """ Create a gantt chart of the activities for a job, flagging those that need an explanation from an operator"""
+
+    activities = job.activities
+
+    #todo cut off activities that extend before/after start/end time
 
     if len(activities) == 0:
         return "No machine activity between these times"
 
     # Add each activity to a dictionary, to add to the graph
-    # Do this in two separate loops so that the entries requiring explanation are first in the dictionary, putting
-    #  them on the upper level in the graph (in a roundabout way) There's probably be a better way to do this via plotly
+    # Do this in two separate loops so that the first entry in the dictionary is always one requiring an explanation,
+    # putting them all on the upper level in the graph (in a roundabout way) There's probably be a better way to do this
     df = []
     annotations = []
     for act in activities:
         if act.explanation_required:
-            start = act.timestamp_start
-            end = act.timestamp_end
+            # If the activity extends past the  start or end, crop it short
+            if act.timestamp_start < job.start_time:
+                start = job.start_time
+            else:
+                start = act.timestamp_start
+            if act.timestamp_end > job.end_time:
+                end = job.end_time
+            else:
+                end = act.timestamp_end
             df.append(dict(Task=act.explanation_required,
                            Start=datetime.fromtimestamp(start),
                            Finish=datetime.fromtimestamp(end),
@@ -179,10 +190,18 @@ def create_shift_end_gantt(activities):
             position = datetime.fromtimestamp((start + end) / 2)
             annotations.append(dict(x=position, y=1.7, text=text, showarrow=False, font=dict(color='black')))
 
+    # The second loop, for activities not requiring an explanation
     for act in activities:
         if not act.explanation_required:
-            start = act.timestamp_start
-            end = act.timestamp_end
+            # If the activity extends past the  start or end, crop it short
+            if act.timestamp_start < job.start_time:
+                start = job.start_time
+            else:
+                start = act.timestamp_start
+            if act.timestamp_end > job.end_time:
+                end = job.end_time
+            else:
+                end = act.timestamp_end
             df.append(dict(Task=act.explanation_required,
                            Start=datetime.fromtimestamp(start),
                            Finish=datetime.fromtimestamp(end),
@@ -254,7 +273,7 @@ def highlight_jobs(activities, layout):
 
         # Create an annotation at the top of the highlight saying the job number
         a = Annotation()
-        a.text = "<b>Job {job_number}</b>".format(job_number=j.job_number)
+        a.text = f"<b>Job {j.job_number}</b>"
         a.font = {
             "size": 16
         }

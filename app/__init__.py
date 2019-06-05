@@ -1,13 +1,13 @@
 from config import Config
-from flask import Flask
-from flask_login import LoginManager
+from flask import Flask, current_app
+from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
+from flask.logging import default_handler
+from logging.handlers import RotatingFileHandler
+import logging
 import os
+import threading
 
-if os.environ.get('DEBUG') == 'True':
-    DEBUG = True
-else:
-    DEBUG = False
 
 # Use seconds in the graphs and measurements. Useful in debugging
 if os.environ.get('USE_SECONDS') == 'True':
@@ -18,6 +18,14 @@ else:
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
+
+# Create logging handlers
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+file_handler = RotatingFileHandler('logs/oee_app.log', maxBytes=10240, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s'))
+stream_handler = logging.StreamHandler()
 
 
 def create_app(config_class=Config):
@@ -43,5 +51,18 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
+
+    # Set up logger
+    app.logger.setLevel(logging.DEBUG)
+    if app.debug:
+        stream_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(logging.DEBUG)
+    else:
+        stream_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.INFO)
+
+    app.logger.removeHandler(default_handler)
+    app.logger.addHandler(stream_handler)
+    app.logger.addHandler(file_handler)
 
     return app

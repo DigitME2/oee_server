@@ -29,14 +29,13 @@ def get_legible_downtime_time(timestamp_start, timestamp_end):
     """ Takes two timestamps and returns a string in the format <hh:mm> <x> minutes"""
     start = datetime.fromtimestamp(timestamp_start).strftime('%H:%M')
     length_m = int((timestamp_end - timestamp_start) / 60)
-    s = "{start_time} for {length_minutes} minutes".format(start_time=start, length_minutes=str(length_m))
+    s = f"{start} for {length_m} minutes"
 
     # Show in seconds if the run time is less than a minute
     if (timestamp_end - timestamp_start) < 60:
         start = datetime.fromtimestamp(timestamp_start).strftime('%H:%M:%S')
-        s = "{start_time} for {length_seconds} seconds".format(
-            start_time=start,
-            length_seconds=int(timestamp_end - timestamp_start))
+        length_seconds = int(timestamp_end - timestamp_start)
+        s = f"{start} for {length_seconds} seconds"
 
     return s
 

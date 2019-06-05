@@ -16,11 +16,8 @@ from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DO
 
 @bp.route('/test')
 def test():
-    try:
-        thing = ActivityCode.query.get(int("hello"))
-    except ValueError:
-        return abort(400, "wrong")
-    return render_template('testing/test.html', thing=thing)
+    activities = Activity.query.filter(Activity.machine_id==1, Activity.timestamp_end is None).all()
+    pass
 
 def sort_activities(act):
     return act.activity_code.id
@@ -28,16 +25,17 @@ def sort_activities(act):
 
 
 
-@bp.route('/createdata')
+#@bp.route('/createdata')
 def create_data():
     """ Creates fake data to use for testing purposes"""
     db.create_all()
 
-    unexplainedcode = ActivityCode(id=UNEXPLAINED_DOWNTIME_CODE_ID, code="EX", short_description='unexplained',
-                                   graph_colour='rgb(178,34,34)')
-    db.session.add(unexplainedcode)
-    uptimecode = ActivityCode(id=UPTIME_CODE_ID, code="UP", short_description='uptime', graph_colour='rgb(0, 255, 128)')
-    db.session.add(uptimecode)
+    # unexplained and uptime are created on database initialisation
+    # unexplainedcode = ActivityCode(id=UNEXPLAINED_DOWNTIME_CODE_ID, code="EX", short_description='unexplained',
+    #                                graph_colour='rgb(178,34,34)')
+    # db.session.add(unexplainedcode)
+    # uptimecode = ActivityCode(id=UPTIME_CODE_ID, code="UP", short_description='uptime', graph_colour='rgb(0, 255, 128)')
+    # db.session.add(uptimecode)
     error1code = ActivityCode(id=2, code="ER1", short_description='error1', graph_colour='rgb(255,64,0)')
     db.session.add(error1code)
     error2code = ActivityCode(id=3, code="ER2", short_description='error2', graph_colour='rgb(255,0,0)')
@@ -52,9 +50,11 @@ def create_data():
         user = User(username="user"+str(i))
         user.set_password("password")
 
-        new_machine = Machine(name="Machine " + str(i))
-        db.session.add(new_machine)
-        db.session.commit()
+        # First machine is created automatically
+        if i != 1:
+            new_machine = Machine(name="Machine " + str(i))
+            db.session.add(new_machine)
+            db.session.commit()
 
         job_start = datetime(year=2018, month=12, day=25, hour=9, minute=0)
         job_end = datetime(year=2018, month=12, day=25, hour=17, minute=0)

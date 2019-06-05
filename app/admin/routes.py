@@ -1,4 +1,4 @@
-from flask import render_template, url_for, redirect, request, abort
+from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf, DataRequired
 
@@ -93,7 +93,8 @@ def edit_activity_code():
             activity_code_id = int(request.args['ac_id'])
             activity_code = ActivityCode.query.get_or_404(activity_code_id)
         except ValueError:
-            error_message = "Error parsing ac_id : {code_id}".format(code_id=request.args['ac_id'])
+            error_message = f"Error parsing ac_id : {request.args['ac_id']} from URL"
+            current_app.logger.warn(error_message)
             return abort(400, error_message)
         # Show a warning to the user depending on the code being edited.
         if activity_code_id == UPTIME_CODE_ID:
@@ -103,13 +104,22 @@ def edit_activity_code():
         else:
             message = "Warning: Changes to these values will" \
                       " retroactively affect past readings with this activity code.<br> \
-                      If this code is no longer needed, deselect \"In Active\" for this code " \
+                      If this code is no longer needed, deselect \"Active\" for this code " \
                       "and create another activity code."
     else:
-        error_message = "No activity code specified"
+        error_message = "No activity code specified in URL"
+        current_app.logger.warn(error_message)
         return abort(400, error_message)
 
     form = ActivityCodeForm()
+    # Get a list of existing activity codes to use for form validation to prevent repeat codes
+    all_activity_codes = []
+    for ac in ActivityCode.query.all():
+        all_activity_codes.append(str(ac.code))
+    if activity_code.code in all_activity_codes:
+        all_activity_codes.remove(activity_code.code)  # Don't prevent the form from entering the current code
+    form.code.validators = [NoneOf(all_activity_codes, message="Code already exists"), DataRequired()]
+
     if form.validate_on_submit():
         activity_code.code = form.code.data
         activity_code.active = form.active.data
@@ -144,56 +154,76 @@ def edit_activity_code():
 @login_required
 @admin_required
 def edit_machine():
-    """The page to edit an activity code"""
+    """The page to edit a machine (also used for creating a new machine)
+    This page will allow an ID to be specified for new machines being created, but will not allow the ID
+    to be changed for existing machines."""
+    form = MachineForm()
+    ids = []
 
-    # If new=true then the request is for a new activity code to be created
+    # If new=true then the request is for a new machine to be created
     if 'new' in request.args and request.args['new'] == "true":
-        # Create a new activity code
+        # Create a new machine
         machine = Machine(name="")
         # Add and flush now to retrieve an id for the new entry
         db.session.add(machine)
         db.session.flush()
         message = "Create new machine"
 
-    # Otherwise get the activity code to be edited
+        # Create a list of existing machine IDs to pass to data validation
+        for m in Machine.query.all():
+            ids.append(m.id)
+        # Allow it to accept the id that has just been assigned for the new entry
+        if machine.id in ids:
+            ids.remove(machine.id)
+
+    # Otherwise get the machine to be edited
     elif 'machine_id' in request.args:
+        # Prevent the ID from being edited for existing machines
+        form.id.render_kw = {'readonly': True}
         try:
             machine_id = int(request.args['machine_id'])
             machine = Machine.query.get_or_404(machine_id)
         except ValueError:
-            error_message = "Error parsing machine_id : {machine_id}".format(machine_id=request.args['machine_id'])
+            current_app.logger.warn(f"Error parsing machine_id in URL. "
+                                    f"machine_id provided : {request.args['machine_id']}")
+            error_message = f"Error parsing machine_id : {request.args['machine_id']}"
             return abort(400, error_message)
         # Show a warning to the user
-        message = "Warning: This machine (ID {machine_id}) retains a reference to all of its past activity. " \
+        message = f"Warning: This machine (ID {machine_id}) retains a reference to all of its past activity. " \
                   "It's recommended not to change which machine this ID refers to." \
-                  "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."\
-            .format(machine_id=machine_id)
+                  "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."
+
     else:
         error_message = "No machine_id specified"
+        current_app.logger.warn("No machine_id specified in URL")
         return abort(400, error_message)
-
-    form = MachineForm()
-    if form.validate_on_submit():
-        # Save the new values on submit
-        machine.name = form.name.data
-        machine.active = form.active.data
-        db.session.add(machine)
-        db.session.commit()
-        return redirect(url_for('admin.admin_home'))
-
-    # Fill out the form with existing values
-    form.id.data = machine.id
-    form.name.data = machine.name
-    form.active.data = machine.active
 
     # Prevent duplicate machine names from being created
     names = []
     for m in Machine.query.all():
         names.append(str(m.name))
-    # Don't prevent saving it with the same name
+    # Don't prevent saving with its own current name
     if machine.name in names:
         names.remove(machine.name)
-    form.name.validators = [NoneOf(names), DataRequired()]
+    form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
+    form.id.validators = [NoneOf(ids, message="A machine with that ID already exists"), DataRequired()]
+
+    if form.validate_on_submit():
+        # Save the new values on submit
+        machine.name = form.name.data
+        machine.active = form.active.data
+        # Only save the ID if creating a new machine
+        if 'new' in request.args and request.args['new'] == "true":
+            machine.id = form.id.data
+        db.session.add(machine)
+        db.session.commit()
+        current_app.logger.debug(f"{machine} edited by {current_user}")
+        return redirect(url_for('admin.admin_home'))
+
+    # Fill out the form with existing values to display on the page
+    form.id.data = machine.id
+    form.name.data = machine.name
+    form.active.data = machine.active
 
     return render_template("admin/edit_machine.html",
                            form=form,

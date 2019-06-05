@@ -22,7 +22,7 @@ class ActivityCodeForm(FlaskForm):
 
 class MachineForm(FlaskForm):
     active = BooleanField()
-    id = StringField()
+    id = IntegerField()
     name = StringField(validators=[DataRequired()])
     submit = SubmitField('Save')
 

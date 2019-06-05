@@ -15,13 +15,13 @@
                     {{ form.active.label }}
                 </div>
                 <div class="formGriditem">
-                    {{ form.id(size=32, disabled="true") }}
+                    {{ form.id(size=32) }}
                 </div>
                 <div class="formGriditem">
                     {{ form.active(size=32) }}
                 </div>
 
-                {% for error in form.name.errors %}
+                {% for error in form.id.errors %}
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
             </div>

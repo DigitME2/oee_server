@@ -1,6 +1,9 @@
 import os
 
 
+
+
+
 class Config(object):
 
     # # Get the database details from environment variables
@@ -26,9 +29,15 @@ class Config(object):
     #     port=DATABASE_PORT,
     #     database=DATABASE_NAME)
 
-    SQLALCHEMY_DATABASE_URI = "sqlite:///prod.db"
+    package_dir = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(package_dir, 'app', 'prod.db')
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or "EdOhMW901yTkiQHb"
+    KAFKA_TOPIC = os.environ.get('KAFKA_TOPIC') or "sam-topic"
+    KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS') or ['localhost:9092']
+    KAFKA_GROUP_ID = os.environ.get('KAFKA_GROUP_ID') or 'oee_webapp1'
+
+    SECRET_KEY = os.environ.get('SECRET_KEY') or "yS7o773kuQ"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = os.path.realpath('app/static/images')
+    UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
 

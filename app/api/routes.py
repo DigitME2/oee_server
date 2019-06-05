@@ -51,7 +51,11 @@ def machine_activity():
         response = jsonify({"error": "No machine_id provided"})
         response.status_code = 400
         return response
-    machine = Machine.query.get_or_404(data['machine_id'])
+    machine = Machine.query.get(data['machine_id'])
+    if machine is None:
+        response = jsonify({"error": "Could not find machine with ID " + str(data['machine_id'])})
+        response.status_code = 400
+        return response
 
     if 'machine_state' not in data:
         response = jsonify({"error": "No machine_state provided"})
