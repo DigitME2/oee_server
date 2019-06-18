@@ -158,9 +158,6 @@ def create_job_end_gantt(job):
     """ Create a gantt chart of the activities for a job, flagging those that need an explanation from an operator"""
 
     activities = job.activities
-
-    #todo cut off activities that extend before/after start/end time
-
     if len(activities) == 0:
         return "No machine activity between these times"
 

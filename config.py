@@ -1,7 +1,5 @@
+import logging
 import os
-
-
-
 
 
 class Config(object):
@@ -40,4 +38,11 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or "yS7o773kuQ"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
+
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    FLASK_LOG_FILE = 'logs/oee_app.log'
+    MACHINE_MONITOR_LOG_FILE = 'logs/oee_app.log'
+    KAFKA_LOG_FILE = 'logs/oee_app.log'
+    LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
