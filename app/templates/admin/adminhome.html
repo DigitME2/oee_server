@@ -4,7 +4,7 @@
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="centralBody">
         <div class="centralWrapper">
-        <div id="adminUserList" class="adminList">
+            <div id="adminUserList" class="adminList">
                 <div class="adminListItem">
                     <h2 class="adminListHeader">Settings</h2>
                 </div>
@@ -42,6 +42,33 @@
 
             </div>
 
+            <div id="adminMachineList" class="adminList">
+                <div class="adminListItem">
+                    <h2 class="adminListHeader">Machines</h2>
+                </div>
+                <div class="adminListItem">
+                    <form action="{{ url_for('admin.edit_machine') }}"
+                          method="get"
+                          style="display: inline;">
+                        <input type="hidden" name="new" value="true"/>
+                        <input type="submit" class="rightAlignButton" value="Create New">
+                    </form>
+                </div>
+
+                {% for m in machines %}
+                    <div class="adminListItem">
+                        {{ m.name }} (ID:{{ m.id }})
+                    </div>
+                    <div class="adminListItem">
+                        <form action="{{ url_for('admin.edit_machine') }}"
+                              method="get"
+                              style="display: inline;">
+                            <input type="hidden" name="machine_id" value="{{ m.id }}"/>
+                            <input type="submit" class="rightAlignButton" value="Edit">
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
 
             <div id="adminActivityCodeList" class="adminList">
                 <div class="adminListItem">
@@ -65,35 +92,6 @@
                               method="get"
                               style="display: inline;">
                             <input type="hidden" name="ac_id" value="{{ ac.id }}"/>
-                            <input type="submit" class="rightAlignButton" value="Edit">
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
-
-
-            <div id="adminMachineList" class="adminList">
-                <div class="adminListItem">
-                    <h2 class="adminListHeader">Machines</h2>
-                </div>
-                <div class="adminListItem">
-                    <form action="{{ url_for('admin.edit_machine') }}"
-                          method="get"
-                          style="display: inline;">
-                        <input type="hidden" name="new" value="true"/>
-                        <input type="submit" class="rightAlignButton" value="Create New">
-                    </form>
-                </div>
-
-                {% for m in machines %}
-                    <div class="adminListItem">
-                        {{ m.name }} (ID:{{ m.id }})
-                    </div>
-                    <div class="adminListItem">
-                        <form action="{{ url_for('admin.edit_machine') }}"
-                              method="get"
-                              style="display: inline;">
-                            <input type="hidden" name="machine_id" value="{{ m.id }}"/>
                             <input type="submit" class="rightAlignButton" value="Edit">
                         </form>
                     </div>

@@ -33,6 +33,7 @@ def settings():
         current_settings.threshold = form.explanation_threshold.data
         db.session.add(current_settings)
         db.session.commit()
+        current_app.logger.info(f"Changed settings: {current_settings}")
         return redirect(url_for('admin.admin_home'))
     form.explanation_threshold.data = current_settings.threshold
     return render_template('admin/settings.html',
@@ -52,6 +53,7 @@ def new_user():
         u.set_password(form.password.data)
         db.session.add(u)
         db.session.commit()
+        current_app.logger.info(f"Created new user: {u}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "New User"
     return render_template("admin/newuser.html", title="Register", nav_bar_title=nav_bar_title, form=form)
@@ -70,6 +72,7 @@ def change_password():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
+        current_app.logger.info(f"Changed password for {user}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "Change password for " + str(user.username)
     return render_template("admin/changepassword.html", nav_bar_title=nav_bar_title, user=user, form=form)
@@ -98,14 +101,14 @@ def edit_activity_code():
             return abort(400, error_message)
         # Show a warning to the user depending on the code being edited.
         if activity_code_id == UPTIME_CODE_ID:
-            message = "Warning: This code should always represent uptime"
+            message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
         elif activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
-            message = "Warning: This code should alway represent unexplained downtime"
+            message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
         else:
-            message = "Warning: Changes to these values will" \
-                      " retroactively affect past readings with this activity code.<br> \
+            message = "Warning: Changes to these values will be reflected in " \
+                      "past readings with this activity code.<br> \
                       If this code is no longer needed, deselect \"Active\" for this code " \
-                      "and create another activity code."
+                      "and create another activity code instead."
     else:
         error_message = "No activity code specified in URL"
         current_app.logger.warn(error_message)
@@ -189,8 +192,8 @@ def edit_machine():
             error_message = f"Error parsing machine_id : {request.args['machine_id']}"
             return abort(400, error_message)
         # Show a warning to the user
-        message = f"Warning: This machine (ID {machine_id}) retains a reference to all of its past activity. " \
-                  "It's recommended not to change which machine this ID refers to." \
+        message = f"This machine ID ({machine_id}) retains a reference to all of its past activity. " \
+                  "This can only be set when a new machine is being created. " \
                   "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."
 
     else:

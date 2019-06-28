@@ -82,6 +82,7 @@ def complete_last_activity(machine_id, timestamp_end):
 def get_current_activity(machine_id):
     """ Get the current activity of a machine by grabbing the most recent entry without an end timestamp"""
     # Get all activities without an end time
+    # noinspection PyComparisonWithNone
     activities = session.query(Activity).filter(Activity.machine_id == machine_id, Activity.timestamp_end == None).all()
 
     if len(activities) == 0:
@@ -166,27 +167,28 @@ def get_legible_downtime_time(timestamp_start, timestamp_end):
     return s
 
 
+# noinspection PyArgumentList
 def get_dummy_machine_activity(timestamp_start, timestamp_end, job_id, machine_id):
     """ Creates fake activities for one machine between two timestamps"""
-    time = timestamp_start
+    virtual_time = timestamp_start
     activities = []
-    while time <= timestamp_end:
+    while virtual_time <= timestamp_end:
         uptime_activity = Activity(machine_id=machine_id,
-                                   timestamp_start=time,
+                                   timestamp_start=virtual_time,
                                    machine_state=MACHINE_STATE_RUNNING,
                                    activity_code_id=UPTIME_CODE_ID,
                                    job_id=job_id)
-        time += randrange(400, 3000)
-        uptime_activity.timestamp_end = time
+        virtual_time += randrange(400, 3000)
+        uptime_activity.timestamp_end = virtual_time
         activities.append(uptime_activity)
 
         downtime_activity = Activity(machine_id=machine_id,
-                                     timestamp_start=time,
+                                     timestamp_start=virtual_time,
                                      machine_state=MACHINE_STATE_OFF,
                                      activity_code_id=UNEXPLAINED_DOWNTIME_CODE_ID,
                                      job_id=job_id)
-        time += randrange(60, 1000)
-        downtime_activity.timestamp_end = time
+        virtual_time += randrange(60, 1000)
+        downtime_activity.timestamp_end = virtual_time
         activities.append(downtime_activity)
 
     return activities

@@ -13,13 +13,12 @@ class User(db.Model, UserMixin):
     admin = db.Column(db.Boolean)
     active_job_id = db.Column(db.Integer)
 
-    jobs = db.relationship('Job')
+    jobs = db.relationship('Job', backref="user")
 
     def has_job(self):
         return self.active_job_id is not None
 
     def set_password(self, password):
-        logger.info(f"Password changed for {self}")
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):

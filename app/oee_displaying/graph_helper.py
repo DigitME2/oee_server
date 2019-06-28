@@ -71,7 +71,7 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
                        Code=act.activity_code.short_description,
                        Activity_id=act.id))
 
-    graph_title = f"{machine_name} OEE"
+    graph_title = f"{machine.name} OEE"
 
     # Create the colours dictionary using codes' colours from the database
     colours = {}
@@ -270,7 +270,7 @@ def highlight_jobs(activities, layout):
 
         # Create an annotation at the top of the highlight saying the job number
         a = Annotation()
-        a.text = f"<b>Job {j.job_number}</b>"
+        a.text = f"<b>Job {j.job_number} - {j.user.username}</b>"
         a.font = {
             "size": 16
         }

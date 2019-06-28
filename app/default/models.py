@@ -66,12 +66,15 @@ class ActivityCode(db.Model):
     activities = db.relationship('Activity', backref='activity_code')
 
     def __repr__(self):
-        return f"ActivityCode '{self.code}' (ID {self.id})>"
+        return f"<ActivityCode code:'{self.code}' (ID {self.id})>"
 
 
 class Settings(db.Model):
     # Only allow one row in this table
     unique = db.Column(db.String, db.CheckConstraint('1'), primary_key=True, default="1")
     threshold = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<Settings threshold:'{self.threshold}'>"
 
 

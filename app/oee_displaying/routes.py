@@ -21,6 +21,7 @@ def machine_graph():
                            graph=graph)
 
 
+
 @bp.route('/updategraph', methods=['GET'])
 def update_graph():
     """ Called when new dates are requested for the graph"""

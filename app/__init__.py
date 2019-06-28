@@ -8,17 +8,7 @@ from flask.logging import default_handler
 from logging.handlers import RotatingFileHandler
 
 
-# Use seconds in the graphs and measurements. Useful in debugging
-if os.environ.get('USE_SECONDS') == 'True':
-    USE_SECONDS = True
-else:
-    USE_SECONDS = False
-
-db = SQLAlchemy()
-login_manager = LoginManager()
-login_manager.login_view = 'login.login'
-
-# Set up logger
+# Set up logging handlers
 if not os.path.exists('logs'):
     os.mkdir('logs')
 file_handler = RotatingFileHandler(filename=Config.FLASK_LOG_FILE, maxBytes=10240, backupCount=10)
@@ -31,6 +21,19 @@ if os.environ.get('FLASK_DEBUG') == '1':
 else:
     stream_handler.setLevel(logging.INFO)
     file_handler.setLevel(logging.INFO)
+
+
+# Use seconds in the graphs and measurements. Useful in debugging
+if os.environ.get('USE_SECONDS') == 'True':
+    USE_SECONDS = True
+else:
+    USE_SECONDS = False
+
+
+db = SQLAlchemy()
+login_manager = LoginManager()
+login_manager.login_view = 'login.login'
+
 
 
 def create_app(config_class=Config):
@@ -67,9 +70,10 @@ def create_app(config_class=Config):
     app.register_blueprint(testing_bp)
 
     # api blueprint allows app to create activities via REST
-    #app.register_blueprint(api_bp)
-    #from app.api import bp as api_bp
+    # app.register_blueprint(api_bp)
+    # from app.api import bp as api_bp
 
-
+    app.logger.info(f"USE_SECONDS = {os.environ.get('USE_SECONDS')}")
+    app.logger.info(f"DEMO_MODE = {os.environ.get('DEMO_MODE')}")
 
     return app

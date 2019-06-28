@@ -101,10 +101,9 @@ def job_in_progress():
             current_app.logger.debug(f"Assigning {a} to {current_job}")
             a.job_id = current_job.id
 
-
-
         # If in demo mode, change the job times and create fake activities
-        if os.environ.get('DEMO'):
+        if os.environ.get('DEMO_MODE') == 'True':
+            current_app.logger.info("DEMO_MODE: Creating fake machine activity")
             current_job.start_time = current_job.end_time - 10800
             db.session.add(current_job)
             activities = get_dummy_machine_activity(timestamp_end=current_job.end_time,

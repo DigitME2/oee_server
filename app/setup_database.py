@@ -1,5 +1,5 @@
 from app import db
-from app.default.models import ActivityCode, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, logger, Machine, Settings
+from app.default.models import ActivityCode, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, Machine, Settings
 from app.login.models import create_default_users
 from flask import current_app
 
