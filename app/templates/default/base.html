@@ -23,7 +23,7 @@
                 <li><a href="{{ url_for('login.logout') }}">Logout</a></li>
             {% endif %}
             {% if current_user.admin %}
-                <li><a href="{{ url_for('oee_monitoring.production') }}">Production</a></li>
+                <li><a href="{{ url_for('oee_monitoring.automatic_production') }}">Production</a></li>
                 <li><a href="{{ url_for('admin.admin_home') }}">Admin</a></li>
                 <li><a href="{{ url_for('oee_displaying.machine_graph') }}">Graphs</a></li>
             {% endif %}

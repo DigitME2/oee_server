@@ -16,7 +16,7 @@ def login():
     if len(User.query.all()) == 0:
         create_default_users()
     if current_user.is_authenticated:
-        return redirect(url_for('oee_monitoring.production'))
+        return redirect(url_for('oee_monitoring.automatic_production'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -31,7 +31,7 @@ def login():
             if user.admin:
                 next_page = url_for('oee_displaying.machine_graph')
             else:
-                next_page = url_for('oee_monitoring.production')
+                next_page = url_for('oee_monitoring.automatic_production')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)

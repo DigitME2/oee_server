@@ -1,5 +1,6 @@
-from app import db
 import logging
+
+from app import db
 
 logger = logging.getLogger('flask.app')
 
@@ -8,7 +9,7 @@ UPTIME_CODE_ID = 1  # The ID of the activity code that for uptime. Preferably 0 
 
 MACHINE_STATE_OFF = 0
 MACHINE_STATE_RUNNING = 1
-MACHINE_STATE_ERROR = 2
+MACHINE_STATE_IDLE = 2
 
 
 class Machine(db.Model):

@@ -1,23 +1,23 @@
 from datetime import datetime
 import time
 from random import randrange
-
-from flask import render_template, request, jsonify, abort
-
+from flask import render_template, request, jsonify, abort, current_app
 from app import db
 from app.testing import bp
 from app.default.models import Machine, ActivityCode, Job, Activity, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID
 from app.login.models import User
-
 from datetime import datetime
 from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, ActivityCode
+from config import Config
 
 
 
 @bp.route('/test')
 def test():
-    activities = Activity.query.filter(Activity.machine_id==1, Activity.timestamp_end is None).all()
-    pass
+    message = "1_1".encode("utf-8")
+    topic = Config.KAFKA_TOPIC
+    current_app.producer.send(value=message, topic=topic)
+    return "test"
 
 def sort_activities(act):
     return act.activity_code.id
