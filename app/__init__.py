@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
+#todo Start the consumer from here, or at least make sure the consumer is running
+
 from config import Config
 
 # Set up logging handlers

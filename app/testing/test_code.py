@@ -1,16 +1,4 @@
-import sys
-import logging
+from app.oee_monitoring.helpers import split_activity, get_current_activity_id
 
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-#
-#
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# handler.setFormatter(formatter)
-# #logger.addHandler(handler)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
+print(get_current_activity_id(1))
 
-logging.debug("testdebug")
-logging.info("testinfo")
-logging.warn("testwarn")
-logging.error("testerror")

@@ -7,14 +7,28 @@ from wtforms.validators import NoneOf, DataRequired
 
 from app import db
 from app.default.models import Activity, ActivityCode, Machine, Job, Settings, UNEXPLAINED_DOWNTIME_CODE_ID, \
-    MACHINE_STATE_RUNNING, MACHINE_STATE_IDLE
+    MACHINE_STATE_RUNNING, MACHINE_STATE_OFF
 from app.oee_displaying.graph_helper import create_job_end_gantt
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
 from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, get_dummy_machine_activity
-from app.oee_monitoring.helpers import split_activity, get_current_activity
+from app.oee_monitoring.helpers import split_activity, get_current_activity_id
 from config import Config
 
+
+@bp.route('/production', methods=['GET'])
+@login_required
+def production():
+    try:
+        mode = request.args.get("mode")
+        if mode == "manual":
+            return redirect(url_for('oee_monitoring.manual_production'))
+        elif mode == "automatic":
+            return redirect(url_for('oee_monitoring.automatic_production'))
+        else:
+            return redirect(url_for('oee_monitoring.manual_production'))
+    except:
+        return redirect(url_for('oee_monitoring.manual_production'))
 
 @bp.route('/production-auto', methods=['GET', 'POST'])
 @login_required
@@ -34,21 +48,22 @@ def automatic_production():
 @bp.route('/production-manual', methods=['GET', 'POST'])
 @login_required
 def manual_production():
-    current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    active_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
     # If the user doesn't have an active job, go to the start job page
-    if current_job is None:
+    if active_job is None:
         return start_manual_job()
     # If the user has a job, check the state of the machine
     else:
-        current_machine = Machine.query.get_or_404(current_job.machine_id)
-        machine_state = get_current_activity(current_machine.id).machine_state
+        current_machine = Machine.query.get_or_404(active_job.machine_id)
+        current_activity = Activity.query.get(int(get_current_activity_id(current_machine.id)))
+        machine_state = current_activity.machine_state
         if machine_state == MACHINE_STATE_RUNNING:
             return manual_job_in_progress()
-        elif machine_state == MACHINE_STATE_IDLE:
+        elif machine_state == MACHINE_STATE_OFF:
             return manual_job_paused()
         else:
             # This shouldn't really happen, but I think it will suffice to treat it as a pause
-            current_app.logger.warn("Recorded machine as off while user logged on")
+            current_app.logger.warn(f"Wrong machine state received: {machine_state}")
             return manual_job_paused()
 
 
@@ -83,7 +98,7 @@ def start_automatic_job():
         current_app.logger.debug(f"{current_user} started {job}")
 
         # Split the current activity so that it doesn't extend to before this job starts
-        current_activity = get_current_activity(machine_id=machine.id)
+        current_activity = Activity.query.get(get_current_activity_id(machine_id=machine.id))
         if current_activity is not None:
             current_app.logger.debug(f"Job started. Splitting {current_activity}")
             split_activity(activity_id=current_activity.id)
@@ -106,7 +121,7 @@ def automatic_job_in_progress():
         # On form submit, give the job an end time and assign activities since start time
 
         # Split the current activity first
-        current_activity = get_current_activity(machine_id=current_job.machine_id)
+        current_activity = Activity.query.get(get_current_activity_id(machine_id=current_job.machine_id))
         if current_activity is not None:
             current_app.logger.debug(f"Job ended. Splitting {current_activity}")
             split_activity(activity_id=current_activity.id)
@@ -276,53 +291,35 @@ def manual_job_in_progress():
             return
 
         if action == "pause":
-            # Set the machine state to idle with a kafka message
-            message = f"{current_job.machine_id}_{MACHINE_STATE_IDLE}".encode("utf-8")
+            # Set the machine state to off with a kafka message
+            message = f"{current_job.machine_id}_{MACHINE_STATE_OFF}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
             current_app.logger.info(f"Pausing {current_job}")
             return manual_job_paused()
 
         if action == "endJob":
-            pass
+            # Set the machine state to off with a kafka message
+            message = f"{current_job.machine_id}_{MACHINE_STATE_OFF}".encode("utf-8")
+            current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
+            current_app.logger.info(f"Ending {current_job}")
+            # Give the job an end time
+            current_job.end_time = time()
+            # Set the job as no longer active
+            current_job.active = None
+            db.session.commit()
 
-    if form.validate_on_submit():
-        # On form submit, give the job an end time and assign activities since start time
-
-        # Split the current activity first
-        current_activity = get_current_activity(machine_id=current_job.machine_id)
-        if current_activity is not None:
-            current_app.logger.debug(f"Job ended. Splitting {current_activity}")
-            split_activity(activity_id=current_activity.id)
-
-        # Give the job an end time
-        current_job.end_time = time()
-
-        # Get all of the machine's activity since the job started
-        activities = Activity.query \
-            .filter(Activity.machine_id == current_job.machine_id) \
-            .filter(Activity.timestamp_start >= current_job.start_time) \
-            .filter(Activity.timestamp_end <= current_job.end_time).all()
-        # Flag activities that require an explanation from the operator
-        flag_activities(activities, threshold=Settings.query.get_or_404(1).threshold)
-        # Assign all of the activity to the current job
-        for a in activities:
-            current_app.logger.debug(f"Assigning {a} to {current_job}")
-            a.job_id = current_job.id
-
-        # If in demo mode, change the job times and create fake activities
-        if os.environ.get('DEMO_MODE') == 'True':
-            current_app.logger.info("DEMO_MODE: Creating fake machine activity")
-            current_job.start_time = current_job.end_time - 10800
-            db.session.add(current_job)
-            activities = get_dummy_machine_activity(timestamp_end=current_job.end_time,
-                                                    timestamp_start=current_job.start_time,
-                                                    job_id=current_job.id,
-                                                    machine_id=current_job.machine_id)
+            # Get all of the machine's activity since the job started
+            activities = Activity.query \
+                .filter(Activity.machine_id == current_job.machine_id) \
+                .filter(Activity.timestamp_start >= current_job.start_time) \
+                .filter(Activity.timestamp_end <= current_job.end_time).all()
+            # Flag activities that require an explanation from the operator
+            flag_activities(activities, threshold=Settings.query.get_or_404(1).threshold)
+            # Assign all of the activity to the current job
             for act in activities:
-                db.session.add(act)
-        # end debug code
+                current_app.logger.debug(f"Assigning {act} to {current_job}")
+                act.job_id = current_job.id
 
-        db.session.commit()
         current_app.logger.debug(f"Ended {current_job}")
         return redirect(url_for('oee_monitoring.manual_production'))
 
@@ -334,7 +331,7 @@ def manual_job_in_progress():
 
 
 def manual_job_paused():
-    current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    paused_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
 
     if request.method == "POST":
         action = request.form["action"]
@@ -344,29 +341,28 @@ def manual_job_paused():
 
         if action == "unpause":
             # Get the reason (ie activity code) for the pause
-            # todo
+            pause_reason = request.form["manualDowntimeReason"]
 
-            # Assign the activity code to the activity
-            # todo
+            try:
+                activity_code = ActivityCode.query.get(pause_reason)
+            except:
+                current_app.logger.error("Could not get activity code for downtime")
+                return
 
-            # Set the machine state to idle with a kafka message
-            message = f"{current_job.machine_id}_{MACHINE_STATE_RUNNING}".encode("utf-8")
+            # Assign the activity code to the current activity
+            current_activity = Activity.query.get(get_current_activity_id(paused_job.machine_id))
+            current_activity.activity_code_id = activity_code.id
+            db.session.commit()
+
+            # Set the machine state to off with a kafka message
+            message = f"{paused_job.machine_id}_{MACHINE_STATE_RUNNING}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
-            current_app.logger.info(f"Unpausing {current_job}")
+            current_app.logger.info(f"Unpausing {paused_job}")
             return manual_job_in_progress()
 
     nav_bar_title = "Job paused"
+    activity_codes = ActivityCode.query.filter_by(active=True)
     return render_template('oee_monitoring/manualjobpaused.html',
-                           job=current_job,
+                           activity_codes=activity_codes,
+                           job=paused_job,
                            nav_bar_title=nav_bar_title)
-
-
-def pause_job(machine_id):
-    # Set the machine state to idle with a kafka message
-    message = f"{machine_id}_{MACHINE_STATE_IDLE}".encode("utf-8")
-    current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
-    pass
-
-
-def unpause_job():
-    pass

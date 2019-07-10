@@ -1,6 +1,6 @@
 import logging
 import os
-from app.oee_monitoring.helpers import create_new_activity, complete_last_activity, get_current_activity
+from app.oee_monitoring.helpers import create_new_activity, complete_last_activity, get_current_activity_id
 from config import Config
 from logging.handlers import RotatingFileHandler
 from time import sleep

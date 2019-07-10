@@ -15,8 +15,13 @@ def login():
     # If there are no users, create a default admin and non-admin
     if len(User.query.all()) == 0:
         create_default_users()
+    # Redirect the user if already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('oee_monitoring.automatic_production'))
+        # Send admins and non-admins to different pages
+        if current_user.admin:
+            return redirect(url_for('oee_displaying.machine_graph'))
+        else:
+            return redirect(url_for('oee_monitoring.manual_production'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -25,13 +30,14 @@ def login():
             return redirect(url_for('login.login'))
         login_user(user)
         current_app.logger.info(f"Logged in {user}")
+        # If the user was redirected here, send the user back to the original page
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            # Send admins to a different page by default
+            # If no next page given, default to these pages
             if user.admin:
                 next_page = url_for('oee_displaying.machine_graph')
             else:
-                next_page = url_for('oee_monitoring.automatic_production')
+                next_page = url_for('oee_monitoring.manual_production')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)

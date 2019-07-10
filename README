@@ -1,0 +1,13 @@
+This project was made to monitor OEE for machines
+
+This project uses Kafka to receive an event every time a machine changes state. This Kafka message can be sent either
+manually by an operator through the flask app or automatically by the machine. Two web addresses are provided depending
+on whether the data is being recorded manually or automatically.
+Machine activity is recorded as an "activity" in the database. An activity is created by the Kafka consumer whenever a
+machine changes state, and ended when the machine changes state again.
+Kafka only deals with the machine being on or off. This is recorded as "machine_state"
+Additional detail to the activity is handled by the flask app, and is added to the same entry in the activity table.
+This additional detail is in the form of "activity code" e.g. UP = uptime, NO = No Operator, stored in the activity
+code table.
+A "Job" is a single unique instance of a user working on a machine. When the user stops working, that job ends and
+every activity during the job's runtime is given a reference back to that job (only for the job's machine)

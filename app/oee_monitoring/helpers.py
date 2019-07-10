@@ -71,7 +71,7 @@ def create_new_activity(machine_id, machine_state, timestamp_start=time()):
 
 def complete_last_activity(machine_id, timestamp_end):
     """ Gets the current active activity for a machine and then ends it with the current time"""
-    current_activity = get_current_activity(machine_id)
+    current_activity = session.query(Activity).get(get_current_activity_id(machine_id))
     if current_activity is None:
         return
     current_activity.timestamp_end = timestamp_end
@@ -79,7 +79,7 @@ def complete_last_activity(machine_id, timestamp_end):
     logger.debug(f"Ended {current_activity}")
 
 
-def get_current_activity(machine_id):
+def get_current_activity_id(machine_id):
     """ Get the current activity of a machine by grabbing the most recent entry without an end timestamp"""
     # Get all activities without an end time
     # noinspection PyComparisonWithNone
@@ -91,7 +91,7 @@ def get_current_activity(machine_id):
 
     elif len(activities) == 1:
         logger.debug(f"Current activity for machine ID {machine_id} -> {activities[0]}")
-        return activities[0]
+        return activities[0].id
 
     else:
         # If there is more than one activity without an end time, print a warning and return the most recent
@@ -103,7 +103,7 @@ def get_current_activity(machine_id):
         for act in activities:
             if act.timestamp_start < current_activity.timestamp_start:
                 current_activity = act
-        return current_activity
+        return current_activity.id
 
 
 def flag_activities(activities, threshold):

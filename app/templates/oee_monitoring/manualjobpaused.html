@@ -8,6 +8,13 @@
         Machine: {{ job.machine.name }}
         <form action="" method="post">
             <input type="hidden" name="action" value="unpause">
+            <label for="manualDowntimeReason">Reason</label>
+            <select name="manualDowntimeReason"
+                                                              id="manualDowntimeReason">
+                                {% for ac in activity_codes %}
+                                    <option value="{{ ac.id }}">{{ ac.code }} - {{ ac.short_description }}</option>
+                                {% endfor %}
+                            </select>
             <input type="submit" value="Resume">
         </form>
     </div>
