@@ -56,7 +56,9 @@ def new_user():
         current_app.logger.info(f"Created new user: {u}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "New User"
-    return render_template("admin/newuser.html", title="Register", nav_bar_title=nav_bar_title, form=form)
+    return render_template("admin/newuser.html", title="Register",
+                           nav_bar_title=nav_bar_title,
+                           form=form)
 
 
 @bp.route('/changepassword', methods=['GET', 'POST'])
@@ -75,7 +77,10 @@ def change_password():
         current_app.logger.info(f"Changed password for {user}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "Change password for " + str(user.username)
-    return render_template("admin/changepassword.html", nav_bar_title=nav_bar_title, user=user, form=form)
+    return render_template("admin/changepassword.html",
+                           nav_bar_title=nav_bar_title,
+                           user=user,
+                           form=form)
 
 
 @bp.route('/editactivitycode', methods=['GET', 'POST'])
@@ -215,6 +220,7 @@ def edit_machine():
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
+        machine.device_ip = form.device_ip.data
         # Only save the ID if creating a new machine
         if 'new' in request.args and request.args['new'] == "true":
             machine.id = form.id.data
@@ -227,7 +233,7 @@ def edit_machine():
     form.id.data = machine.id
     form.name.data = machine.name
     form.active.data = machine.active
-
+    form.device_ip.data = machine.device_ip
     return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)

@@ -6,6 +6,20 @@ from flask import abort, request, render_template, current_app
 from flask_login import login_required
 
 
+@bp.route('/dashboard')
+def dashboard():
+    # Get the group of machines to show
+    if 'machine_group' not in request.args:
+        current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
+        return abort(400, "No machine_group provided in url")
+    machine_group = request.args['machine_group']
+    start_time = datetime.combine(datetime.today(), time.min)
+    end_time = (start_time + timedelta(days=1))
+    graph = create_all_machines_gantt(graph_start=start_time.timestamp(), graph_end=end_time.timestamp())
+    return render_template("oee_displaying/dashboard.html",
+                           graph=graph)
+
+
 @bp.route('/graphs')
 @login_required
 def machine_graph():
@@ -19,7 +33,6 @@ def machine_graph():
                            machines=Machine.query.all(),
                            nav_bar_title=nav_bar_title,
                            graph=graph)
-
 
 
 @bp.route('/updategraph', methods=['GET'])

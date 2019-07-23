@@ -1,0 +1,10 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="centralForm">
+        <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+        <p>{{ message|safe }}</p> <br>
+        {% for m in machines %}
+    </div>
+
+{% endblock %}

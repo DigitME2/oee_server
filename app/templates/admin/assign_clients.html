@@ -1,0 +1,26 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <div class="centralForm">
+{#    Option to add new client#}
+    <form>
+        Add new
+        <label>IP
+            <input type="text" name="ipAddress">
+            <select name="month" id="monthDropdown">
+                {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+    </form>
+        {% for c in clients %}
+            <form>
+            <input type>
+            </form>
+        {% endfor %}
+    </div>
+
+{% endblock %}

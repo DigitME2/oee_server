@@ -6,6 +6,9 @@ class StartForm(FlaskForm):
     machine_choices = []
     job_number = StringField('Job Number')
     machine = SelectField('Machine', choices=machine_choices)
+    planned_set_time = StringField('Planned Set Time')
+    planned_cycle_time = StringField('Planned Cycle Time')
+    planned_cycle_quantity = StringField('Planned Cycle Quantity')
     submit = SubmitField('Start')
 
 

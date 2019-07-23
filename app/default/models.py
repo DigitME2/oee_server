@@ -14,6 +14,7 @@ MACHINE_STATE_RUNNING = 1
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
+    device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
 
     activities = db.relationship('Activity')
@@ -30,6 +31,9 @@ class Job(db.Model):
     start_time = db.Column(db.Float, nullable=False)
     end_time = db.Column(db.Float)
     job_number = db.Column(db.String, nullable=False)
+    planned_set_time = db.Column(db.Integer)
+    planned_cycle_time = db.Column(db.Integer)
+    planned_cycle_quantity = db.Column(db.Integer)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     active = db.Column(db.Boolean)  # This should either be true or null
@@ -67,6 +71,7 @@ class ActivityCode(db.Model):
 
     def __repr__(self):
         return f"<ActivityCode code:'{self.code}' (ID {self.id})>"
+
 
 
 class Settings(db.Model):

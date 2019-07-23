@@ -70,13 +70,14 @@ def create_new_activity(machine_id, machine_state, timestamp_start=time()):
 
 
 def complete_last_activity(machine_id, timestamp_end):
-    """ Gets the current active activity for a machine and then ends it with the current time"""
-    current_activity = session.query(Activity).get(get_current_activity_id(machine_id))
-    if current_activity is None:
+    """ Gets the most recent active activity for a machine and then ends it with the current time"""
+    last_activity_id = get_current_activity_id(machine_id)
+    if last_activity_id is None:
         return
-    current_activity.timestamp_end = timestamp_end
+    last_activity = session.query(Activity).get(last_activity_id)
+    last_activity.timestamp_end = timestamp_end
     session.commit()
-    logger.debug(f"Ended {current_activity}")
+    logger.debug(f"Ended {last_activity}")
 
 
 def get_current_activity_id(machine_id):

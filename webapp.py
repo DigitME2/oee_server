@@ -2,7 +2,7 @@ import logging
 import os
 import threading
 from app import create_app
-#from kafka_consumer.consumer import consumer_thread
+from kafka_consumer.consumer import consumer_thread
 
 
 # Create the flask app
@@ -16,5 +16,5 @@ if "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
     app.logger.setLevel(gunicorn_logger.level)
 
 # Start a thread to subscribe to kafka
-#kafka_consumer = threading.Thread(target=consumer_thread)
-#kafka_consumer.start()
+kafka_consumer = threading.Thread(target=consumer_thread)
+kafka_consumer.start()

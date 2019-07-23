@@ -28,7 +28,7 @@ def setup_database():
         current_app.logger.info("Created default activity codes on first startup")
 
     if len(Machine.query.all()) == 0:
-        machine1 = Machine(name="Machine 1")
+        machine1 = Machine(name="Machine 1", device_ip="127.0.0.1")
         db.session.add(machine1)
         db.session.commit()
         current_app.logger.info("Created default machine on first startup")

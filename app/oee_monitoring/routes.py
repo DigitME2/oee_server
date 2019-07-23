@@ -16,98 +16,119 @@ from app.oee_monitoring.helpers import split_activity, get_current_activity_id
 from config import Config
 
 
-@bp.route('/production', methods=['GET'])
+@bp.route('/production', methods=['GET', 'POST'])
 @login_required
 def production():
-    try:
-        mode = request.args.get("mode")
-        if mode == "manual":
-            return redirect(url_for('oee_monitoring.manual_production'))
-        elif mode == "automatic":
-            return redirect(url_for('oee_monitoring.automatic_production'))
-        else:
-            return redirect(url_for('oee_monitoring.manual_production'))
-    except:
-        return redirect(url_for('oee_monitoring.manual_production'))
-
-@bp.route('/production-auto', methods=['GET', 'POST'])
-@login_required
-def automatic_production():
-    current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
-    # If the user doesn't have an active job, go to the start job page
-    if current_job is None:
-        return start_automatic_job()
-    else:
-        # If the user's current job doesn't have an end time, it is in progress
-        if current_job.end_time is None:
-            return automatic_job_in_progress()
-        else:
-            return end_automatic_job()
-
-
-@bp.route('/production-manual', methods=['GET', 'POST'])
-@login_required
-def manual_production():
+    """ From this page, the user will be sent to a different page depending on the state of the job that is currently
+    in progress"""
     active_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
     # If the user doesn't have an active job, go to the start job page
     if active_job is None:
-        return start_manual_job()
-    # If the user has a job, check the state of the machine
+        return start_job()
     else:
-        current_machine = Machine.query.get_or_404(active_job.machine_id)
-        current_activity = Activity.query.get(int(get_current_activity_id(current_machine.id)))
-        machine_state = current_activity.machine_state
-        if machine_state == MACHINE_STATE_RUNNING:
-            return manual_job_in_progress()
-        elif machine_state == MACHINE_STATE_OFF:
-            return manual_job_paused()
-        else:
-            # This shouldn't really happen, but I think it will suffice to treat it as a pause
-            current_app.logger.warn(f"Wrong machine state received: {machine_state}")
-            return manual_job_paused()
+        #todo need a better way of getting manual or automatic. Not feasible to put the argument in every time
+
+        # Determine if the app is in manual or automatic mode
+        # If no mode specified, default to manual
+        mode = request.args.get("mode") or "manual"
+        if mode == "manual":
+            # Manual mode
+            # Check the status of the machine to determine the state of the job
+            current_machine = Machine.query.get_or_404(active_job.machine_id)
+            try:
+                current_activity = Activity.query.get(get_current_activity_id(current_machine.id))
+                machine_state = current_activity.machine_state
+            except TypeError:
+                # This could be raised if there are no activities
+                return manual_job_in_progress()
+            if machine_state == MACHINE_STATE_RUNNING:
+                return manual_job_in_progress()
+            elif machine_state == MACHINE_STATE_OFF:
+                return manual_job_paused()
+            else:
+                # This shouldn't really happen, but I think it will suffice to treat it as a pause
+                current_app.logger.warn(f"Wrong machine state received: {machine_state}")
+                return manual_job_paused()
+
+        elif mode == "automatic":
+            # Automatic mode
+            # If the user's current job doesn't have an end time, it is in progress
+            if active_job.end_time is None:
+                return automatic_job_in_progress()
+            else:
+                return end_automatic_job()
 
 
-def start_automatic_job():
-    """ The page where a user will start a job"""
-
+def start_job():
+    """ The page where a user with no active job is sent to"""
     form = StartForm()
-    # Get a list of existing machines to create form dropdown
-    machine_names = []
-    for m in Machine.query.filter_by(active=True).all():
-        machine_names.append((str(m.id), str(m.name)))
-    form.machine.choices = machine_names
-    # Get a list of existing job numbers to use for form validation
-    job_numbers = []
-    for j in Job.query.all():
-        job_numbers.append(str(j.job_number))
-    form.job_number.validators = [NoneOf(job_numbers, message="Job number already exists"), DataRequired()]
+
+    # Check to see if a machine is assigned to the device
+    assigned_machine = Machine.query.filter_by(device_ip=request.remote_addr).first()
+    if assigned_machine is not None:
+        # Machine is not selected by user. No dropdown shown
+        device_is_linked_to_machine = True
+        # Remove the machine field from the form to prevent validation errors
+        del form.machine
+    else:
+        # Machine is selected from a dropdown
+        device_is_linked_to_machine = False
+        # Get a list of existing machines to create form dropdown
+        machine_names = []
+        for m in Machine.query.filter_by(active=True).all():
+            machine_names.append((str(m.id), str(m.name)))
+        form.machine.choices = machine_names
+
+    # Get a list of existing job numbers to use for form validation, preventing repeat jobs
+    # job_numbers = []
+    # for j in Job.query.all():
+    #     job_numbers.append(str(j.job_number))
+    # form.job_number.validators = [NoneOf(job_numbers, message="Job number already exists"), DataRequired()]
 
     if form.validate_on_submit():
         # On form submit, start a new job
-        machine = Machine.query.get_or_404(form.machine.data)
+        # Get the target machine from either the IP or form
+        machine = assigned_machine or Machine.query.get_or_404(form.machine.data)
 
         # Create the new job
         start_time = time()
         job = Job(start_time=start_time,
                   user_id=current_user.id,
                   job_number=form.job_number.data,
+                  planned_set_time=form.planned_set_time.data,
+                  planned_cycle_time=form.planned_cycle_time.data,
+                  planned_cycle_quantity=form.planned_cycle_quantity.data,
                   machine_id=machine.id,
                   active=True)
         db.session.add(job)
         db.session.commit()
         current_app.logger.debug(f"{current_user} started {job}")
 
-        # Split the current activity so that it doesn't extend to before this job starts
-        current_activity = Activity.query.get(get_current_activity_id(machine_id=machine.id))
-        if current_activity is not None:
-            current_app.logger.debug(f"Job started. Splitting {current_activity}")
-            split_activity(activity_id=current_activity.id)
+        # Determine if the app is in manual or automatic mode
+        # If no mode specified, default to manual
+        mode = request.args.get("mode") or "manual"
 
-        return redirect(url_for('oee_monitoring.automatic_production'))
+        if mode == "manual":
+            # Manual mode
+            # Set the machine state to in-use with a kafka message
+            message = f"{machine.id}_{MACHINE_STATE_RUNNING}".encode("utf-8")
+            current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
+            return redirect(url_for('oee_monitoring.production'))
+        else:
+            # Automatic mode
+            # Split the current activity so that it doesn't extend to before this job starts
+            current_activity = Activity.query.get(get_current_activity_id(machine_id=machine.id))
+            if current_activity is not None:
+                current_app.logger.debug(f"Job started. Splitting {current_activity}")
+                split_activity(activity_id=current_activity.id)
+            return redirect(url_for('oee_monitoring.production'))
+
     nav_bar_title = "Start a new job"
     return render_template('oee_monitoring/startjob.html',
                            title="New Job",
                            form=form,
+                           assigned_machine=assigned_machine,
+                           device_is_linked_to_machine=device_is_linked_to_machine,
                            nav_bar_title=nav_bar_title)
 
 
@@ -234,48 +255,6 @@ def end_automatic_job():
                            colours=colours)
 
 
-def start_manual_job():
-    """ The page where a user will start a manual job (one that requires the user to enter machine state)"""
-
-    form = StartForm()
-    # Get a list of existing machines to create form dropdown
-    machine_names = []
-    for m in Machine.query.filter_by(active=True).all():
-        machine_names.append((str(m.id), str(m.name)))
-    form.machine.choices = machine_names
-    # Get a list of existing job numbers to use for form validation
-    job_numbers = []
-    for j in Job.query.all():
-        job_numbers.append(str(j.job_number))
-    form.job_number.validators = [NoneOf(job_numbers, message="Job number already exists"), DataRequired()]
-
-    if form.validate_on_submit():
-        # On form submit, start a new job
-        machine = Machine.query.get_or_404(form.machine.data)
-
-        # Set the machine state to in-use with a kafka message
-        message = f"{machine.id}_{MACHINE_STATE_RUNNING}".encode("utf-8")
-        current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
-
-        # Create the new job
-        start_time = time()
-        job = Job(start_time=start_time,
-                  user_id=current_user.id,
-                  job_number=form.job_number.data,
-                  machine_id=machine.id,
-                  active=True)
-        db.session.add(job)
-        db.session.commit()
-        current_app.logger.debug(f"{current_user} started {job}")
-
-        return redirect(url_for('oee_monitoring.manual_production'))
-    nav_bar_title = "Start a new job"
-    return render_template('oee_monitoring/startjob.html',
-                           title="New Job",
-                           form=form,
-                           nav_bar_title=nav_bar_title)
-
-
 def manual_job_in_progress():
     """ The page shown to a user while a job is active. This handles jobs where the user is required to manually
     enter the states of the machine"""
@@ -298,6 +277,9 @@ def manual_job_in_progress():
             return manual_job_paused()
 
         if action == "endJob":
+            #todo put the job number in the kafka message instead of this messy method
+            # while youre at it, change kafka message to be more like machine=1&state=2 instead of 1_2
+
             # Set the machine state to off with a kafka message
             message = f"{current_job.machine_id}_{MACHINE_STATE_OFF}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
@@ -321,7 +303,7 @@ def manual_job_in_progress():
                 act.job_id = current_job.id
 
         current_app.logger.debug(f"Ended {current_job}")
-        return redirect(url_for('oee_monitoring.manual_production'))
+        return redirect(url_for('oee_monitoring.production'))
 
     nav_bar_title = "Job in progress"
     return render_template('oee_monitoring/manualjobinprogress.html',
