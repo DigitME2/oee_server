@@ -1,11 +1,15 @@
-from flask import render_template, url_for, redirect, request, abort, current_app
+from datetime import datetime
+import os
+
+import pandas as pd
+from flask import render_template, url_for, redirect, request, abort, current_app, send_file
 from flask_login import login_required, current_user
 from wtforms.validators import NoneOf, DataRequired
 
 from app import db
 from app.admin import bp
-from app.admin.helpers import admin_required
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm
+from app.admin.helpers import admin_required
 from app.default.models import Machine, ActivityCode, Job, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, Settings
 from app.login.models import User
 
@@ -220,7 +224,12 @@ def edit_machine():
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
-        machine.device_ip = form.device_ip.data
+        machine.group = form.group.data
+        # Save empty ip values as null to avoid unique constraint errors in the database
+        if form.device_ip.data == "":
+            machine.device_ip = None
+        else:
+            machine.device_ip = form.device_ip.data
         # Only save the ID if creating a new machine
         if 'new' in request.args and request.args['new'] == "true":
             machine.id = form.id.data
@@ -232,9 +241,32 @@ def edit_machine():
     # Fill out the form with existing values to display on the page
     form.id.data = machine.id
     form.name.data = machine.name
+    form.group.data = machine.group
     form.active.data = machine.active
     form.device_ip.data = machine.device_ip
     return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)
 
+
+@bp.route('/export', methods=['GET'])
+def export():
+    query = str(Job.query.filter_by(user_id=1).statement.compile(compile_kwargs={"literal_binds": True}))
+    df = pd.read_sql(sql=query, con=db.engine)
+
+    # Convert the times to a readable format
+    df['start_time'] = list(map(datetime.fromtimestamp, df["start_time"]))
+    df['end_time'] = list(map(datetime.fromtimestamp, df["end_time"]))
+
+    filename = 'output.csv'
+    directory = os.path.join('app', 'static', 'temp')
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    filepath = os.path.abspath(os.path.join(directory, filename))
+    # Delete the old temporary file
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
+    df.to_csv(filepath)
+    new_file_name = "testy.csv"
+    return send_file(filename_or_fp=filepath, cache_timeout=-1, as_attachment=True, attachment_filename=new_file_name)

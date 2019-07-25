@@ -14,6 +14,7 @@ MACHINE_STATE_RUNNING = 1
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
+    group = db.Column(db.String)
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
 
@@ -71,7 +72,6 @@ class ActivityCode(db.Model):
 
     def __repr__(self):
         return f"<ActivityCode code:'{self.code}' (ID {self.id})>"
-
 
 
 class Settings(db.Model):

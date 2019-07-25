@@ -34,7 +34,7 @@ engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
 Base = declarative_base(engine)
 metadata = Base.metadata
 Session = sessionmaker(bind=engine)
-session = Session()
+
 
 try:
     class Activity(Base):
@@ -51,7 +51,7 @@ except NoSuchTableError:
 
 def create_new_activity(machine_id, machine_state, timestamp_start=time()):
     """ Creates an activity and saves it to database"""
-
+    session = Session()
     # Translate machine state into activity code
     if int(machine_state) == MACHINE_STATE_RUNNING:
         activity_id = UPTIME_CODE_ID
@@ -64,13 +64,16 @@ def create_new_activity(machine_id, machine_state, timestamp_start=time()):
     new_activity.activity_code_id = activity_id
     new_activity.timestamp_start = timestamp_start
 
+
     session.add(new_activity)
     session.commit()
     logger.debug(f"Started {new_activity}")
+    session.close()
 
 
 def complete_last_activity(machine_id, timestamp_end):
     """ Gets the most recent active activity for a machine and then ends it with the current time"""
+    session = Session()
     last_activity_id = get_current_activity_id(machine_id)
     if last_activity_id is None:
         return
@@ -78,20 +81,23 @@ def complete_last_activity(machine_id, timestamp_end):
     last_activity.timestamp_end = timestamp_end
     session.commit()
     logger.debug(f"Ended {last_activity}")
+    session.close()
 
 
-def get_current_activity_id(machine_id):
+def get_current_activity_id(target_machine_id):
     """ Get the current activity of a machine by grabbing the most recent entry without an end timestamp"""
+    session = Session()
     # Get all activities without an end time
     # noinspection PyComparisonWithNone
-    activities = session.query(Activity).filter(Activity.machine_id == machine_id, Activity.timestamp_end == None).all()
-
+    # The line below is causing a sql.programmingerror and im not sure why
+    activities = session.query(Activity).filter(Activity.machine_id == target_machine_id, Activity.timestamp_end == None).all()
+    session.close()
     if len(activities) == 0:
-        logger.debug(f"No current activity on machine ID {machine_id}")
+        logger.debug(f"No current activity on machine ID {target_machine_id}")
         return None
 
     elif len(activities) == 1:
-        logger.debug(f"Current activity for machine ID {machine_id} -> {activities[0]}")
+        logger.debug(f"Current activity for machine ID {target_machine_id} -> {activities[0]}")
         return activities[0].id
 
     else:
@@ -110,7 +116,7 @@ def get_current_activity_id(machine_id):
 def flag_activities(activities, threshold):
     """ Filters a list of activities, adding explanation_required=True to those that require an explanation
     for downtime above a defined threshold"""
-
+    session = Session()
     ud_index_counter = 0
     downtime_explanation_threshold_s = threshold
     for act in activities:
@@ -124,12 +130,13 @@ def flag_activities(activities, threshold):
         else:
             act.explanation_required = False
     session.commit()
+    session.close()
     return activities
 
 
 def split_activity(activity_id, split_time=None):
     """ Ends an activity and starts a new activity with the same values, ending/starting at the split_time"""
-
+    session = Session()
     old_activity = session.query(Activity).get(activity_id)
 
     if split_time is None:
@@ -151,6 +158,7 @@ def split_activity(activity_id, split_time=None):
     session.commit()
     logger.debug(f"Ended {old_activity}")
     logger.debug(f"Started {new_activity}")
+    session.close()
 
 
 def get_legible_downtime_time(timestamp_start, timestamp_end):

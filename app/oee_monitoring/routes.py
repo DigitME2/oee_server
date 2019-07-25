@@ -58,7 +58,7 @@ def production():
             else:
                 return end_automatic_job()
 
-
+#todo nothing stopping multiple jobs on one machine
 def start_job():
     """ The page where a user with no active job is sent to"""
     form = StartForm()
@@ -117,7 +117,7 @@ def start_job():
         else:
             # Automatic mode
             # Split the current activity so that it doesn't extend to before this job starts
-            current_activity = Activity.query.get(get_current_activity_id(machine_id=machine.id))
+            current_activity = Activity.query.get(get_current_activity_id(target_machine_id=machine.id))
             if current_activity is not None:
                 current_app.logger.debug(f"Job started. Splitting {current_activity}")
                 split_activity(activity_id=current_activity.id)
@@ -142,7 +142,7 @@ def automatic_job_in_progress():
         # On form submit, give the job an end time and assign activities since start time
 
         # Split the current activity first
-        current_activity = Activity.query.get(get_current_activity_id(machine_id=current_job.machine_id))
+        current_activity = Activity.query.get(get_current_activity_id(target_machine_id=current_job.machine_id))
         if current_activity is not None:
             current_app.logger.debug(f"Job ended. Splitting {current_activity}")
             split_activity(activity_id=current_activity.id)

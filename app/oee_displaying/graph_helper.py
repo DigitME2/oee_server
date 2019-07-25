@@ -1,9 +1,11 @@
 from plotly.offline import plot
-from plotly.graph_objs import Layout
+from plotly.graph_objs import Layout, YAxis, XAxis
 from plotly.graph_objs.layout import Shape, Annotation
+from flask import current_app
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
 from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, MACHINE_STATE_RUNNING
+from app.oee_monitoring.helpers import get_current_activity_id
 import plotly.figure_factory as ff
 
 
@@ -32,15 +34,15 @@ def apply_default_layout(layout):
     return layout
 
 
-def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
+def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False):
     """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
 
-    if machine is None:
+    if machine_id is None:
         return "This machine does not exist"
 
     # Get the machine's activities between the two times
     activities = Activity.query \
-        .filter(Activity.machine_id == machine.id) \
+        .filter(Activity.machine_id == machine_id) \
         .filter(Activity.timestamp_end >= graph_start) \
         .filter(Activity.timestamp_start <= graph_end).all()
     act_codes = ActivityCode.query.all()
@@ -71,6 +73,7 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
                        Code=act.activity_code.short_description,
                        Activity_id=act.id))
 
+    machine = Machine.query.get(machine_id)
     graph_title = f"{machine.name} OEE"
 
     # Create the colours dictionary using codes' colours from the database
@@ -102,38 +105,15 @@ def create_machine_gantt(machine, graph_start, graph_end, hide_jobless=False):
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_all_machines_gantt(graph_start, graph_end):
-    """ Creates a gantt plot of OEE for all machines in the database between given times"""
-    machines = Machine.query.all()
-    if len(machines) == 0:
-        return "No machines found"
-    df = []
-    for machine in machines:
-        activities = Activity.query \
-            .filter(Activity.machine_id == machine.id) \
-            .filter(Activity.timestamp_end >= graph_start) \
-            .filter(Activity.timestamp_start <= graph_end).all()
-        for act in activities:
-            # Don't show values outside of graph time range
-            if act.timestamp_start < graph_start:
-                start = graph_start
-            else:
-                start = act.timestamp_start
-            if act.timestamp_end > graph_end:
-                end = graph_end
-            else:
-                end = act.timestamp_end
+def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
+    """ Creates a gantt plot of OEE for all machines in the database between given times
+    graph_start = the start time of the graph
+    graph_end = the end time of the graph
+    machine_ids = a list of ids to include in the graph"""
 
-            # This graph only deals with running and not running
-            if act.machine_state == MACHINE_STATE_RUNNING:
-                code = 1
-            else:
-                code = 2
-            # Add the activity as a dict to the data fields list
-            df.append(dict(Task=machine.name,
-                           Start=datetime.fromtimestamp(start),
-                           Finish=datetime.fromtimestamp(end),
-                           Code=code))
+    df = get_machines_activities(machine_ids=machine_ids,
+                                 graph_start=graph_start,
+                                 graph_end=graph_end)
     if len(df) == 0:
         return "No machine activity"
     graph_title = "All machines OEE"
@@ -231,6 +211,50 @@ def create_job_end_gantt(job):
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
+def create_dashboard_gantt(graph_start, graph_end, machine_ids):
+    """ Creates a gantt plot of OEE for all machines in the database between given times
+    graph_start = the start time of the graph
+    graph_end = the end time of the graph
+    machine_ids = a list of ids to include in the graph"""
+
+    df = get_machines_activities(machine_ids=machine_ids,
+                                 graph_start=graph_start,
+                                 graph_end=graph_end)
+    if len(df) == 0:
+        return "No machine activity"
+    # todo Set title to machine group
+    graph_title = ""
+    colours = {1: ActivityCode.query.get(UPTIME_CODE_ID).graph_colour,
+               2: ActivityCode.query.get(UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour}
+    fig = ff.create_gantt(df,
+                          title=graph_title,
+                          group_tasks=True,
+                          colors=colours,
+                          index_col='Code',
+                          bar_width=0.4,
+                          width=1800)
+
+    # Create a layout object using the layout automatically created
+    layout = Layout(fig['layout'])
+
+    layout = apply_default_layout(layout)
+    layout.height = None
+    layout.width = None
+    layout.autosize = True
+    layout.margin = dict(l=100, r=0, b=50, t=0, pad=10, autoexpand=True)
+
+    layout.yaxis.range = None
+    layout.yaxis.autorange = True
+
+    layout.xaxis.rangeselector.visible = False
+
+    fig['layout'] = layout
+    return plot(fig,
+                output_type="div",
+                include_plotlyjs=True,
+                config={"displayModeBar": False, "showLink": False})
+
+
 def highlight_jobs(activities, layout):
     """ Creates 'highlight' shapes to show the times of jobs on the graph"""
     # Get all of the jobs from the activities
@@ -294,3 +318,65 @@ def sort_activities(act):
     if act.activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
         return 1
     return act.activity_code_id
+
+
+def get_machines_activities(machine_ids, graph_start, graph_end, crop_overflow=True):
+    """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
+    crop_overflow will crop activities that extend past the requested graph start and end times"""
+    machines = []
+    for id in machine_ids:
+        machine = Machine.query.get(id)
+        if machine is not None:
+            machines.append(machine)
+        else:
+            current_app.logger.warn(f"Gantt requested for non-existent Machine ID {id}")
+    df = []
+    for machine in machines:
+        activities = Activity.query \
+            .filter(Activity.machine_id == machine.id) \
+            .filter(Activity.timestamp_end >= graph_start) \
+            .filter(Activity.timestamp_start <= graph_end).all()
+        # If required, add the current_activity (The above loop will not get it)
+        # and extend the end time to the end of the graph
+
+        current_activity_id = get_current_activity_id(target_machine_id=machine.id)
+        if current_activity_id is not None:
+            current_act = Activity.query.get(current_activity_id)
+            # Don't add the current activity if it started after the requested end of the graph
+            if current_act.timestamp_start <= graph_end:
+                activities.append(current_act)
+
+        for act in activities:
+            # Don't show values outside of graph time range
+            if crop_overflow:
+                if act.timestamp_start < graph_start:
+                    start = graph_start
+                else:
+                    start = act.timestamp_start
+                if act.timestamp_end is None:
+                    # Extend the current activity to either graph end or current time
+                    if graph_end >= datetime.now().timestamp():
+                        end = datetime.now().timestamp()
+                    else:
+                        end = graph_end
+                elif act.timestamp_end > graph_end:
+                    end = graph_end
+                else:
+                    end = act.timestamp_end
+            # Use actual times if they're not being cropped
+            else:
+                start = act.timestamp_start
+                end = act.timestamp_end
+
+            # This graph only deals with running and not running
+            if act.machine_state == MACHINE_STATE_RUNNING:
+                code = 1
+            else:
+                code = 2
+            # Add the activity as a dict to the data fields list
+            df.append(dict(Task=machine.name,
+                           Start=datetime.fromtimestamp(start),
+                           Finish=datetime.fromtimestamp(end),
+                           Code=code))
+
+    return df

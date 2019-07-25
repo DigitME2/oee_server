@@ -16,5 +16,6 @@ if "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
     app.logger.setLevel(gunicorn_logger.level)
 
 # Start a thread to subscribe to kafka
-kafka_consumer = threading.Thread(target=consumer_thread)
-kafka_consumer.start()
+# todo uncomment. this is left commented because its a faff to end if its launched from the main thread
+#kafka_consumer = threading.Thread(target=consumer_thread)
+#kafka_consumer.start()

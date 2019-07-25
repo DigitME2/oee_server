@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField
-from wtforms.validators import DataRequired, EqualTo, IPAddress
+from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional
 from wtforms.widgets import TextArea
 
 
@@ -24,7 +24,8 @@ class MachineForm(FlaskForm):
     active = BooleanField()
     id = IntegerField()
     name = StringField(validators=[DataRequired()])
-    device_ip = StringField("Operator Device IP Address", validators=[IPAddress(ipv4=True, ipv6=False)])
+    group = StringField("Machine Group", validators=[DataRequired()])
+    device_ip = StringField("Operator Device IP Address", validators=[Optional(), IPAddress(ipv4=True, ipv6=False)])
     submit = SubmitField('Save')
 
 

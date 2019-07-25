@@ -1,4 +1,4 @@
-from app.oee_displaying.graph_helper import create_machine_gantt, create_all_machines_gantt
+from app.oee_displaying.graph_helper import create_machine_gantt, create_multiple_machines_gantt, create_dashboard_gantt
 from app.oee_displaying import bp
 from app.default.models import Machine
 from datetime import datetime, timedelta, time
@@ -13,9 +13,22 @@ def dashboard():
         current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
         return abort(400, "No machine_group provided in url")
     machine_group = request.args['machine_group']
-    start_time = datetime.combine(datetime.today(), time.min)
-    end_time = (start_time + timedelta(days=1))
-    graph = create_all_machines_gantt(graph_start=start_time.timestamp(), graph_end=end_time.timestamp())
+    machine_ids = (machine.id for machine in Machine.query.filter_by(group=machine_group).all())
+
+    start = datetime.combine(datetime.today(), time.min)
+    end = (start + timedelta(days=1))
+
+    if 'start' in request.args:
+        start_time = datetime.strptime(request.args['start'], "%H:%M")
+        start = start.replace(hour=start_time.hour, minute=start_time.minute)
+
+    if 'end' in request.args:
+        end_time = datetime.strptime(request.args['end'], "%H:%M")
+        end = end.replace(hour=end_time.hour, minute=end_time.minute)
+
+    graph = create_dashboard_gantt(graph_start=start.timestamp(),
+                                   graph_end=end.timestamp(),
+                                   machine_ids=machine_ids)
     return render_template("oee_displaying/dashboard.html",
                            graph=graph)
 
@@ -26,7 +39,9 @@ def machine_graph():
     """ The page showing the OEE of a machine and reasons for downtime"""
     start_time = datetime.combine(datetime.today(), time.min)
     end_time = (start_time + timedelta(days=1))
-    graph = create_all_machines_gantt(graph_start=start_time.timestamp(), graph_end=end_time.timestamp())
+    graph = create_multiple_machines_gantt(graph_start=start_time.timestamp(),
+                                           graph_end=end_time.timestamp(),
+                                           machine_ids=(machine.id for machine in Machine.query.all()))
     nav_bar_title = "Machine Activity"
     current_app.logger.debug(f"Creating graph for all machines between {start_time} and {end_time}")
     return render_template('oee_displaying/machine.html',
@@ -62,9 +77,11 @@ def update_graph():
     # If id=-1 is passed, create a graph of all machines
     if int(machine_id) == -1:
         current_app.logger.debug(f"Creating graph for all machines between {start_time} and {end_time}")
-        return create_all_machines_gantt(graph_start=start_time, graph_end=end_time)
+        return create_multiple_machines_gantt(graph_start=start_time,
+                                              graph_end=end_time,
+                                              machine_ids=(machine.id for machine in Machine.query.all()))
     else:
         machine = Machine.query.get_or_404(machine_id)
         current_app.logger.debug(f"Creating graph for {machine} between {start_time} and {end_time}")
-        return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine=machine)
+        return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine_id=machine.id)
 

@@ -42,6 +42,8 @@ def login():
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)
 
+    #todo When logging in and logging out, set the machine accordingly
+
 
 @bp.route('/logout')
 @login_required

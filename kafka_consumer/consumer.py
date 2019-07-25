@@ -25,6 +25,8 @@ else:
 logger.addHandler(stream_handler)
 logger.addHandler(file_handler)
 
+#TODO This sometimes doesnt register straight away. This causes a problem when trying to unpause a job as
+# it returns to the paused screen. Could fix the slow updates or make a workaround to send the user the in progress screen
 
 def consumer_thread():
     """ Runs a kafka consumer"""
