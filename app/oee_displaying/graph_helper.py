@@ -11,19 +11,19 @@ import plotly.figure_factory as ff
 
 def apply_default_layout(layout):
     layout.xaxis.rangeselector.buttons = [
-                dict(count=1,
-                     label='1h',
-                     step='hour',
-                     stepmode='backward'),
-                dict(count=3,
-                     label='3h',
-                     step='hour',
-                     stepmode='backward'),
-                dict(count=6,
-                     label='6h',
-                     step='hour',
-                     stepmode='backward'),
-                dict(step='all')]
+        dict(count=1,
+             label='1h',
+             step='hour',
+             stepmode='backward'),
+        dict(count=3,
+             label='3h',
+             step='hour',
+             stepmode='backward'),
+        dict(count=6,
+             label='6h',
+             step='hour',
+             stepmode='backward'),
+        dict(step='all')]
     layout.showlegend = False
     layout.xaxis.showline = True
     layout.yaxis.tickfont = {
@@ -111,9 +111,9 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
-    df = get_machines_activities(machine_ids=machine_ids,
-                                 graph_start=graph_start,
-                                 graph_end=graph_end)
+    df = get_machines_activities_df(machine_ids=machine_ids,
+                                    graph_start=graph_start,
+                                    graph_end=graph_end)
     if len(df) == 0:
         return "No machine activity"
     graph_title = "All machines OEE"
@@ -217,9 +217,9 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids):
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
-    df = get_machines_activities(machine_ids=machine_ids,
-                                 graph_start=graph_start,
-                                 graph_end=graph_end)
+    df = get_machines_activities_df(machine_ids=machine_ids,
+                                    graph_start=graph_start,
+                                    graph_end=graph_end)
     if len(df) == 0:
         return "No machine activity"
     # todo Set title to machine group
@@ -253,6 +253,33 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids):
                 output_type="div",
                 include_plotlyjs=True,
                 config={"displayModeBar": False, "showLink": False})
+
+
+def create_downtime_pie(machine_id, graph_start, graph_end):
+    machine = Machine.query.get_or_404(machine_id)
+    labels = []
+    values = []
+    colours = []
+    for ac in ActivityCode.query.all():
+        labels.append(ac.short_description)
+        values.append(calculate_activity_percent(machine_id, ac.id, graph_start, graph_end))
+        colours.append(ac.graph_colour)
+
+    layout = Layout(title=f"OEE for {machine.name}", )
+
+    fig = {'data': [{'type': 'pie',
+                     'name': f"OEE for {machine.name}",
+                     'labels': labels,
+                     'values': values,
+                     'direction': 'clockwise',
+                     'textposition': 'inside',
+                     'textinfo': 'label+percent',
+                     'marker': {'colors': colours}}],
+
+           'layout': {'title': f"OEE for {machine.name}"}}
+    return plot(fig,
+                output_type="div",
+                include_plotlyjs=True)
 
 
 def highlight_jobs(activities, layout):
@@ -320,7 +347,46 @@ def sort_activities(act):
     return act.activity_code_id
 
 
-def get_machines_activities(machine_ids, graph_start, graph_end, crop_overflow=True):
+def calculate_oee(machine_id, time_start, time_end):
+    """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
+    Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
+    # todo add performance and quality if possible
+    # Get all of the activities for the machine between the two given times
+    activities = Activity.query \
+        .filter(Activity.machine_id == machine_id) \
+        .filter(Activity.timestamp_end >= time_start) \
+        .filter(Activity.timestamp_start <= time_end).all()
+
+    # Calculate the availability of the machine
+    total_time = time_end - time_start
+    run_time = 0
+    for act in activities:
+        run_time += (act.timestamp_end - act.timestamp_start)
+
+    availability = run_time / total_time
+    return availability * 100
+
+
+def calculate_activity_percent(machine_id, activity_code_id, time_start, time_end):
+    """ Returns the percent of time a certain activity code takes up for a certain machine over two timestamps"""
+    activities = Activity.query \
+        .filter(Activity.machine_id == machine_id) \
+        .filter(Activity.activity_code_id == activity_code_id) \
+        .filter(Activity.timestamp_end >= time_start) \
+        .filter(Activity.timestamp_start <= time_end).all()
+
+    total_time = time_end - time_start
+    activity_code_time = 0
+    for act in activities:
+        activity_code_time += (act.timestamp_end - act.timestamp_start)
+
+    if activity_code_time == 0:
+        return 0
+    else:
+        return (total_time / activity_code_time) * 100
+
+
+def get_machines_activities_df(machine_ids, graph_start, graph_end, crop_overflow=True):
     """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
     crop_overflow will crop activities that extend past the requested graph start and end times"""
     machines = []

@@ -8,6 +8,7 @@ import pandas as pd
 from app import db
 from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, ActivityCode
 from app.default.models import Machine, ActivityCode, Job, Activity, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID
+from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
 from app.testing import bp
 from config import Config
@@ -16,26 +17,10 @@ from flask import render_template, request, jsonify, abort, current_app, send_fi
 
 @bp.route('/test')
 def test():
-    jobs = Job.query.filter_by(user_id=1).all()
-    query = str(Job.query.filter_by(user_id=1).statement.compile(compile_kwargs={"literal_binds": True}))
-    df = pd.read_sql(sql=query, con=db.engine)
-
-    # Convert the times to a readable format
-    df['start_time'] = list(map(datetime.fromtimestamp, df["start_time"]))
-    df['end_time'] = list(map(datetime.fromtimestamp, df["end_time"]))
-
-    filename = 'output.csv'
-    directory = os.path.join('app', 'static', 'temp')
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    filepath = os.path.abspath(os.path.join(directory, filename))
-    # Delete the old temporary file
-    if os.path.exists(filepath):
-        os.remove(filepath)
-
-    df.to_csv(filepath)
-    new_file_name = "testy.csv"
-    return send_file(filename_or_fp=filepath, cache_timeout=-1, as_attachment=True, attachment_filename=new_file_name)
+    end = datetime.now().timestamp()  # a days worth
+    start = end - + 86400
+    graph = create_downtime_pie(machine_id=1, graph_start=start, graph_end=end)
+    return graph
 
 
 

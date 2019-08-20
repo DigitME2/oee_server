@@ -16,6 +16,11 @@ from app.oee_monitoring.helpers import split_activity, get_current_activity_id
 from config import Config
 
 
+
+#todo Chris requested that logoff can be done without finishing a job. Maybe say this isnt possible and continue
+# the job next time it is logged on
+
+
 @bp.route('/production', methods=['GET', 'POST'])
 @login_required
 def production():

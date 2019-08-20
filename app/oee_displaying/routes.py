@@ -85,3 +85,6 @@ def update_graph():
         current_app.logger.debug(f"Creating graph for {machine} between {start_time} and {end_time}")
         return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine_id=machine.id)
 
+@bp.route('/pie')
+def pie():
+    return render_template()
