@@ -1,11 +1,11 @@
 from plotly.offline import plot
-from plotly.graph_objs import Layout, YAxis, XAxis
+from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
 from flask import current_app
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
-from app.default.models import UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, MACHINE_STATE_RUNNING
-from app.oee_monitoring.helpers import get_current_activity_id
+from config import Config
+from app.helpers import get_current_activity_id
 import plotly.figure_factory as ff
 
 
@@ -117,8 +117,8 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     if len(df) == 0:
         return "No machine activity"
     graph_title = "All machines OEE"
-    colours = {1: ActivityCode.query.get(UPTIME_CODE_ID).graph_colour,
-               2: ActivityCode.query.get(UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour}
+    colours = {1: ActivityCode.query.get(Config.UPTIME_CODE_ID).graph_colour,
+               2: ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour}
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,
@@ -186,8 +186,8 @@ def create_job_end_gantt(job):
                            Activity_id=act.id))
 
     # Use the colours assigned to uptime and unexplained downtime
-    uptime_colour = ActivityCode.query.get(UPTIME_CODE_ID).graph_colour
-    unexplained_colour = ActivityCode.query.get(UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour
+    uptime_colour = ActivityCode.query.get(Config.UPTIME_CODE_ID).graph_colour
+    unexplained_colour = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour
     colours = {True: unexplained_colour,
                False: uptime_colour}
     fig = ff.create_gantt(df,
@@ -224,8 +224,8 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids):
         return "No machine activity"
     # todo Set title to machine group
     graph_title = ""
-    colours = {1: ActivityCode.query.get(UPTIME_CODE_ID).graph_colour,
-               2: ActivityCode.query.get(UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour}
+    colours = {1: ActivityCode.query.get(Config.UPTIME_CODE_ID).graph_colour,
+               2: ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour}
     fig = ff.create_gantt(df,
                           title=graph_title,
                           group_tasks=True,
@@ -340,9 +340,9 @@ def highlight_jobs(activities, layout):
 
 def sort_activities(act):
     # Sort so uptime is always first in the list
-    if act.activity_code_id == UPTIME_CODE_ID:
+    if act.activity_code_id == Config.UPTIME_CODE_ID:
         return 0
-    if act.activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
+    if act.activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
         return 1
     return act.activity_code_id
 
@@ -435,7 +435,7 @@ def get_machines_activities_df(machine_ids, graph_start, graph_end, crop_overflo
                 end = act.timestamp_end
 
             # This graph only deals with running and not running
-            if act.machine_state == MACHINE_STATE_RUNNING:
+            if act.machine_state == Config.MACHINE_STATE_RUNNING:
                 code = 1
             else:
                 code = 2

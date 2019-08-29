@@ -4,12 +4,6 @@ from app import db
 
 logger = logging.getLogger('flask.app')
 
-UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
-UPTIME_CODE_ID = 1  # The ID of the activity code that for uptime. Preferably 0 to keep it on the bottom of the graph
-
-MACHINE_STATE_OFF = 0
-MACHINE_STATE_RUNNING = 1
-
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -17,6 +11,13 @@ class Machine(db.Model):
     group = db.Column(db.String)
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
+    # Schedule times are saved as decimal time e.g. 9.5 - 9.30am
+    schedule_start_1 = db.Column(db.Integer)
+    schedule_end_1 = db.Column(db.Integer)
+    schedule_start_2 = db.Column(db.Integer)
+    schedule_end_2 = db.Column(db.Integer)
+    schedule_start_3 = db.Column(db.Integer)
+    schedule_end_3 = db.Column(db.Integer)
 
     activities = db.relationship('Activity')
     jobs = db.relationship('Job', backref='machine')
@@ -49,6 +50,7 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
     machine_state = db.Column(db.Integer, nullable=False)
+    scheduled_state = db.Column(db.Integer)
     explanation_required = db.Column(db.Boolean)
     timestamp_start = db.Column(db.Float, nullable=False)
     timestamp_end = db.Column(db.Float)
@@ -57,6 +59,14 @@ class Activity(db.Model):
 
     def __repr__(self):
         return f"<Activity machine:{self.machine_id} machine_state:{self.machine_state} (ID {self.id})>"
+
+
+class ScheduledActivity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
+    scheduled_machine_state = db.Column(db.Integer, nullable=False)
+    timestamp_start = db.Column(db.Float, nullable=False)
+    timestamp_end = db.Column(db.Float)
 
 
 class ActivityCode(db.Model):

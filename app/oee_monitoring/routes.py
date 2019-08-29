@@ -3,21 +3,18 @@ from time import time
 
 from flask import abort, render_template, request, redirect, url_for, current_app, flash
 from flask_login import login_required, current_user
-from wtforms.validators import NoneOf, DataRequired
 
 from app import db
-from app.default.models import Activity, ActivityCode, Machine, Job, Settings, UNEXPLAINED_DOWNTIME_CODE_ID, \
-    MACHINE_STATE_RUNNING, MACHINE_STATE_OFF
+from app.default.models import Activity, ActivityCode, Machine, Job, Settings
 from app.oee_displaying.graph_helper import create_job_end_gantt
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
-from app.oee_monitoring.helpers import flag_activities, get_legible_downtime_time, get_dummy_machine_activity
-from app.oee_monitoring.helpers import split_activity, get_current_activity_id
+from app.helpers import flag_activities, get_legible_downtime_time, get_dummy_machine_activity
+from app.helpers import split_activity, get_current_activity_id
 from config import Config
 
 
-
-#todo Chris requested that logoff can be done without finishing a job. Maybe say this isnt possible and continue
+# todo Chris requested that logoff can be done without finishing a job. Maybe say this isnt possible and continue
 # the job next time it is logged on
 
 
@@ -31,7 +28,7 @@ def production():
     if active_job is None:
         return start_job()
     else:
-        #todo need a better way of getting manual or automatic. Not feasible to put the argument in every time
+        # todo need a better way of getting manual or automatic. Not feasible to put the argument in every time
 
         # Determine if the app is in manual or automatic mode
         # If no mode specified, default to manual
@@ -46,9 +43,9 @@ def production():
             except TypeError:
                 # This could be raised if there are no activities
                 return manual_job_in_progress()
-            if machine_state == MACHINE_STATE_RUNNING:
+            if machine_state == Config.MACHINE_STATE_RUNNING:
                 return manual_job_in_progress()
-            elif machine_state == MACHINE_STATE_OFF:
+            elif machine_state == Config.MACHINE_STATE_OFF:
                 return manual_job_paused()
             else:
                 # This shouldn't really happen, but I think it will suffice to treat it as a pause
@@ -63,7 +60,8 @@ def production():
             else:
                 return end_automatic_job()
 
-#todo nothing stopping multiple jobs on one machine
+
+# todo nothing stopping multiple jobs on one machine
 def start_job():
     """ The page where a user with no active job is sent to"""
     form = StartForm()
@@ -116,7 +114,7 @@ def start_job():
         if mode == "manual":
             # Manual mode
             # Set the machine state to in-use with a kafka message
-            message = f"{machine.id}_{MACHINE_STATE_RUNNING}".encode("utf-8")
+            message = f"{machine.id}_{Config.MACHINE_STATE_RUNNING}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
             return redirect(url_for('oee_monitoring.production'))
         else:
@@ -215,7 +213,7 @@ def end_automatic_job():
                 act.activity_code_id = int(request.form[str(act.ud_index)])
                 current_app.logger.debug(f"Setting {act} to ActivityCode ID {act.activity_code_id}")
                 # If the activity is still saved as unexplained, don't remove the explanation_required flag
-                if act.activity_code_id != UNEXPLAINED_DOWNTIME_CODE_ID:
+                if act.activity_code_id != Config.UNEXPLAINED_DOWNTIME_CODE_ID:
                     act.explanation_required = False
         db.session.commit()
 
@@ -276,7 +274,7 @@ def manual_job_in_progress():
 
         if action == "pause":
             # Set the machine state to off with a kafka message
-            message = f"{current_job.machine_id}_{MACHINE_STATE_OFF}".encode("utf-8")
+            message = f"{current_job.machine_id}_{Config.MACHINE_STATE_OFF}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
             current_app.logger.info(f"Pausing {current_job}")
             return manual_job_paused()
@@ -286,7 +284,7 @@ def manual_job_in_progress():
             # while youre at it, change kafka message to be more like machine=1&state=2 instead of 1_2
 
             # Set the machine state to off with a kafka message
-            message = f"{current_job.machine_id}_{MACHINE_STATE_OFF}".encode("utf-8")
+            message = f"{current_job.machine_id}_{Config.MACHINE_STATE_OFF}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
             current_app.logger.info(f"Ending {current_job}")
             # Give the job an end time
@@ -342,7 +340,7 @@ def manual_job_paused():
             db.session.commit()
 
             # Set the machine state to off with a kafka message
-            message = f"{paused_job.machine_id}_{MACHINE_STATE_RUNNING}".encode("utf-8")
+            message = f"{paused_job.machine_id}_{Config.MACHINE_STATE_RUNNING}".encode("utf-8")
             current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
             current_app.logger.info(f"Unpausing {paused_job}")
             return manual_job_in_progress()

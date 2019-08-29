@@ -1,7 +1,11 @@
+import atexit
 import logging
 import os
+
 from logging.handlers import RotatingFileHandler
 
+from app import helpers
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_mobility import Mobility
 from flask.logging import default_handler
@@ -10,7 +14,8 @@ from flask_sqlalchemy import SQLAlchemy
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
-#todo Start the consumer from here, or at least make sure the consumer is running
+
+# todo Start the consumer from here, or at least make sure the consumer is running
 
 from config import Config
 
@@ -44,6 +49,15 @@ login_manager.login_view = 'login.login'
 # Set up Kafka producer to publish messages to Kafka
 topic = Config.KAFKA_TOPIC
 bootstrap_servers = Config.KAFKA_BOOTSTRAP_SERVERS
+
+# Set up scheduler to produce machine schedules daily
+scheduler = BackgroundScheduler()
+#todo apscheduler doing the machine schedule. Needs testing.
+scheduler.add_job(func=helpers.create_daily_scheduled_activities, trigger="cron", hour=15, minute=41)
+scheduler.start()
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())
 
 
 def create_app(config_class=Config):

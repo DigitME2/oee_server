@@ -1,6 +1,7 @@
 from app import db
 from app.api import bp
-from app.default.models import Machine, Activity, MACHINE_STATE_RUNNING, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID
+from app.default.models import Machine, Activity
+from config import Config
 from flask import request, jsonify
 import json
 from time import time
@@ -85,10 +86,10 @@ def machine_activity():
         response.status_code = 400
         return response
 
-    if int(machine_state) == MACHINE_STATE_RUNNING:
-        activity_id = UPTIME_CODE_ID
+    if int(machine_state) == Config.MACHINE_STATE_RUNNING:
+        activity_id = Config.UPTIME_CODE_ID
     else:
-        activity_id = UNEXPLAINED_DOWNTIME_CODE_ID
+        activity_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
 
     # Create and save the activity
     new_activity = Activity(machine_id=machine.id,

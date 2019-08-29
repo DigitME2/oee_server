@@ -10,7 +10,8 @@ from app import db
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, ActivityCode, Job, UNEXPLAINED_DOWNTIME_CODE_ID, UPTIME_CODE_ID, Settings
+from app.default.models import Machine, ActivityCode, Job, Settings
+from config import Config
 from app.login.models import User
 
 
@@ -109,9 +110,9 @@ def edit_activity_code():
             current_app.logger.warn(error_message)
             return abort(400, error_message)
         # Show a warning to the user depending on the code being edited.
-        if activity_code_id == UPTIME_CODE_ID:
+        if activity_code_id == Config.UPTIME_CODE_ID:
             message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
-        elif activity_code_id == UNEXPLAINED_DOWNTIME_CODE_ID:
+        elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
             message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
         else:
             message = "Warning: Changes to these values will be reflected in " \
@@ -201,8 +202,7 @@ def edit_machine():
             error_message = f"Error parsing machine_id : {request.args['machine_id']}"
             return abort(400, error_message)
         # Show a warning to the user
-        message = f"This machine ID ({machine_id}) retains a reference to all of its past activity. " \
-                  "This can only be set when a new machine is being created. " \
+        message = f"This machine ID ({machine_id}) can only be set when a new machine is being created. " \
                   "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."
 
     else:
@@ -225,6 +225,12 @@ def edit_machine():
         machine.name = form.name.data
         machine.active = form.active.data
         machine.group = form.group.data
+        machine.schedule_start_1 = form.shift_1_start.data
+        machine.schedule_end_1 = form.shift_1_end.data
+        machine.schedule_start_2 = form.shift_2_start.data
+        machine.schedule_end_2 = form.shift_2_end.data
+        machine.schedule_start_3 = form.shift_3_start.data
+        machine.schedule_end_3 = form.shift_3_end.data
         # Save empty ip values as null to avoid unique constraint errors in the database
         if form.device_ip.data == "":
             machine.device_ip = None
@@ -244,6 +250,12 @@ def edit_machine():
     form.group.data = machine.group
     form.active.data = machine.active
     form.device_ip.data = machine.device_ip
+    form.shift_1_start.data = machine.schedule_start_1
+    form.shift_1_end.data = machine.schedule_end_1
+    form.shift_2_start.data = machine.schedule_start_2
+    form.shift_2_end.data = machine.schedule_end_2
+    form.shift_3_start.data = machine.schedule_start_3
+    form.shift_3_end.data = machine.schedule_end_3
     return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)

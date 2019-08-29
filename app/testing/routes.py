@@ -6,8 +6,7 @@ from random import randrange
 
 import pandas as pd
 from app import db
-from app.default.models import Activity, Machine, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID, ActivityCode
-from app.default.models import Machine, ActivityCode, Job, Activity, UPTIME_CODE_ID, UNEXPLAINED_DOWNTIME_CODE_ID
+from app.default.models import *
 from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
 from app.testing import bp
@@ -23,12 +22,8 @@ def test():
     return graph
 
 
-
 def sort_activities(act):
     return act.activity_code.id
-
-
-
 
 
 #@bp.route('/createdata')

@@ -46,3 +46,8 @@ class Config(object):
     KAFKA_LOG_FILE = 'logs/oee_app.log'
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
+
+    UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
+    UPTIME_CODE_ID = 1  # The ID of the activity code that for uptime. Preferably 0 to keep it on the bottom of the graph
+    MACHINE_STATE_OFF = 0
+    MACHINE_STATE_RUNNING = 1

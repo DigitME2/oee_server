@@ -26,6 +26,12 @@ class MachineForm(FlaskForm):
     name = StringField(validators=[DataRequired()])
     group = StringField("Machine Group", validators=[DataRequired()])
     device_ip = StringField("Operator Device IP Address", validators=[Optional(), IPAddress(ipv4=True, ipv6=False)])
+    shift_1_start = IntegerField(validators=[DataRequired()])
+    shift_1_end = IntegerField(validators=[DataRequired()])
+    shift_2_start = IntegerField(validators=[DataRequired()])
+    shift_2_end = IntegerField(validators=[DataRequired()])
+    shift_3_start = IntegerField(validators=[DataRequired()])
+    shift_3_end = IntegerField(validators=[DataRequired()])
     submit = SubmitField('Save')
 
 
