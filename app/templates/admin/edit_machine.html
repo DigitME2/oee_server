@@ -5,7 +5,7 @@
         <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
         <p>{{ message|safe }}</p> <br>
 
-        <form action="" method="post">
+        <form action="" method="post" class="editMachineForm">
             {{ form.hidden_tag() }}
             <div class="formGrid">
                 <div class="formGriditem">
@@ -50,16 +50,16 @@
 
             <p>
             <div class="formGrid">
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_1_start.label }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_1_end.label }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_1_start(size=32) }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_1_end(size=32) }}
                 </div>
 
@@ -71,16 +71,16 @@
                 {% endfor %}
             </div>
         <div class="formGrid">
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_2_start.label }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_2_end.label }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_2_start(size=32) }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_2_end(size=32) }}
                 </div>
 
@@ -92,16 +92,16 @@
                 {% endfor %}
             </div>
         <div class="formGrid">
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_3_start.label }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_3_end.label }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_3_start(size=32) }}
                 </div>
-                <div class="formGriditem">
+                <div class="formGriditem shiftEntry">
                     {{ form.shift_3_end(size=32) }}
                 </div>
 

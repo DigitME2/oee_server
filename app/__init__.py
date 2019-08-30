@@ -53,7 +53,7 @@ bootstrap_servers = Config.KAFKA_BOOTSTRAP_SERVERS
 # Set up scheduler to produce machine schedules daily
 scheduler = BackgroundScheduler()
 #todo apscheduler doing the machine schedule. Needs testing.
-scheduler.add_job(func=helpers.create_daily_scheduled_activities, trigger="cron", hour=15, minute=41)
+scheduler.add_job(func=helpers.create_daily_scheduled_activities, trigger="cron", hour=15, minute=41)#todo set to midnight
 scheduler.start()
 
 # Shut down the scheduler when exiting the app

@@ -245,20 +245,32 @@ def get_dummy_machine_activity(timestamp_start, timestamp_end, job_id, machine_i
     return activities
 
 
-def create_daily_scheduled_activities():
+def create_daily_scheduled_activities(skip_if_already_done=True):
     session = Session()
+    logger.info(f"Creating Scheduled Activities")
     for machine in session.query(Machine).all():
         # TODO Check if today's activities have already been created
-        today = datetime.now()
 
-        # shift_periods = ["break_1", "shift_1", "break_2", "shift_2", "break_3", "shift_3"]
-        #
-        # for shift in shift_periods:
+        logger.debug(f"Creating Scheduled Activities for {machine}")
+
+        last_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        next_midnight = last_midnight + timedelta(days=1)
+
+        # Check to see if activities have already been created for today
+        # noinspection PyUnresolvedReferences
+        existing_activities = session.query(ScheduledActivity) \
+            .filter(ScheduledActivity.machine_id == machine.id) \
+            .filter(ScheduledActivity.timestamp_start > last_midnight.timestamp()) \
+            .filter(ScheduledActivity.timestamp_end < next_midnight.timestamp()).all()
+
+        if skip_if_already_done and len(existing_activities) > 0:
+            logger.warn(f"Scheduled activities already exist today for {machine} Skipping...")
+            continue
 
         # noinspection PyArgumentList
         morning = ScheduledActivity(machine_id=machine.id,
                                     scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                    timestamp_start=datetime.now().replace(hour=0, minute=0, second=0).timestamp(),
+                                    timestamp_start=last_midnight.timestamp(),
                                     timestamp_end=decimal_time_to_current_day(machine.schedule_start_1))
 
         # noinspection PyArgumentList
@@ -290,12 +302,11 @@ def create_daily_scheduled_activities():
                                    timestamp_start=decimal_time_to_current_day(machine.schedule_start_3),
                                    timestamp_end=decimal_time_to_current_day(machine.schedule_end_3))
 
-        tomorrow = datetime.now() + timedelta(days=1)
         # noinspection PyArgumentList
         night = ScheduledActivity(machine_id=machine.id,
                                   scheduled_machine_state=Config.MACHINE_STATE_OFF,
                                   timestamp_start=decimal_time_to_current_day(machine.schedule_end_3),
-                                  timestamp_end=tomorrow.replace(hour=0, minute=0, second=0).timestamp())
+                                  timestamp_end=next_midnight.timestamp())
 
         session.add(morning)
         session.add(shift1)
@@ -305,9 +316,6 @@ def create_daily_scheduled_activities():
         session.add(shift3)
         session.add(night)
         session.commit()
-
-    logger.info("Creating Scheduled activities")
-    #todo
 
 
 def decimal_time_to_current_day(decimal_time):

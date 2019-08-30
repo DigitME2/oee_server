@@ -33,6 +33,7 @@ class MachineForm(FlaskForm):
     shift_3_start = IntegerField(validators=[DataRequired()])
     shift_3_end = IntegerField(validators=[DataRequired()])
     submit = SubmitField('Save')
+    # todo validate times
 
 
 class RegisterForm(FlaskForm):

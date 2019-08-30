@@ -6,6 +6,7 @@ from random import randrange
 
 import pandas as pd
 from app import db
+from app.helpers import create_daily_scheduled_activities
 from app.default.models import *
 from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
@@ -20,6 +21,11 @@ def test():
     start = end - + 86400
     graph = create_downtime_pie(machine_id=1, graph_start=start, graph_end=end)
     return graph
+
+@bp.route('/test1')
+def test1():
+    create_daily_scheduled_activities()
+    return "Create scheduled activities"
 
 
 def sort_activities(act):
