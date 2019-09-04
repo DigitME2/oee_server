@@ -3,11 +3,11 @@
 {% block content %}
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="centralForm">
-        Job {{ job.job_number }}
+        Job {{ job.wo_number }}
         <br>
         Machine: {{ job.machine.name }}
         <form action="" method="post">
-            <p>Job in progress: {{ job.job_number }} </p>
+            <p>Job in progress: {{ job.wo_number }} </p>
             <p>
                 {{ form.csrf_token }}
                 {{ form.submit() }}

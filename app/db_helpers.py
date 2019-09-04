@@ -1,21 +1,24 @@
 import logging
 import math as maths
 import os
-from random import randrange
-from config import Config
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
+from random import randrange
+from time import time
+
 from sqlalchemy import create_engine
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from time import time
 
+from config import Config
+
+# TODO can move this file back to somewhere with app context
 
 # Set up logger
 logger = logging.getLogger('machine_activity')
 logger.setLevel(logging.DEBUG)
-file_handler = RotatingFileHandler(filename=Config.MACHINE_MONITOR_LOG_FILE, maxBytes=10240, backupCount=10)
+file_handler = RotatingFileHandler(filename=Config.FLASK_LOG_FILE, maxBytes=10240, backupCount=10)
 file_handler.setFormatter(Config.LOG_FORMATTER)
 stream_handler = logging.StreamHandler()
 if os.environ.get('FLASK_DEBUG') == '1':
@@ -73,9 +76,7 @@ except NoSuchTableError:
 
 
 
-
-
-def create_new_activity(machine_id, machine_state, timestamp_start=time()):
+def create_new_activity(machine_id, machine_state, timestamp_start=datetime.now().timestamp()):
     """ Creates an activity and saves it to database"""
     session = Session()
     # Translate machine state into activity code
@@ -84,11 +85,11 @@ def create_new_activity(machine_id, machine_state, timestamp_start=time()):
     else:
         activity_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
 
-
     new_activity = Activity()
     new_activity.machine_id = machine_id
     new_activity.machine_state = machine_state
     new_activity.activity_code_id = activity_id
+    new_activity.user_id = get_current_machine_user_id(machine_id)
     new_activity.timestamp_start = timestamp_start
 
 
@@ -98,7 +99,7 @@ def create_new_activity(machine_id, machine_state, timestamp_start=time()):
     session.close()
 
 
-def complete_last_activity(machine_id, timestamp_end):
+def complete_last_activity(machine_id, timestamp_end=datetime.now().timestamp()):
     """ Gets the most recent active activity for a machine and then ends it with the current time"""
     session = Session()
     last_activity_id = get_current_activity_id(machine_id)
@@ -150,8 +151,7 @@ def get_scheduled_machine_state(machine_id, timestamp=time()):
     decimal_time = hour + (minute/60)
 
     if machine.schedule_start_1 >= decimal_time < machine.schedule_end_1:
-        pass
-
+        pass #todo
     session.close()
 
 
@@ -201,22 +201,6 @@ def split_activity(activity_id, split_time=None):
     logger.debug(f"Ended {old_activity}")
     logger.debug(f"Started {new_activity}")
     session.close()
-
-
-def get_legible_downtime_time(timestamp_start, timestamp_end):
-    """ Takes two timestamps and returns a string in the format <hh:mm> <x> minutes"""
-    start = datetime.fromtimestamp(timestamp_start).strftime('%H:%M')
-    length_m = int((timestamp_end - timestamp_start) / 60)
-    s = f"{start} for {length_m} minutes"
-
-    # Show in seconds if the run time is less than a minute
-    if (timestamp_end - timestamp_start) < 60:
-        start = datetime.fromtimestamp(timestamp_start).strftime('%H:%M:%S')
-        length_seconds = int(timestamp_end - timestamp_start)
-        s = f"{start} for {length_seconds} seconds"
-
-    return s
-
 
 # noinspection PyArgumentList
 def get_dummy_machine_activity(timestamp_start, timestamp_end, job_id, machine_id):
@@ -316,6 +300,7 @@ def create_daily_scheduled_activities(skip_if_already_done=True):
         session.add(shift3)
         session.add(night)
         session.commit()
+        session.close()
 
 
 def decimal_time_to_current_day(decimal_time):
@@ -323,3 +308,33 @@ def decimal_time_to_current_day(decimal_time):
     hour = maths.floor(decimal_time)
     minute = (decimal_time - hour) * 60
     return datetime.now().replace(hour=hour, minute=minute).timestamp()
+
+
+def get_activity_duration(activity_id):
+    """ Gets the duration of an activity in minutes"""
+    session = Session()
+    act = session.query(Activity).get(activity_id)
+    start = act.timestamp_start
+    if act.timestamp_end is not None:
+        end = act.timestamp_end
+    else:
+        end = datetime.now().timestamp()
+    return (end - start)/60
+
+
+def get_legible_duration(timestamp_start, timestamp_end):
+    """ Takes two timestamps and returns a string in the format <hh:mm> <x> minutes"""
+    minutes = maths.floor((timestamp_end - timestamp_start) / 60)
+    hours = maths.floor((timestamp_end - timestamp_start) / 3600)
+    if minutes == 0:
+        return f"{maths.floor(timestamp_end - timestamp_start)} seconds"
+    if hours == 0:
+        return f"{minutes} minutes"
+    else:
+        leftover_minutes = minutes - (hours * 60)
+        return f"{hours} hours {leftover_minutes} minutes"
+
+
+def get_current_machine_user_id(machine_id):
+    #todo
+    return 1

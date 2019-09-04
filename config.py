@@ -31,19 +31,16 @@ class Config(object):
     db_path = os.path.join(package_dir, 'app', 'prod.db')
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
 
-    KAFKA_TOPIC = os.environ.get('KAFKA_TOPIC') or "sam-topic"
-    KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS') or ['localhost:9092']
-    KAFKA_GROUP_ID = os.environ.get('KAFKA_GROUP_ID') or 'oee_webapp1'
-
     SECRET_KEY = os.environ.get('SECRET_KEY') or "yS7o773kuQ"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
 
     if not os.path.exists('logs'):
         os.mkdir('logs')
+
+    STREAM_LOGGING_LEVEL = logging.DEBUG
+    FILE_LOGGING_LEVEL = logging.INFO
     FLASK_LOG_FILE = 'logs/oee_app.log'
-    MACHINE_MONITOR_LOG_FILE = 'logs/oee_app.log'
-    KAFKA_LOG_FILE = 'logs/oee_app.log'
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
 

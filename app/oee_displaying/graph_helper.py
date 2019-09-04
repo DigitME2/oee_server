@@ -5,7 +5,7 @@ from flask import current_app
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
 from config import Config
-from app.helpers import get_current_activity_id
+from app.db_helpers import get_current_activity_id
 import plotly.figure_factory as ff
 
 
@@ -321,7 +321,7 @@ def highlight_jobs(activities, layout):
 
         # Create an annotation at the top of the highlight saying the job number
         a = Annotation()
-        a.text = f"<b>Job {j.job_number} - {j.user.username}</b>"
+        a.text = f"<b>Job {j.wo_number} - {j.user.username}</b>"
         a.font = {
             "size": 16
         }

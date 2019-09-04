@@ -8,6 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/app/static/javascript" />
       <excludeFolder url="file://$MODULE_DIR$/app/templates/testing" />
       <excludeFolder url="file://$MODULE_DIR$/app/testing" />
+      <excludeFolder url="file://$MODULE_DIR$/logs" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/venv2" />
     </content>

@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, time
 from flask import abort, request, render_template, current_app
 from flask_login import login_required
 
+from app.oee_displaying.helpers import get_machine_status
+
 
 @bp.route('/dashboard')
 def dashboard():
@@ -35,7 +37,7 @@ def dashboard():
 
 @bp.route('/graphs')
 @login_required
-def machine_graph():
+def multiple_machine_graph():
     """ The page showing the OEE of a machine and reasons for downtime"""
     start_time = datetime.combine(datetime.today(), time.min)
     end_time = (start_time + timedelta(days=1))
@@ -46,6 +48,35 @@ def machine_graph():
     current_app.logger.debug(f"Creating graph for all machines between {start_time} and {end_time}")
     return render_template('oee_displaying/machine.html',
                            machines=Machine.query.all(),
+                           nav_bar_title=nav_bar_title,
+                           graph=graph)
+
+
+@bp.route('/allmachinesstatus')
+@login_required
+def all_machines_status():
+    # Create a list of dictionaries containing the status for every machine
+    machine_status_dicts = []
+    for machine in Machine.query.all():
+        machine_status_dicts.append(get_machine_status(machine.id))
+    return render_template("oee_displaying/all_machines_status.html",
+                           machine_status_dicts=machine_status_dicts)
+
+
+@bp.route('/machinestatus/<machine_id>')
+@login_required
+def machine_status(machine_id):
+    """ The page showing the OEE of a machine and reasons for downtime"""
+    machine = Machine.query.get_or_404(machine_id)
+    start_time = datetime.combine(datetime.today(), time.min)
+    end_time = (start_time + timedelta(days=1))
+    graph = create_machine_gantt(graph_start=start_time.timestamp(),
+                                 graph_end=end_time.timestamp(),
+                                 machine_id=machine.id)
+    nav_bar_title = "Machine Activity"
+    status_dict = get_machine_status(machine.id)
+    return render_template('oee_displaying/machine_status.html',
+                           machine_status_dict=status_dict,
                            nav_bar_title=nav_bar_title,
                            graph=graph)
 
@@ -84,7 +115,3 @@ def update_graph():
         machine = Machine.query.get_or_404(machine_id)
         current_app.logger.debug(f"Creating graph for {machine} between {start_time} and {end_time}")
         return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine_id=machine.id)
-
-@bp.route('/pie')
-def pie():
-    return render_template()

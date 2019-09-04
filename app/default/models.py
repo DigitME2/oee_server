@@ -32,7 +32,7 @@ class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.Float, nullable=False)
     end_time = db.Column(db.Float)
-    job_number = db.Column(db.String, nullable=False)
+    wo_number = db.Column(db.String, nullable=False)
     planned_set_time = db.Column(db.Integer)
     planned_cycle_time = db.Column(db.Integer)
     planned_cycle_quantity = db.Column(db.Integer)
@@ -43,7 +43,7 @@ class Job(db.Model):
     activities = db.relationship('Activity', backref='job')
 
     def __repr__(self):
-        return f"<Job {self.job_number} (ID {self.id})>"
+        return f"<Job {self.wo_number} (ID {self.id})>"
 
 
 class Activity(db.Model):
@@ -56,6 +56,7 @@ class Activity(db.Model):
     timestamp_end = db.Column(db.Float)
     activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'))
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __repr__(self):
         return f"<Activity machine:{self.machine_id} machine_state:{self.machine_state} (ID {self.id})>"

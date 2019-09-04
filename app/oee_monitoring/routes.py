@@ -1,16 +1,17 @@
 import os
-from time import time
+from datetime import datetime
 
 from flask import abort, render_template, request, redirect, url_for, current_app, flash
 from flask_login import login_required, current_user
 
 from app import db
+from app.db_helpers import complete_last_activity, create_new_activity
 from app.default.models import Activity, ActivityCode, Machine, Job, Settings
 from app.oee_displaying.graph_helper import create_job_end_gantt
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
-from app.helpers import flag_activities, get_legible_downtime_time, get_dummy_machine_activity
-from app.helpers import split_activity, get_current_activity_id
+from app.db_helpers import flag_activities, get_legible_duration, get_dummy_machine_activity
+from app.db_helpers import split_activity, get_current_activity_id
 from config import Config
 
 
@@ -82,11 +83,11 @@ def start_job():
             machine_names.append((str(m.id), str(m.name)))
         form.machine.choices = machine_names
 
-    # Get a list of existing job numbers to use for form validation, preventing repeat jobs
-    # job_numbers = []
+    # Get a list of existing job numbers to use for form validation, preventing repeat jobs. Disabled while repeat jobs allowed
+    # wo_numbers = []
     # for j in Job.query.all():
-    #     job_numbers.append(str(j.job_number))
-    # form.job_number.validators = [NoneOf(job_numbers, message="Job number already exists"), DataRequired()]
+    #     wo_numbers.append(str(j.wo_number))
+    # form.wo_number.validators = [NoneOf(wo_numbers, message="Job number already exists"), DataRequired()]
 
     if form.validate_on_submit():
         # On form submit, start a new job
@@ -94,10 +95,9 @@ def start_job():
         machine = assigned_machine or Machine.query.get_or_404(form.machine.data)
 
         # Create the new job
-        start_time = time()
-        job = Job(start_time=start_time,
+        job = Job(start_time=datetime.now().timestamp(),
                   user_id=current_user.id,
-                  job_number=form.job_number.data,
+                  wo_number=form.wo_number.data,
                   planned_set_time=form.planned_set_time.data,
                   planned_cycle_time=form.planned_cycle_time.data,
                   planned_cycle_quantity=form.planned_cycle_quantity.data,
@@ -105,7 +105,6 @@ def start_job():
                   active=True)
         db.session.add(job)
         db.session.commit()
-        current_app.logger.debug(f"{current_user} started {job}")
 
         # Determine if the app is in manual or automatic mode
         # If no mode specified, default to manual
@@ -113,9 +112,18 @@ def start_job():
 
         if mode == "manual":
             # Manual mode
-            # Set the machine state to in-use with a kafka message
-            message = f"{machine.id}_{Config.MACHINE_STATE_RUNNING}".encode("utf-8")
-            current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
+            # Mark the most recent activity in the database as complete
+            complete_last_activity(machine_id=machine.id)
+
+            # Start a new activity
+            new_activity = Activity(machine_id=machine.id,
+                                    machine_state=Config.MACHINE_STATE_RUNNING,
+                                    activity_code_id=Config.UPTIME_CODE_ID,
+                                    user_id=current_user.id,
+                                    timestamp_start=datetime.now().timestamp())
+            db.session.add(new_activity)
+            db.session.commit()
+            current_app.logger.info(f"{current_user} started {job}")
             return redirect(url_for('oee_monitoring.production'))
         else:
             # Automatic mode
@@ -135,6 +143,115 @@ def start_job():
                            nav_bar_title=nav_bar_title)
 
 
+def manual_job_in_progress():
+    """ The page shown to a user while a job is active. This handles jobs where the user is required to manually
+    enter the states of the machine"""
+
+    current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    # TODO consider keeping a reference to the job in the user session or from the browser
+
+    form = EndForm()
+
+    if request.method == "POST":
+        action = request.form["action"]
+        if action is None:
+            abort(400)
+            return
+
+        if action == "pause":
+            # Mark the most recent activity in the database as complete
+            complete_last_activity(machine_id=current_job.machine_id)
+
+            # Start a new activity
+            new_activity = Activity(machine_id=current_job.machine_id,
+                                    machine_state=Config.MACHINE_STATE_OFF,
+                                    activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                                    user_id=current_user.id,
+                                    job_id=current_job.id,
+                                    timestamp_start=datetime.now().timestamp())
+            db.session.add(new_activity)
+            db.session.commit()
+            current_app.logger.debug(f"Paused {current_job}")
+            return manual_job_paused()
+
+        if action == "endJob":
+            # Mark the most recent activity in the database as complete
+            complete_last_activity(machine_id=current_job.machine_id)
+
+            # Start a new activity
+            new_activity = Activity(machine_id=current_job.machine_id,
+                                    machine_state=Config.MACHINE_STATE_OFF,
+                                    activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                                    user_id=current_user.id,
+                                    timestamp_start=datetime.now().timestamp())
+            # TODO make new code for no operator
+
+            # Give the job an end time
+            current_job.end_time = datetime.now().timestamp()
+            # Set the job as no longer active
+            current_job.active = None
+            db.session.commit()
+            current_app.logger.info(f"Ended {current_job}")
+
+        return redirect(url_for('oee_monitoring.production'))
+
+    nav_bar_title = "Job in progress"
+    return render_template('oee_monitoring/manualjobinprogress.html',
+                           form=form,
+                           job=current_job,
+                           nav_bar_title=nav_bar_title)
+
+# TODO Set a machine to "no job" when it has no job
+
+
+def manual_job_paused():
+    paused_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+
+    if request.method == "POST":
+        action = request.form["action"]
+        if action is None:
+            abort(400)
+            return
+
+        if action == "unpause":
+            # Get the reason (ie activity code) for the pause
+            pause_reason = request.form["manualDowntimeReason"]
+
+            try:
+                activity_code = ActivityCode.query.get(pause_reason)
+                current_app.logger.debug(f"Pause reason: {activity_code}")
+            except:
+                current_app.logger.error("Could not get activity code for downtime")
+                return
+
+            # Assign the activity code to the paused activity
+            paused_activity = Activity.query.get(get_current_activity_id(paused_job.machine_id))
+            paused_activity.activity_code_id = activity_code.id
+            db.session.commit()
+
+            # Mark the most recent activity in the database as complete
+            complete_last_activity(machine_id=paused_job.machine_id)
+
+            # Start a new activity
+            new_activity = Activity(machine_id=paused_job.machine_id,
+                                    machine_state=Config.MACHINE_STATE_RUNNING,
+                                    activity_code_id=Config.UPTIME_CODE_ID,
+                                    user_id=current_user.id,
+                                    timestamp_start=datetime.now().timestamp())
+            db.session.add(new_activity)
+            db.session.commit()
+
+            current_app.logger.debug(f"Un-paused {paused_job}")
+            return manual_job_in_progress()
+
+    nav_bar_title = "Job paused"
+    activity_codes = ActivityCode.query.filter_by(active=True)
+    return render_template('oee_monitoring/manualjobpaused.html',
+                           activity_codes=activity_codes,
+                           job=paused_job,
+                           nav_bar_title=nav_bar_title)
+
+
 def automatic_job_in_progress():
     """ The page shown to a user while a job is active"""
 
@@ -151,7 +268,7 @@ def automatic_job_in_progress():
             split_activity(activity_id=current_activity.id)
 
         # Give the job an end time
-        current_job.end_time = time()
+        current_job.end_time = datetime.now().timestamp()
 
         # Get all of the machine's activity since the job started
         activities = Activity.query \
@@ -236,7 +353,7 @@ def end_automatic_job():
 
     for act in activities:
         if act.explanation_required:
-            act.time_summary = get_legible_downtime_time(act.timestamp_start, act.timestamp_end)
+            act.time_summary = get_legible_duration(act.timestamp_start, act.timestamp_end)
 
     graph = create_job_end_gantt(job=current_job)
     nav_bar_title = "Submit Job"
@@ -256,98 +373,3 @@ def end_automatic_job():
                            activity_codes=activity_codes,
                            activities=activities,
                            colours=colours)
-
-
-def manual_job_in_progress():
-    """ The page shown to a user while a job is active. This handles jobs where the user is required to manually
-    enter the states of the machine"""
-
-    current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
-
-    form = EndForm()
-
-    if request.method == "POST":
-        action = request.form["action"]
-        if action is None:
-            abort(400)
-            return
-
-        if action == "pause":
-            # Set the machine state to off with a kafka message
-            message = f"{current_job.machine_id}_{Config.MACHINE_STATE_OFF}".encode("utf-8")
-            current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
-            current_app.logger.info(f"Pausing {current_job}")
-            return manual_job_paused()
-
-        if action == "endJob":
-            #todo put the job number in the kafka message instead of this messy method
-            # while youre at it, change kafka message to be more like machine=1&state=2 instead of 1_2
-
-            # Set the machine state to off with a kafka message
-            message = f"{current_job.machine_id}_{Config.MACHINE_STATE_OFF}".encode("utf-8")
-            current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
-            current_app.logger.info(f"Ending {current_job}")
-            # Give the job an end time
-            current_job.end_time = time()
-            # Set the job as no longer active
-            current_job.active = None
-            db.session.commit()
-
-            # Get all of the machine's activity since the job started
-            activities = Activity.query \
-                .filter(Activity.machine_id == current_job.machine_id) \
-                .filter(Activity.timestamp_start >= current_job.start_time) \
-                .filter(Activity.timestamp_end <= current_job.end_time).all()
-            # Flag activities that require an explanation from the operator
-            flag_activities(activities, threshold=Settings.query.get_or_404(1).threshold)
-            # Assign all of the activity to the current job
-            for act in activities:
-                current_app.logger.debug(f"Assigning {act} to {current_job}")
-                act.job_id = current_job.id
-
-        current_app.logger.debug(f"Ended {current_job}")
-        return redirect(url_for('oee_monitoring.production'))
-
-    nav_bar_title = "Job in progress"
-    return render_template('oee_monitoring/manualjobinprogress.html',
-                           form=form,
-                           job=current_job,
-                           nav_bar_title=nav_bar_title)
-
-
-def manual_job_paused():
-    paused_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
-
-    if request.method == "POST":
-        action = request.form["action"]
-        if action is None:
-            abort(400)
-            return
-
-        if action == "unpause":
-            # Get the reason (ie activity code) for the pause
-            pause_reason = request.form["manualDowntimeReason"]
-
-            try:
-                activity_code = ActivityCode.query.get(pause_reason)
-            except:
-                current_app.logger.error("Could not get activity code for downtime")
-                return
-
-            # Assign the activity code to the current activity
-            current_activity = Activity.query.get(get_current_activity_id(paused_job.machine_id))
-            current_activity.activity_code_id = activity_code.id
-            db.session.commit()
-
-            # Set the machine state to off with a kafka message
-            message = f"{paused_job.machine_id}_{Config.MACHINE_STATE_RUNNING}".encode("utf-8")
-            current_app.producer.send(value=message, topic=Config.KAFKA_TOPIC)
-            current_app.logger.info(f"Unpausing {paused_job}")
-            return manual_job_in_progress()
-
-    nav_bar_title = "Job paused"
-    activity_codes = ActivityCode.query.filter_by(active=True)
-    return render_template('oee_monitoring/manualjobpaused.html',
-                           activity_codes=activity_codes,
-                           job=paused_job,
-                           nav_bar_title=nav_bar_title)

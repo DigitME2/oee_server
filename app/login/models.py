@@ -5,12 +5,14 @@ import logging
 
 logger = logging.getLogger('flask.app')
 
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     admin = db.Column(db.Boolean)
+    current_machine_id = db.Column(db.Integer)
     active_job_id = db.Column(db.Integer)
 
     jobs = db.relationship('Job', backref="user")
@@ -27,6 +29,14 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"<User '{self.username}' (ID {self.id})>"
 
+
+class UserSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    device_ip = db.Column(db.String)
+    timestamp_login = db.Column(db.Integer)
+    timestamp_logout = db.Column(db.Integer)
+    machine_id = db.Column(db.Integer)
 
 @login_manager.user_loader
 def load_user(user_id):

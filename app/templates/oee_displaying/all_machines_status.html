@@ -1,0 +1,36 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
+
+    <div class="centralBody">
+        <div class="machineTable">
+            <table class="statusTable">
+                <tr>
+                    <th>Machine</th>
+                    <th>Operator</th>
+                    <th>Job</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                </tr>
+
+                {% for status_dict in machine_status_dicts %}
+                    <tr>
+                        <td>{{ status_dict["machine_name"] }}</td>
+                        <td>{{ status_dict["machine_user"] }}</td>
+                        <td>{{ status_dict["machine_job"] }}</td>
+                        <td>{{ status_dict["machine_activity"] }}</td>
+                        <td>{{ status_dict["duration"] }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+
+        </div>
+        <div class="graph" id="graph">
+            {{ graph|safe }}
+        </div>
+
+    </div>
+
+{% endblock %}

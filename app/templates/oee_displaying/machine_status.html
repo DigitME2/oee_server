@@ -1,0 +1,74 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
+
+    <div class="centralBody">
+        <div class="machineTable">
+            <table class="statusTable">
+                <tr>
+                    <th>Machine</th>
+                    <th>Operator</th>
+                    <th>Job</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                </tr>
+                <tr>
+                    <td>{{ machine_status_dict["machine_name"] }}</td>
+                    <td>{{ machine_status_dict["machine_user"] }}</td>
+                    <td>{{ machine_status_dict["machine_job"] }}</td>
+                    <td>{{ machine_status_dict["machine_activity"] }}</td>
+                    <td>{{ machine_status_dict["duration"] }}</td>
+                </tr>
+            </table>
+
+        </div>
+        <div class="graph" id="graph">
+            {{ graph|safe }}
+        </div>
+
+    </div>
+
+
+
+
+    <script src="{{ url_for('static', filename='javascript/jquery-3.3.1.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='javascript/jquery-ui-1.12.1/jquery-ui.js') }}"
+            type="text/javascript"></script>
+
+    <script>
+        $(function () {
+            $("#datePicker").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', new Date());
+        });
+    </script>
+
+
+    <script type=text/javascript>
+        $body = $("body");
+
+        $('#createGraph').bind('click', function () {
+            $body.addClass("loading");
+            $.ajax({
+                url: '{{ url_for('oee_displaying.update_graph') }}',
+                method: "GET",
+                data: {
+                    date: $('#datePicker').val(),
+                    machine_id: $('#machineSelect').val()
+                },
+                success: function (response) {
+                    $('#graph').html(response);
+                    $body.removeClass("loading");
+                },
+                error: function (error) {
+                    console.log(error);
+                    $('#graph').html("Error getting graph");
+                    $body.removeClass("loading");
+                }
+            });
+        });
+    </script>
+
+
+{% endblock %}

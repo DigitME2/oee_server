@@ -4,15 +4,14 @@ import os
 
 from logging.handlers import RotatingFileHandler
 
-from app import helpers
+from app import db_helpers
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_mobility import Mobility
 from flask.logging import default_handler
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
+
 
 
 # todo Start the consumer from here, or at least make sure the consumer is running
@@ -26,12 +25,9 @@ file_handler = RotatingFileHandler(filename=Config.FLASK_LOG_FILE, maxBytes=1024
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s'))
 stream_handler = logging.StreamHandler()
-if os.environ.get('FLASK_DEBUG') == '1':
-    stream_handler.setLevel(logging.DEBUG)
-    file_handler.setLevel(logging.DEBUG)
-else:
-    stream_handler.setLevel(logging.INFO)
-    file_handler.setLevel(logging.INFO)
+
+stream_handler.setLevel(Config.STREAM_LOGGING_LEVEL)
+file_handler.setLevel(Config.FILE_LOGGING_LEVEL)
 
 
 # Use seconds in the graphs and measurements. Useful in debugging
@@ -46,14 +42,10 @@ login_manager = LoginManager()
 login_manager.login_view = 'login.login'
 
 
-# Set up Kafka producer to publish messages to Kafka
-topic = Config.KAFKA_TOPIC
-bootstrap_servers = Config.KAFKA_BOOTSTRAP_SERVERS
-
+# TODO Scheduler needs a proper test. Seems to be working but haven't left it overnight or anything
 # Set up scheduler to produce machine schedules daily
 scheduler = BackgroundScheduler()
-#todo apscheduler doing the machine schedule. Needs testing.
-scheduler.add_job(func=helpers.create_daily_scheduled_activities, trigger="cron", hour=15, minute=41)#todo set to midnight
+scheduler.add_job(func=db_helpers.create_daily_scheduled_activities, trigger="cron", hour=0, minute=1)
 scheduler.start()
 
 # Shut down the scheduler when exiting the app
@@ -78,10 +70,6 @@ def create_app(config_class=Config):
 
     login_manager.init_app(app)
     Mobility(app)
-
-    # Start the Kafka producer
-    app.producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
-
 
     from app.admin import bp as admin_bp
     from app.default import bp as default_bp

@@ -47,5 +47,5 @@ def setup_database():
         db.session.add(settings)
         db.session.commit()
         current_app.logger.info("Created default settings on first startup")
-        # The program will crash on first start, so end here and start it again
+        current_app.logger.warn("Ending process to complete first time setup...")
         os.abort()
