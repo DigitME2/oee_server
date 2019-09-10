@@ -61,6 +61,8 @@ def create_app(config_class=Config):
     app.logger.addHandler(stream_handler)
     app.logger.addHandler(file_handler)
 
+    print("Logging level:", logging.getLevelName(app.logger.getEffectiveLevel()))
+
     app.config.from_object(config_class)
     db.init_app(app)
     # Fill the database with default values
@@ -75,6 +77,7 @@ def create_app(config_class=Config):
     from app.default import bp as default_bp
     from app.errors import bp as errors_bp
     from app.login import bp as users_bp
+    from app.android import bp as android_bp
     from app.oee_displaying import bp as oee_displaying_bp
     from app.oee_monitoring import bp as oee_monitoring_bp
     from app.testing import bp as testing_bp
@@ -83,6 +86,7 @@ def create_app(config_class=Config):
     app.register_blueprint(default_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(android_bp)
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
