@@ -83,12 +83,6 @@ def start_job():
             machine_names.append((str(m.id), str(m.name)))
         form.machine.choices = machine_names
 
-    # Get a list of existing job numbers to use for form validation, preventing repeat jobs. Disabled while repeat jobs allowed
-    # wo_numbers = []
-    # for j in Job.query.all():
-    #     wo_numbers.append(str(j.wo_number))
-    # form.wo_number.validators = [NoneOf(wo_numbers, message="Job number already exists"), DataRequired()]
-
     if form.validate_on_submit():
         # On form submit, start a new job
         # Get the target machine from either the IP or form
@@ -120,6 +114,7 @@ def start_job():
                                     machine_state=Config.MACHINE_STATE_RUNNING,
                                     activity_code_id=Config.UPTIME_CODE_ID,
                                     user_id=current_user.id,
+                                    job_id=job.id,
                                     timestamp_start=datetime.now().timestamp())
             db.session.add(new_activity)
             db.session.commit()
@@ -143,11 +138,13 @@ def start_job():
                            nav_bar_title=nav_bar_title)
 
 
+
 def manual_job_in_progress():
     """ The page shown to a user while a job is active. This handles jobs where the user is required to manually
     enter the states of the machine"""
 
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    timestamp = datetime.now().timestamp()
     # TODO consider keeping a reference to the job in the user session or from the browser
 
     form = EndForm()
@@ -159,8 +156,10 @@ def manual_job_in_progress():
             return
 
         if action == "pause":
+
+
             # Mark the most recent activity in the database as complete
-            complete_last_activity(machine_id=current_job.machine_id)
+            complete_last_activity(machine_id=current_job.machine_id, timestamp_end=timestamp)
 
             # Start a new activity
             new_activity = Activity(machine_id=current_job.machine_id,
@@ -168,13 +167,15 @@ def manual_job_in_progress():
                                     activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                     user_id=current_user.id,
                                     job_id=current_job.id,
-                                    timestamp_start=datetime.now().timestamp())
+                                    timestamp_start=timestamp)
             db.session.add(new_activity)
             db.session.commit()
             current_app.logger.debug(f"Paused {current_job}")
             return manual_job_paused()
 
         if action == "endJob":
+            current_job.end_time = timestamp
+            current_job.active = None
             # Mark the most recent activity in the database as complete
             complete_last_activity(machine_id=current_job.machine_id)
 
@@ -185,11 +186,7 @@ def manual_job_in_progress():
                                     user_id=current_user.id,
                                     timestamp_start=datetime.now().timestamp())
             # TODO make new code for no operator
-
-            # Give the job an end time
-            current_job.end_time = datetime.now().timestamp()
-            # Set the job as no longer active
-            current_job.active = None
+            db.session.add(new_activity)
             db.session.commit()
             current_app.logger.info(f"Ended {current_job}")
 
@@ -203,9 +200,12 @@ def manual_job_in_progress():
 
 # TODO Set a machine to "no job" when it has no job
 
+# todo what happens if the user leaves a job unfinished then logs into another machine
 
 def manual_job_paused():
+
     paused_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
+    timestamp = datetime.now().timestamp()
 
     if request.method == "POST":
         action = request.form["action"]
@@ -230,14 +230,15 @@ def manual_job_paused():
             db.session.commit()
 
             # Mark the most recent activity in the database as complete
-            complete_last_activity(machine_id=paused_job.machine_id)
+            complete_last_activity(machine_id=paused_job.machine_id, timestamp_end=timestamp)
 
             # Start a new activity
             new_activity = Activity(machine_id=paused_job.machine_id,
                                     machine_state=Config.MACHINE_STATE_RUNNING,
                                     activity_code_id=Config.UPTIME_CODE_ID,
                                     user_id=current_user.id,
-                                    timestamp_start=datetime.now().timestamp())
+                                    job_id=paused_job.id,
+                                    timestamp_start=timestamp)
             db.session.add(new_activity)
             db.session.commit()
 

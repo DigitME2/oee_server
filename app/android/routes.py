@@ -13,14 +13,7 @@ from werkzeug.urls import url_parse
 
 NO_JOB_RESULT_CODE = 8001
 
-"""The screen to log the user into the system."""
-current_app.logger.debug("Login attempt to /androidlogin")
-response = {}
-if "user_id" in request.get_json():
-    user_id = request.get_json()["user_id"]
-    user = User.query.get(user_id)
-    if user is None:
-        response["success"] = False
+
 @bp.route('/checkstate', methods=['GET'])
 def android_check_state():
     current_app.logger.debug(f"State check from {request.remote_addr}")
@@ -28,7 +21,14 @@ def android_check_state():
 
 @bp.route('/androidlogin', methods=['POST'])
 def android_login():
-    if True: #todo
+    """The screen to log the user into the system."""
+    current_app.logger.debug("Login attempt to /androidlogin")
+    response = {}
+    if "user_id" in request.get_json():
+        user_id = request.get_json()["user_id"]
+        user = User.query.get(user_id)
+        if user is None:
+            response["success"] = False
         response["reason"] = f"User {user_id} does not exist"
         return json.dumps(response), 200, {'ContentType': 'application/json'}
     else:

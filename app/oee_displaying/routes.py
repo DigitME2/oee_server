@@ -51,9 +51,8 @@ def multiple_machine_graph():
                            nav_bar_title=nav_bar_title,
                            graph=graph)
 
-
+1568105560
 @bp.route('/allmachinesstatus')
-@login_required
 def all_machines_status():
     # Create a list of dictionaries containing the status for every machine
     machine_status_dicts = []

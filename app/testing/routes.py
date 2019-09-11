@@ -12,14 +12,17 @@ from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
 from app.testing import bp
 from config import Config
-from flask import render_template, request, jsonify, abort, current_app, send_file
+from flask import render_template, request, jsonify, abort, current_app, send_file, session
+from flask_login import current_user
 
 
 @bp.route('/test')
 def test():
     end = datetime.now().timestamp()  # a days worth
-    start = end - + 86400
+    start = end - 86400
+    print(session["job_id3"])
     graph = create_downtime_pie(machine_id=1, graph_start=start, graph_end=end)
+    session["job_id1"] = 13
     return graph
 
 @bp.route('/test1')
