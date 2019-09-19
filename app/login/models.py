@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     current_machine_id = db.Column(db.Integer)
     active_job_id = db.Column(db.Integer)
 
+    sessions = db.relationship('UserSession', backref="user")
     jobs = db.relationship('Job', backref="user")
 
     def has_job(self):
@@ -33,10 +34,21 @@ class User(db.Model, UserMixin):
 class UserSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    machine_id = db.Column(db.Integer, db.ForeignKey("machine.id"), nullable=False)
     device_ip = db.Column(db.String)
     timestamp_login = db.Column(db.Integer)
     timestamp_logout = db.Column(db.Integer)
-    machine_id = db.Column(db.Integer)
+    active = db.Column(db.Boolean)
+
+    jobs = db.relationship('Job', backref="user_session")
+
+    def __repr__(self):
+        return f"<UserSession " \
+               f"user_id:{self.user_id} " \
+               f"device_ip:{self.device_ip} " \
+               f"machine_id:{self.machine_id} " \
+               f"(ID {self.id})> "
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -55,7 +67,7 @@ def create_default_users():
         return
     # noinspection PyArgumentList
     default_user = User(username="user", admin=False)
-    default_user.set_password("digitme2")
+    default_user.set_password("1")
 
     db.session.add(default_admin)
     db.session.add(default_user)

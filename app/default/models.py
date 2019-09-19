@@ -19,6 +19,7 @@ class Machine(db.Model):
     schedule_start_3 = db.Column(db.Integer)
     schedule_end_3 = db.Column(db.Integer)
 
+    user_sessions = db.relationship("UserSession", backref="machine")
     activities = db.relationship('Activity')
     jobs = db.relationship('Job', backref='machine')
 
@@ -38,6 +39,7 @@ class Job(db.Model):
     planned_cycle_quantity = db.Column(db.Integer)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
     active = db.Column(db.Boolean)  # This should either be true or null
 
     activities = db.relationship('Activity', backref='job')

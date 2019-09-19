@@ -11,6 +11,9 @@ from flask_mobility import Mobility
 from flask.logging import default_handler
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.contrib.fixers import ProxyFix
+
+
 
 
 
@@ -71,7 +74,8 @@ def create_app(config_class=Config):
         setup_database()
 
     login_manager.init_app(app)
-    Mobility(app)
+    app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
+    Mobility(app)  # To detect a when client is on a mobile
 
     from app.admin import bp as admin_bp
     from app.default import bp as default_bp

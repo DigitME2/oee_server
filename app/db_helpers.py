@@ -75,30 +75,6 @@ except NoSuchTableError:
     logger.warning("No ScheduledActivity Table")
 
 
-
-def create_new_activity(machine_id, machine_state, timestamp_start=datetime.now().timestamp()):
-    """ Creates an activity and saves it to database"""
-    session = Session()
-    # Translate machine state into activity code
-    if int(machine_state) == Config.MACHINE_STATE_RUNNING:
-        activity_id = Config.UPTIME_CODE_ID
-    else:
-        activity_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
-
-    new_activity = Activity()
-    new_activity.machine_id = machine_id
-    new_activity.machine_state = machine_state
-    new_activity.activity_code_id = activity_id
-    new_activity.user_id = get_current_machine_user_id(machine_id)
-    new_activity.timestamp_start = timestamp_start
-
-
-    session.add(new_activity)
-    session.commit()
-    logger.debug(f"Started {new_activity}")
-    session.close()
-
-
 def complete_last_activity(machine_id, timestamp_end=datetime.now().timestamp()):
     """ Gets the most recent active activity for a machine and then ends it with the current time"""
     session = Session()
@@ -139,20 +115,6 @@ def get_current_activity_id(target_machine_id):
             if act.timestamp_start < current_activity.timestamp_start:
                 current_activity = act
         return current_activity.id
-
-
-def get_scheduled_machine_state(machine_id, timestamp=time()):
-    session = Session()
-    machine = session.query(Machine).get(machine_id)
-
-    # Calculate the decimal time
-    hour = datetime.fromtimestamp(timestamp).hour
-    minute = datetime.fromtimestamp(timestamp).minute
-    decimal_time = hour + (minute/60)
-
-    if machine.schedule_start_1 >= decimal_time < machine.schedule_end_1:
-        pass #todo
-    session.close()
 
 
 def flag_activities(activities, threshold):
@@ -334,7 +296,3 @@ def get_legible_duration(timestamp_start, timestamp_end):
         leftover_minutes = minutes - (hours * 60)
         return f"{hours} hours {leftover_minutes} minutes"
 
-
-def get_current_machine_user_id(machine_id):
-    #todo
-    return 1

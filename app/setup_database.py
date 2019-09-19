@@ -18,13 +18,13 @@ def setup_database():
                                        code="EX",
                                        short_description='Unexplained',
                                        long_description="Downtime that doesn't have an explanation from the user",
-                                       graph_colour='rgb(178,34,34)')
+                                       graph_colour='#b22222')
         db.session.add(unexplainedcode)
         uptimecode = ActivityCode(id=Config.UPTIME_CODE_ID,
                                   code="UP",
                                   short_description='Uptime',
                                   long_description='The machine is in use',
-                                  graph_colour='rgb(0, 255, 128)')
+                                  graph_colour='#00ff80')
         db.session.add(uptimecode)
         db.session.commit()
         current_app.logger.info("Created default activity codes on first startup")

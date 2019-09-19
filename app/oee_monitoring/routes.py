@@ -5,7 +5,7 @@ from flask import abort, render_template, request, redirect, url_for, current_ap
 from flask_login import login_required, current_user
 
 from app import db
-from app.db_helpers import complete_last_activity, create_new_activity
+from app.db_helpers import complete_last_activity
 from app.default.models import Activity, ActivityCode, Machine, Job, Settings
 from app.oee_displaying.graph_helper import create_job_end_gantt
 from app.oee_monitoring import bp
@@ -28,38 +28,37 @@ def production():
     # If the user doesn't have an active job, go to the start job page
     if active_job is None:
         return start_job()
-    else:
-        # todo need a better way of getting manual or automatic. Not feasible to put the argument in every time
+    # todo need a better way of getting manual or automatic. Not feasible to put the argument in every time
 
-        # Determine if the app is in manual or automatic mode
-        # If no mode specified, default to manual
-        mode = request.args.get("mode") or "manual"
-        if mode == "manual":
-            # Manual mode
-            # Check the status of the machine to determine the state of the job
-            current_machine = Machine.query.get_or_404(active_job.machine_id)
-            try:
-                current_activity = Activity.query.get(get_current_activity_id(current_machine.id))
-                machine_state = current_activity.machine_state
-            except TypeError:
-                # This could be raised if there are no activities
-                return manual_job_in_progress()
-            if machine_state == Config.MACHINE_STATE_RUNNING:
-                return manual_job_in_progress()
-            elif machine_state == Config.MACHINE_STATE_OFF:
-                return manual_job_paused()
-            else:
-                # This shouldn't really happen, but I think it will suffice to treat it as a pause
-                current_app.logger.warn(f"Wrong machine state received: {machine_state}")
-                return manual_job_paused()
+    # Determine if the app is in manual or automatic mode
+    # If no mode specified, default to manual
+    mode = request.args.get("mode") or "manual"
+    if mode == "manual":
+        # Manual mode
+        # Check the status of the machine to determine the state of the job
+        current_machine = Machine.query.get_or_404(active_job.machine_id)
+        try:
+            current_activity = Activity.query.get(get_current_activity_id(current_machine.id))
+            machine_state = current_activity.machine_state
+        except TypeError:
+            # This could be raised if there are no activities
+            return manual_job_in_progress()
+        if machine_state == Config.MACHINE_STATE_RUNNING:
+            return manual_job_in_progress()
+        elif machine_state == Config.MACHINE_STATE_OFF:
+            return manual_job_paused()
+        else:
+            # This shouldn't really happen, but I think it will suffice to treat it as a pause
+            current_app.logger.warn(f"Wrong machine state received: {machine_state}")
+            return manual_job_paused()
 
-        elif mode == "automatic":
-            # Automatic mode
-            # If the user's current job doesn't have an end time, it is in progress
-            if active_job.end_time is None:
-                return automatic_job_in_progress()
-            else:
-                return end_automatic_job()
+    elif mode == "automatic":
+        # Automatic mode
+        # If the user's current job doesn't have an end time, it is in progress
+        if active_job.end_time is None:
+            return automatic_job_in_progress()
+        else:
+            return end_automatic_job()
 
 
 # todo nothing stopping multiple jobs on one machine
