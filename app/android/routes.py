@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from flask import request, redirect, current_app
+from flask import abort, request, current_app
 
 from app import db
 from app.android.helpers import start_user_session, end_user_sessions
@@ -30,47 +30,44 @@ def android_check_state():
     current_app.logger.debug(f"Checking state for session {user_session}")
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
-        current_app.logger.debug(f"Returning state to {request.remote_addr}: no_job")
+        current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
         return json.dumps({"state": "no_job"})
 
+    # If there is an active job, send the user to the job in progress screen
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     # Send the list of downtime reasons to populate a dropdown
-    all_codes = ActivityCode.query.filter_by(active=True).all()
-    downtime_reasons = [code.short_description for code in all_codes]
-
-    # Send a list of colours corresponding to downtime reasons
-    colours = [code.graph_colour for code in all_codes]
-    # TODO Do the lists of colours and downtime become misaligned if activity codes get disabled?
-    colours = [code.graph_colour for code in all_codes]
-    # If the most recent activity is "running", send to active job screen. Attach the wo_number to display to user
+    all_active_codes = ActivityCode.query.filter_by(active=True).all()
+    # Get the current activity code to set the colour and dropdown
     try:
         machine = user_session.machine
         current_activity = Activity.query.get(get_current_activity_id(machine.id))
-        machine_state = current_activity.machine_state
+        current_activity_code = current_activity.activity_code
+        colour = current_activity_code.graph_colour
     except TypeError:
         # This could be raised if there are no activities
-        current_app.logger.debug(f"Returning state to {request.remote_addr}: active_job")
-        return json.dumps({"state": "active_job",
+        current_app.logger.error(f"Active job screen requested with no activities.")
+        colour = "#ffffff"
+        current_activity_code = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID)
+
+    current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
+    return json.dumps({"state": "active_job",
+                       "wo_number": current_job.wo_number,
+                       "current_activity": current_activity_code.short_description,
+                       "activity_codes": [code.short_description for code in all_active_codes],
+                       "colour": colour})
+
+
+
+
+
+    # If the most recent activity is "running", send to active job screen. Attach the wo_number to display to user
+
+    current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
+    return json.dumps({"state": "active_job",
                            "wo_number": current_job.wo_number,
                            "downtime_reasons": downtime_reasons,
-                           "colours": colours})
-    if machine_state == Config.MACHINE_STATE_RUNNING:
-        current_app.logger.debug(f"Returning state to {request.remote_addr}: active_job")
-        return json.dumps({"state": "active_job",
-                           "wo_number": current_job.wo_number,
-                           "downtime_reasons": downtime_reasons,
-                           "colours": colours})
-    # If the most recent activity is not uptime, send to paused job screen. Send downtime reasons for dropdown box
-    else:
-        all_codes = ActivityCode.query.filter_by(active=True).all()
-        downtime_reasons = [code.short_description for code in all_codes]
-        colours = [code.graph_colour for code in all_codes]
-        current_app.logger.debug(f"Returning state to {request.remote_addr}: paused_job")
-        return json.dumps({"state": "paused_job",
-                           "wo_number": current_job.wo_number,
-                           "downtime_reasons": downtime_reasons,
-                           "colours": colours})
+                           "colour": colour})
 
 
 @bp.route('/androidlogin', methods=['POST'])
@@ -166,66 +163,40 @@ def android_start_job():
     return json.dumps({"success": True})
 
 
-@bp.route('/androidpausejob', methods=['POST'])
-def android_pause_job():
-    timestamp = datetime.now().timestamp()
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
-
-    # Start a new activity
-    new_activity = Activity(machine_id=user_session.machine_id,
-                            machine_state=Config.MACHINE_STATE_OFF,
-                            activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                            user_id=user_session.user_id,
-                            job_id=current_job.id,
-                            timestamp_start=timestamp)
-    db.session.add(new_activity)
-    db.session.commit()
-    current_app.logger.debug(f"Paused {current_job}")
-
-    downtime_reasons = [code.short_description for code in ActivityCode.query.filter_by(active=True).all()]
-    return json.dumps({"success": True,
-                       "wo_number": current_job.wo_number,
-                       "downtime_reasons": downtime_reasons})
-
-
-@bp.route('/androidresumejob', methods=['POST'])
-def android_resume_job():
-    timestamp = datetime.now().timestamp()
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
-
-    # Start a new activity
-    new_activity = Activity(machine_id=user_session.machine_id,
-                            machine_state=Config.MACHINE_STATE_RUNNING,
-                            activity_code_id=Config.UPTIME_CODE_ID,
-                            user_id=user_session.user_id,
-                            job_id=current_job.id,
-                            timestamp_start=timestamp)
-    db.session.add(new_activity)
-    db.session.commit()
-    current_app.logger.debug(f"Resumed {current_job}")
-    return json.dumps({"success": True,
-                       "wo_number": current_job.wo_number})
-
-
 @bp.route('/androidupdate', methods=['POST'])
 def android_update_activity():
-    """ Updates the activity code of the current activity without starting a new one"""
+    timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    try:
+        selected_activity_description = request.json["selected_activity_code"]
+    except KeyError:
+        return json.dumps({"success": False})
 
-    reason = request.json["downtime_reason"]
+    # Mark the most recent activity in the database as complete
+    complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
 
-    # Update the current activity
-    current_activity = Activity.query.get(get_current_activity_id(user_session.machine_id))
-    activity_code = ActivityCode.query.filter_by(short_description=reason).first()
-    current_activity.activity_code_id = activity_code.id
+    # Start a new activity
+    # The current job is the only active job belonging to the user session
+    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
+    # The activity code is obtained from the request
+    activity_code = ActivityCode.query.filter_by(short_description=selected_activity_description).first()
+    # The machine state is calculated from the activity code
+    if activity_code.id == Config.UPTIME_CODE_ID:
+        machine_state = Config.MACHINE_STATE_RUNNING
+    else:
+        machine_state = Config.MACHINE_STATE_OFF
+    # Create the new activity
+    new_activity = Activity(machine_id=user_session.machine_id,
+                            machine_state=machine_state,
+                            activity_code_id=activity_code.id,
+                            user_id=user_session.user_id,
+                            job_id=current_job.id,
+                            timestamp_start=timestamp)
+    db.session.add(new_activity)
     db.session.commit()
-    return json.dumps({"success": True})
+    current_app.logger.debug(f"Started {new_activity} for {current_job}")
+    return json.dumps({"success": True,
+                       "colour": activity_code.graph_colour})
 
 
 @bp.route('/androidendjob', methods=['POST'])
