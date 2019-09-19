@@ -13,9 +13,7 @@ from app.login.models import User, UserSession
 from config import Config
 
 
-# TODO Get rid of pauses. Maybe branch to do this
 # TODO Check the request makes sense, ie ensure the app hasnt got to the wrong page
-
 
 @bp.route('/checkstate', methods=['GET'])
 def android_check_state():
@@ -57,17 +55,6 @@ def android_check_state():
                        "activity_codes": [code.short_description for code in all_active_codes],
                        "colour": colour})
 
-
-
-
-
-    # If the most recent activity is "running", send to active job screen. Attach the wo_number to display to user
-
-    current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-    return json.dumps({"state": "active_job",
-                           "wo_number": current_job.wo_number,
-                           "downtime_reasons": downtime_reasons,
-                           "colour": colour})
 
 
 @bp.route('/androidlogin', methods=['POST'])
@@ -113,13 +100,19 @@ def android_login():
 @bp.route('/androidlogout', methods=['POST'])
 def android_logout():
     """ Logs the user out of the system. """
+    timestamp = datetime.now().timestamp()
     # Get the current user session based on the IP of the device accessing this page
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-    # End any jobs under the current session
+    # End any jobs  under the current session
     for job in user_session.jobs:
         if job.active:
-            job.end_time = datetime.now().timestamp()
+            job.end_time = timestamp
             job.active = None
+    # End the current activity
+    act = Activity.query.get(get_current_activity_id(user_session.machine_id))
+    act.timestamp_end = timestamp
+    db.session.commit()
+
     current_app.logger.info(f"Logging out {user_session.user}")
     end_user_sessions(user_session.user_id)
     return json.dumps({"success": True})
@@ -129,11 +122,8 @@ def android_logout():
 def android_start_job():
     if not request.is_json:
         return 404
-    machine = Machine.query.filter_by(device_ip=request.remote_addr).first()
-    if machine is None:
-        # TODO Properly account for a machine not being assigned
-        machine = Machine.query.get(1)
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    machine = user_session.machine
 
     # Create the job
     job = Job(start_time=datetime.now().timestamp(),
