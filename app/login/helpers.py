@@ -1,14 +1,18 @@
 from datetime import datetime
+
 from flask import current_app
 
 from app import db
-from app.db_helpers import get_current_activity_id
-from app.default.models import Machine, Job, Activity
+from app.default.models import Machine
 from app.login.models import UserSession
 
 
 def start_user_session(user_id, device_ip):
-    # todo maybe check there arent any active sessions
+    user_session = UserSession.query.filter_by(user_id=user_id, device_ip=device_ip, active=True).first()
+    if user_session is not None:
+        current_app.logger.warning(
+            f"Tried to start a user session for user {user_id} while one is already open. Closing...")
+        end_user_sessions(user_id)
     try:
         machine_id = Machine.query.filter_by(device_ip=device_ip).first().id
     except:
@@ -36,5 +40,3 @@ def end_user_sessions(user_id):
             job.end_time = timestamp
             job.active = None
         db.session.commit()
-
-

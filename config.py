@@ -46,5 +46,6 @@ class Config(object):
 
     UNEXPLAINED_DOWNTIME_CODE_ID = 0  # The ID of the activity code that represents unexplained downtime
     UPTIME_CODE_ID = 1  # The ID of the activity code that for uptime. Preferably 0 to keep it on the bottom of the graph
+    SETTING_CODE_ID = 2
     MACHINE_STATE_OFF = 0
     MACHINE_STATE_RUNNING = 1

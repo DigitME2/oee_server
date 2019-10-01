@@ -4,6 +4,8 @@ from app import db
 
 logger = logging.getLogger('flask.app')
 
+SHIFT_STRFTIME_FORMAT = "%H%M"  # Time is stored in the database as a string and converted to a time object
+
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -11,16 +13,15 @@ class Machine(db.Model):
     group = db.Column(db.String)
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
-    # Schedule times are saved as decimal time e.g. 9.5 - 9.30am
-    schedule_start_1 = db.Column(db.Integer)
-    schedule_end_1 = db.Column(db.Integer)
-    schedule_start_2 = db.Column(db.Integer)
-    schedule_end_2 = db.Column(db.Integer)
-    schedule_start_3 = db.Column(db.Integer)
-    schedule_end_3 = db.Column(db.Integer)
+    schedule_start_1 = db.Column(db.String)
+    schedule_end_1 = db.Column(db.String)
+    schedule_start_2 = db.Column(db.String)
+    schedule_end_2 = db.Column(db.String)
+    schedule_start_3 = db.Column(db.String)
+    schedule_end_3 = db.Column(db.String)
 
     user_sessions = db.relationship("UserSession", backref="machine")
-    activities = db.relationship('Activity')
+    activities = db.relationship('Activity', backref='machine')
     jobs = db.relationship('Job', backref='machine')
 
     def __repr__(self):
@@ -35,8 +36,11 @@ class Job(db.Model):
     end_time = db.Column(db.Float)
     wo_number = db.Column(db.String, nullable=False)
     planned_set_time = db.Column(db.Integer)
+    setup_scrap = db.Column(db.Integer)
+    planned_run_time = db.Column(db.Integer)
+    planned_quantity = db.Column(db.Integer)
     planned_cycle_time = db.Column(db.Integer)
-    planned_cycle_quantity = db.Column(db.Integer)
+    actual_quantity = db.Column(db.Integer)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)

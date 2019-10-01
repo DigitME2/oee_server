@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.default.models import Machine, Activity
-from app.login.models import User
+from app.login.models import User, UserSession
 from app.db_helpers import get_legible_duration, get_current_activity_id
 
 
@@ -23,4 +23,9 @@ def get_machine_status(machine_id):
             "duration": duration}
 
 def get_current_machine_user_id(machine_id): # todo
+    sessions = UserSession.filter_by(machine_id=machine_id, active=True).all()
+    if len(sessions) > 1:
+        current_app.logger
+    elif len(sessions) == 1:
+        return sessions[0].user_id
     return 1

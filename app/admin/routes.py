@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 import os
 
 import pandas as pd
@@ -10,7 +10,7 @@ from app import db
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, ActivityCode, Job, Settings
+from app.default.models import Machine, ActivityCode, Job, Settings, SHIFT_STRFTIME_FORMAT
 from config import Config
 from app.login.models import User
 
@@ -114,6 +114,8 @@ def edit_activity_code():
             message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
         elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
             message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
+        elif activity_code_id == Config.SETTING_CODE_ID:
+            message = f"Warning: This entry (ID {activity_code_id}) should always represent setting"
         else:
             message = "Warning: Changes to these values will be reflected in " \
                       "past readings with this activity code.<br> \
@@ -221,16 +223,22 @@ def edit_machine():
     form.id.validators = [NoneOf(ids, message="A machine with that ID already exists"), DataRequired()]
 
     if form.validate_on_submit():
+
+        # todo test code
+        time1 = form.shift_1_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+
+        # end test
+
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
         machine.group = form.group.data
-        machine.schedule_start_1 = form.shift_1_start.data
-        machine.schedule_end_1 = form.shift_1_end.data
-        machine.schedule_start_2 = form.shift_2_start.data
-        machine.schedule_end_2 = form.shift_2_end.data
-        machine.schedule_start_3 = form.shift_3_start.data
-        machine.schedule_end_3 = form.shift_3_end.data
+        machine.schedule_start_1 = form.shift_1_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        machine.schedule_end_1 = form.shift_1_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        machine.schedule_start_2 = form.shift_2_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        machine.schedule_end_2 = form.shift_2_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        machine.schedule_start_3 = form.shift_3_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        machine.schedule_end_3 = form.shift_3_end.data.strftime(SHIFT_STRFTIME_FORMAT)
         # Save empty ip values as null to avoid unique constraint errors in the database
         if form.device_ip.data == "":
             machine.device_ip = None
@@ -250,12 +258,12 @@ def edit_machine():
     form.group.data = machine.group
     form.active.data = machine.active
     form.device_ip.data = machine.device_ip
-    form.shift_1_start.data = machine.schedule_start_1
-    form.shift_1_end.data = machine.schedule_end_1
-    form.shift_2_start.data = machine.schedule_start_2
-    form.shift_2_end.data = machine.schedule_end_2
-    form.shift_3_start.data = machine.schedule_start_3
-    form.shift_3_end.data = machine.schedule_end_3
+    form.shift_1_start.data = datetime.strptime(machine.schedule_start_1, SHIFT_STRFTIME_FORMAT)
+    form.shift_1_end.data = datetime.strptime(machine.schedule_end_1, SHIFT_STRFTIME_FORMAT)
+    form.shift_2_start.data = datetime.strptime(machine.schedule_start_2, SHIFT_STRFTIME_FORMAT)
+    form.shift_2_end.data = datetime.strptime(machine.schedule_end_2, SHIFT_STRFTIME_FORMAT)
+    form.shift_3_start.data = datetime.strptime(machine.schedule_start_3, SHIFT_STRFTIME_FORMAT)
+    form.shift_3_end.data = datetime.strptime(machine.schedule_end_3, SHIFT_STRFTIME_FORMAT)
     return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)

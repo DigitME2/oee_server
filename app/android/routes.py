@@ -1,19 +1,20 @@
 import json
 from datetime import datetime
 
-from flask import abort, request, current_app
+from flask import request, current_app
 
 from app import db
-from app.android.helpers import start_user_session, end_user_sessions
+from app.login.helpers import start_user_session, end_user_sessions
 from app.db_helpers import get_current_activity_id, complete_last_activity
-from app.default.models import Machine, Job, Activity, ActivityCode
+from app.default.models import Job, Activity, ActivityCode
 from app.login import bp
 from app.login.models import User, UserSession
 
 from config import Config
 
-
+# TODO Don't send setting as an option for downtime
 # TODO Check the request makes sense, ie ensure the app hasnt got to the wrong page
+
 
 @bp.route('/checkstate', methods=['GET'])
 def android_check_state():
@@ -26,16 +27,16 @@ def android_check_state():
         return json.dumps({"state": "no_user"})
 
     current_app.logger.debug(f"Checking state for session {user_session}")
+
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
         return json.dumps({"state": "no_job"})
 
-    # If there is an active job, send the user to the job in progress screen
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     # Send the list of downtime reasons to populate a dropdown
-    all_active_codes = ActivityCode.query.filter_by(active=True).all()
+    all_active_codes = ActivityCode.query.filter(ActivityCode.active, ActivityCode.id != Config.SETTING_CODE_ID).all()
     # Get the current activity code to set the colour and dropdown
     try:
         machine = user_session.machine
@@ -48,13 +49,18 @@ def android_check_state():
         colour = "#ffffff"
         current_activity_code = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID)
 
+    # If the current activity is "setting", send to setting screen
+    if current_activity_code.id == Config.SETTING_CODE_ID:
+        return json.dumps({"state": "setting",
+                           "wo_number": current_job.wo_number,
+                           "colour": colour})
+
     current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
     return json.dumps({"state": "active_job",
                        "wo_number": current_job.wo_number,
                        "current_activity": current_activity_code.short_description,
                        "activity_codes": [code.short_description for code in all_active_codes],
                        "colour": colour})
-
 
 
 @bp.route('/androidlogin', methods=['POST'])
@@ -122,31 +128,50 @@ def android_logout():
 def android_start_job():
     if not request.is_json:
         return 404
+    timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     machine = user_session.machine
+    setting = request.json["setting"]
 
     # Create the job
-    job = Job(start_time=datetime.now().timestamp(),
-              user_id=user_session.user_id,
-              user_session_id=user_session.id,
-              wo_number=request.json["wo_number"],
-              planned_cycle_time=request.json["planned_cycle_time"],
-              planned_cycle_quantity=request.json["planned_cycle_quantity"],
-              machine_id=machine.id,
-              active=True)
+    if setting:
+        job = Job(start_time=timestamp,
+                  user_id=user_session.user_id,
+                  user_session_id=user_session.id,
+                  wo_number=request.json["wo_number"],
+                  planned_set_time=request.json["planned_set_time"],
+                  machine_id=machine.id,
+                  active=True)
+    else:
+        job = Job(start_time=timestamp,
+                  user_id=user_session.user_id,
+                  user_session_id=user_session.id,
+                  wo_number=request.json["wo_number"],
+                  planned_run_time=request.json["planned_run_time"],
+                  planned_quantity=request.json["planned_quantity"],
+                  planned_cycle_time=request.json["planned_cycle_time"],
+                  machine_id=machine.id,
+                  active=True)
+
     db.session.add(job)
     db.session.commit()
 
     # End the current activity
-    complete_last_activity(machine_id=machine.id)
+    complete_last_activity(machine_id=machine.id, timestamp_end=timestamp)
+
+    # Set the first activity depending on whether the machine is being set
+    if setting:
+        starting_activity_code = Config.SETTING_CODE_ID
+    else:
+        starting_activity_code = Config.UPTIME_CODE_ID
 
     # Start a new activity
     new_activity = Activity(machine_id=machine.id,
                             machine_state=Config.MACHINE_STATE_RUNNING,
-                            activity_code_id=Config.UPTIME_CODE_ID,
+                            activity_code_id=starting_activity_code,
                             user_id=user_session.user_id,
                             job_id=job.id,
-                            timestamp_start=datetime.now().timestamp())
+                            timestamp_start=timestamp)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.info(f"{user_session.user} started {job}")
@@ -194,10 +219,24 @@ def android_end_job():
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
 
+    try:
+        quantity = int(request.json["quantity"])
+        setting = request.json["setting"]
+    except KeyError:
+        return json.dumps({"success": False})
+
     # End the current job
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    current_job.timestamp_end = timestamp
+    current_job.end_time = timestamp
     current_job.active = None
+
+    # If the job was being set, quantity = the scrap, otherwise it is actual quantity
+    if setting:
+        current_job.setup_scrap = quantity
+    else:
+        current_job.actual_quantity = quantity
+
+    db.session.commit()
 
     # Mark the most recent activity in the database as complete
     complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
@@ -207,11 +246,10 @@ def android_end_job():
                             machine_state=Config.MACHINE_STATE_OFF,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             user_id=user_session.user_id,
-                            job_id=current_job.id,
                             timestamp_start=timestamp)
     db.session.add(new_activity)
     db.session.commit()
-    current_app.logger.debug(f"Ended {current_job}")
+    current_app.logger.debug(f"User {user_session.user} ended {current_job}")
     return json.dumps({"success": True})
 
 

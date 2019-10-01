@@ -14,30 +14,36 @@ def setup_database():
     create_default_users()
 
     if len(ActivityCode.query.all()) == 0:
-        unexplainedcode = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                                       code="EX",
-                                       short_description='Unexplained',
-                                       long_description="Downtime that doesn't have an explanation from the user",
-                                       graph_colour='#b22222')
-        db.session.add(unexplainedcode)
-        uptimecode = ActivityCode(id=Config.UPTIME_CODE_ID,
-                                  code="UP",
-                                  short_description='Uptime',
-                                  long_description='The machine is in use',
-                                  graph_colour='#00ff80')
-        db.session.add(uptimecode)
+        unexplained_code = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                                        code="EX",
+                                        short_description='Unexplained',
+                                        long_description="Downtime that doesn't have an explanation from the user",
+                                        graph_colour='#b22222')
+        db.session.add(unexplained_code)
+        uptime_code = ActivityCode(id=Config.UPTIME_CODE_ID,
+                                   code="UP",
+                                   short_description='Uptime',
+                                   long_description='The machine is in use',
+                                   graph_colour='#00ff80')
+        db.session.add(uptime_code)
+        setting_code = ActivityCode(id=Config.SETTING_CODE_ID,
+                                    code="ST",
+                                    short_description="Setting",
+                                    long_description="The machine is being set up",
+                                    graph_colour="#ff8000")
+        db.session.add(setting_code)
         db.session.commit()
         current_app.logger.info("Created default activity codes on first startup")
 
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",
                            device_ip="127.0.0.1",
-                           schedule_start_1=8,
-                           schedule_end_1=12,
-                           schedule_start_2=13,
-                           schedule_end_2=17,
-                           schedule_start_3=17,
-                           schedule_end_3=20)
+                           schedule_start_1="0800",
+                           schedule_end_1="1200",
+                           schedule_start_2="1300",
+                           schedule_end_2="1700",
+                           schedule_start_3="1700",
+                           schedule_end_3="2000")
         db.session.add(machine1)
         db.session.commit()
         current_app.logger.info("Created default machine on first startup")

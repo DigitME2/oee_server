@@ -75,8 +75,12 @@ except NoSuchTableError:
     logger.warning("No ScheduledActivity Table")
 
 
-def complete_last_activity(machine_id, timestamp_end=datetime.now().timestamp()):
-    """ Gets the most recent active activity for a machine and then ends it with the current time"""
+def complete_last_activity(machine_id, timestamp_end=None):
+    """ Gets the most recent active activity for a machine and then ends it with the current time, or a provided time"""
+
+    # Don't put datetime.now() as the default argument, it will break this function
+    if timestamp_end is None:
+        timestamp_end = datetime.now().timestamp()
     session = Session()
     last_activity_id = get_current_activity_id(machine_id)
     if last_activity_id is None:
@@ -105,15 +109,20 @@ def get_current_activity_id(target_machine_id):
         return activities[0].id
 
     else:
-        # If there is more than one activity without an end time, print a warning and return the most recent
+        # If there is more than one activity without an end time, end them and return the most recent
+
+        # Get the current activity by grabbing the one with the most recent start time
+        current_activity = max(activities, key=lambda activity: activity.timestamp_start)
+        activities.remove(current_activity)
+
         logger.warning("More than one open-ended activity when trying to get current activity:")
         for act in activities:
-            logger.debug(f"Open activity: {act}")
-        current_activity = activities[0]
-        logger.debug(f"Using {current_activity} as current activity")
-        for act in activities:
-            if act.timestamp_start < current_activity.timestamp_start:
-                current_activity = act
+            if act.timestamp_end == None:
+                logger.warning(f"Closing lost activity {act}")
+                act.timestamp_end = act.timestamp_start
+                session.add(act)
+                session.commit()
+
         return current_activity.id
 
 
@@ -163,6 +172,7 @@ def split_activity(activity_id, split_time=None):
     logger.debug(f"Ended {old_activity}")
     logger.debug(f"Started {new_activity}")
     session.close()
+
 
 # noinspection PyArgumentList
 def get_dummy_machine_activity(timestamp_start, timestamp_end, job_id, machine_id):
