@@ -199,7 +199,7 @@ def create_job_end_gantt(job):
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_dashboard_gantt(graph_start, graph_end, machine_ids):
+def create_dashboard_gantt(graph_start, graph_end, machine_ids, title):
     """ Creates a gantt plot of OEE for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
@@ -217,14 +217,13 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids):
 
     if len(df) == 0:
         return "No machine activity"
-    # todo Set title to machine group
-    graph_title = ""
+
     # Create the colours dictionary using codes' colours from the database
     colours = {}
     for act_code in ActivityCode.query.all():
         colours[act_code.short_description] = act_code.graph_colour
     fig = ff.create_gantt(df,
-                          title=graph_title,
+                          title=title,
                           group_tasks=True,
                           colors=colours,
                           index_col='Code',
@@ -233,11 +232,13 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids):
 
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
-
-    #todo Lower the height when there are only a few machines, to stop the bar being super high
-
     layout = apply_default_layout(layout)
-    layout.height = None
+
+    # Lower the height when there are only a few machines, to stop the bar being stretched vertically
+    if len(machine_ids) < 4:
+        layout.height = 200 * len(machine_ids)
+    else:
+        layout.height = None
     layout.width = None
     layout.autosize = True
     layout.margin = dict(l=100, r=0, b=50, t=0, pad=10, autoexpand=True)

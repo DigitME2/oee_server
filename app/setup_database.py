@@ -38,6 +38,7 @@ def setup_database():
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",
                            device_ip="127.0.0.1",
+                           machine_group="1",
                            schedule_start_1="0800",
                            schedule_end_1="1200",
                            schedule_start_2="1300",

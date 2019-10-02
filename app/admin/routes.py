@@ -224,11 +224,6 @@ def edit_machine():
 
     if form.validate_on_submit():
 
-        # todo test code
-        time1 = form.shift_1_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-
-        # end test
-
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data

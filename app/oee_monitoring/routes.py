@@ -15,10 +15,6 @@ from app.db_helpers import split_activity, get_current_activity_id
 from config import Config
 
 
-# todo Chris requested that logoff can be done without finishing a job. Maybe say this isnt possible and continue
-# the job next time it is logged on
-
-
 @bp.route('/production', methods=['GET', 'POST'])
 @login_required
 def production():
@@ -28,7 +24,6 @@ def production():
     # If the user doesn't have an active job, go to the start job page
     if active_job is None:
         return start_job()
-    # todo need a better way of getting manual or automatic. Not feasible to put the argument in every time
 
     # Determine if the app is in manual or automatic mode
     # If no mode specified, default to manual
@@ -61,7 +56,6 @@ def production():
             return end_automatic_job()
 
 
-# todo nothing stopping multiple jobs on one machine
 def start_job():
     """ The page where a user with no active job is sent to"""
     form = StartForm()
@@ -144,7 +138,6 @@ def manual_job_in_progress():
 
     current_job = Job.query.filter_by(user_id=current_user.id, active=True).first()
     timestamp = datetime.now().timestamp()
-    # TODO consider keeping a reference to the job in the user session or from the browser
 
     form = EndForm()
 
@@ -184,7 +177,6 @@ def manual_job_in_progress():
                                     activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                     user_id=current_user.id,
                                     timestamp_start=datetime.now().timestamp())
-            # TODO make new code for no operator
             db.session.add(new_activity)
             db.session.commit()
             current_app.logger.info(f"Ended {current_job}")
@@ -197,9 +189,6 @@ def manual_job_in_progress():
                            job=current_job,
                            nav_bar_title=nav_bar_title)
 
-# TODO Set a machine to "no job" when it has no job
-
-# todo what happens if the user leaves a job unfinished then logs into another machine
 
 def manual_job_paused():
 

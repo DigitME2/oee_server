@@ -12,9 +12,6 @@ from app.login.models import User, UserSession
 
 from config import Config
 
-# TODO Don't send setting as an option for downtime
-# TODO Check the request makes sense, ie ensure the app hasnt got to the wrong page
-
 
 @bp.route('/checkstate', methods=['GET'])
 def android_check_state():
@@ -93,7 +90,9 @@ def android_login():
         end_user_sessions(user.id)
         current_app.logger.info(f"Logged in {user} (Android)")
         response["success"] = True
-        start_user_session(user.id, request.remote_addr)
+        if not start_user_session(user.id, request.remote_addr):
+            response["success"] = False
+            response["reason"] = f"No machine assigned to this IP ({request.remote_addr})"
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
     else:

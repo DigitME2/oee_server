@@ -13,12 +13,6 @@ from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 
-
-
-
-
-# todo Start the consumer from here, or at least make sure the consumer is running
-
 from config import Config
 
 # Set up logging handlers

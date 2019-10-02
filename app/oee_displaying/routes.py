@@ -15,7 +15,9 @@ def dashboard():
         current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
         return abort(400, "No machine_group provided in url")
     machine_group = request.args['machine_group']
-    machine_ids = (machine.id for machine in Machine.query.filter_by(group=machine_group).all())
+    machine_ids = list(machine.id for machine in Machine.query.filter_by(group=machine_group).all())
+
+    graph_title = f"Machine group {machine_group}"
 
     start = datetime.combine(datetime.today(), time.min)
     end = (start + timedelta(days=1))
@@ -30,7 +32,8 @@ def dashboard():
 
     graph = create_dashboard_gantt(graph_start=start.timestamp(),
                                    graph_end=end.timestamp(),
-                                   machine_ids=machine_ids)
+                                   machine_ids=machine_ids,
+                                   title=graph_title)
     return render_template("oee_displaying/dashboard.html",
                            graph=graph)
 
