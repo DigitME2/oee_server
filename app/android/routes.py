@@ -4,12 +4,11 @@ from datetime import datetime
 from flask import request, current_app
 
 from app import db
-from app.login.helpers import start_user_session, end_user_sessions
 from app.db_helpers import get_current_activity_id, complete_last_activity
-from app.default.models import Job, Activity, ActivityCode
+from app.default.models import Job, Activity, ActivityCode, Machine
 from app.login import bp
+from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, UserSession
-
 from config import Config
 
 
@@ -18,10 +17,25 @@ def android_check_state():
     """ The app calls this on opening, to see whether a user is logged in, or a job is active etc"""
     # Get the user session based on the IP of the device accessing this page
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+
     # If there is no user session, send to login screen
     if user_session is None:
         current_app.logger.debug(f"Returning state to {request.remote_addr}: no_user")
-        return json.dumps({"state": "no_user"})
+        # Get the machine that should be assigned to this ip
+        assigned_machines = Machine.query.filter_by(device_ip=request.remote_addr, active=True).all()
+        # If no or multiple machines are assigned, show an error message
+        if len(assigned_machines) == 0:
+            current_app.logger.info(f"No machine assigned to {request.remote_addr}")
+            machine_text = f"Error: No machine assigned to this client IP ({request.remote_addr})"
+        elif len(assigned_machines) > 1:
+            current_app.logger.info(f"Multiple machines assigned to {request.remote_addr}")
+            machine_text = f"Error: Multiple machines assigned to this client IP ({request.remote_addr})"
+        else:
+            machine = assigned_machines[0]
+            machine_text = machine.name
+        return json.dumps({"state": "no_user",
+                           "machine": machine_text,
+                           "ip": request.remote_addr})
 
     current_app.logger.debug(f"Checking state for session {user_session}")
 
@@ -92,7 +106,7 @@ def android_login():
         response["success"] = True
         if not start_user_session(user.id, request.remote_addr):
             response["success"] = False
-            response["reason"] = f"No machine assigned to this IP ({request.remote_addr})"
+            response["reason"] = f"Error getting assigned machine ({request.remote_addr})"
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
     else:
@@ -114,9 +128,11 @@ def android_logout():
             job.end_time = timestamp
             job.active = None
     # End the current activity
-    act = Activity.query.get(get_current_activity_id(user_session.machine_id))
-    act.timestamp_end = timestamp
-    db.session.commit()
+    current_activity_id = get_current_activity_id(user_session.machine_id)
+    if current_activity_id:
+        act = Activity.query.get(current_activity_id)
+        act.timestamp_end = timestamp
+        db.session.commit()
 
     current_app.logger.info(f"Logging out {user_session.user}")
     end_user_sessions(user_session.user_id)

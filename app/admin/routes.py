@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from flask import render_template, url_for, redirect, request, abort, current_app, send_file
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
 
 from app import db
@@ -177,8 +178,13 @@ def edit_machine():
 
     # If new=true then the request is for a new machine to be created
     if 'new' in request.args and request.args['new'] == "true":
+        new_machine = True
+    else:
+        new_machine = False
+
+    if new_machine:
         # Create a new machine
-        machine = Machine(name="")
+        machine = Machine(name="", active=True)
         # Add and flush now to retrieve an id for the new entry
         db.session.add(machine)
         db.session.flush()
@@ -242,23 +248,28 @@ def edit_machine():
         # Only save the ID if creating a new machine
         if 'new' in request.args and request.args['new'] == "true":
             machine.id = form.id.data
-        db.session.add(machine)
-        db.session.commit()
+        try:
+            db.session.add(machine)
+            db.session.commit()
+        except IntegrityError as e:
+            return str(e)
+
         current_app.logger.debug(f"{machine} edited by {current_user}")
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page
     form.id.data = machine.id
-    form.name.data = machine.name
-    form.group.data = machine.group
     form.active.data = machine.active
-    form.device_ip.data = machine.device_ip
-    form.shift_1_start.data = datetime.strptime(machine.schedule_start_1, SHIFT_STRFTIME_FORMAT)
-    form.shift_1_end.data = datetime.strptime(machine.schedule_end_1, SHIFT_STRFTIME_FORMAT)
-    form.shift_2_start.data = datetime.strptime(machine.schedule_start_2, SHIFT_STRFTIME_FORMAT)
-    form.shift_2_end.data = datetime.strptime(machine.schedule_end_2, SHIFT_STRFTIME_FORMAT)
-    form.shift_3_start.data = datetime.strptime(machine.schedule_start_3, SHIFT_STRFTIME_FORMAT)
-    form.shift_3_end.data = datetime.strptime(machine.schedule_end_3, SHIFT_STRFTIME_FORMAT)
+    if not new_machine:
+        form.name.data = machine.name
+        form.group.data = machine.group
+        form.device_ip.data = machine.device_ip
+        form.shift_1_start.data = datetime.strptime(machine.schedule_start_1 or "", SHIFT_STRFTIME_FORMAT)
+        form.shift_1_end.data = datetime.strptime(machine.schedule_end_1, SHIFT_STRFTIME_FORMAT)
+        form.shift_2_start.data = datetime.strptime(machine.schedule_start_2, SHIFT_STRFTIME_FORMAT)
+        form.shift_2_end.data = datetime.strptime(machine.schedule_end_2, SHIFT_STRFTIME_FORMAT)
+        form.shift_3_start.data = datetime.strptime(machine.schedule_start_3, SHIFT_STRFTIME_FORMAT)
+        form.shift_3_end.data = datetime.strptime(machine.schedule_end_3, SHIFT_STRFTIME_FORMAT)
     return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)
