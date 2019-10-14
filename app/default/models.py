@@ -55,12 +55,11 @@ class Job(db.Model):
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
+    activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), nullable=False)
     machine_state = db.Column(db.Integer, nullable=False)
-    scheduled_state = db.Column(db.Integer)
-    explanation_required = db.Column(db.Boolean)
     timestamp_start = db.Column(db.Float, nullable=False)
     timestamp_end = db.Column(db.Float)
-    activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'))
+    explanation_required = db.Column(db.Boolean)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 

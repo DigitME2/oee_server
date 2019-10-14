@@ -16,6 +16,7 @@ class User(db.Model, UserMixin):
     active_job_id = db.Column(db.Integer)
 
     sessions = db.relationship('UserSession', backref="user")
+    activities = db.relationship('Activity', backref="user")
     jobs = db.relationship('Job', backref="user")
 
     def has_job(self):

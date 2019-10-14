@@ -8,6 +8,7 @@ from app.login.models import UserSession
 
 
 def start_user_session(user_id, device_ip):
+    """ Start a new session. Usually called when a user logs in"""
     user_session = UserSession.query.filter_by(user_id=user_id, device_ip=device_ip, active=True).first()
     # Close any user sessions that the current user has
     if user_session is not None:
@@ -34,6 +35,7 @@ def start_user_session(user_id, device_ip):
 
 
 def end_user_sessions(user_id=None, machine_id=None):
+    """ End all sessions for a user or a machine (Either can be given)"""
     timestamp = datetime.now().timestamp()
     sessions = []
     if user_id:

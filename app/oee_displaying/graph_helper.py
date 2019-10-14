@@ -6,6 +6,7 @@ from plotly.graph_objs.layout import Shape, Annotation
 from flask import current_app
 from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
+from app.oee_displaying.helpers import get_machine_status
 from config import Config
 from app.db_helpers import get_current_activity_id
 import plotly.figure_factory as ff
@@ -91,8 +92,14 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     machine_ids = a list of ids to include in the graph"""
 
     activities = []
+    machine_ids.sort()
     for machine_id in machine_ids:
-        activities.extend(get_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end))
+        machine_activities = get_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
+        # If a machine has no activities, add a fake one so it still shows on the graph
+        if len(machine_activities) == 0:
+            activities.append(Activity(timestamp_start=graph_start, timestamp_end=graph_start))
+        else:
+            activities.extend(machine_activities)
 
     df = get_df(activities=activities,
                 group_by="machine_name",
@@ -199,15 +206,18 @@ def create_job_end_gantt(job):
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_dashboard_gantt(graph_start, graph_end, machine_ids, title):
+def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_plotlyjs=True):
     """ Creates a gantt plot of OEE for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
     activities = []
+    machine_ids.sort()
     for machine_id in machine_ids:
-        activities.extend(get_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end))
+        activities.extend(get_activities(machine_id=machine_id,
+                                         timestamp_start=graph_start,
+                                         timestamp_end=graph_end))
 
     df = get_df(activities=activities,
                 group_by="machine_name",
@@ -230,28 +240,49 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title):
                           bar_width=0.4,
                           width=1800)
 
+
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
     layout = apply_default_layout(layout)
 
     # Lower the height when there are only a few machines, to stop the bar being stretched vertically
+    # Minor bug: If there are machines without activities, they'll still count here but wont show on the graph
     if len(machine_ids) < 4:
         layout.height = 200 * len(machine_ids)
     else:
         layout.height = None
     layout.width = None
     layout.autosize = True
-    layout.margin = dict(l=100, r=0, b=50, t=0, pad=10, autoexpand=True)
-
+    layout.margin['l'] = 150  # Create a bigger margin on the left to avoid cutting off title
     layout.yaxis.range = None
     layout.yaxis.autorange = True
 
+    layout.xaxis.range = [datetime.fromtimestamp(graph_start), datetime.fromtimestamp(graph_end)]
+
     layout.xaxis.rangeselector.visible = False
 
+    new_tick_texts = []
+    # Replace the labels on the y axis to show the current user and job
+    for machine_id in machine_ids:
+        status_dict = get_machine_status(machine_id)
+        desired_text = f"{status_dict['machine_name']}<br>" \
+                       f"{status_dict['machine_user']}<br>" \
+                       f"{status_dict['machine_job']}<br>" \
+                       f"{status_dict['machine_activity']}"
+        new_tick_texts.append(desired_text)
+
+    # The order of the tick texts in the layout is in the reverse order
+    new_tick_texts.reverse()
+    layout.yaxis.ticktext = tuple(new_tick_texts)
+    #TODO I dont like this method of changing the tick texts. It is possible to mix up machines
+    # as there is nothing currently controlling this
+
+    #TODO This is getting the wrong user
     fig['layout'] = layout
+
     return plot(fig,
                 output_type="div",
-                include_plotlyjs=True,
+                include_plotlyjs=include_plotlyjs,
                 config={"displayModeBar": False, "showLink": False})
 
 
@@ -366,12 +397,6 @@ def get_df(activities, group_by, graph_start, graph_end, crop_overflow=True):
 
     return df
 
-#     df.append(dict(Task=act.activity_code.code,
-    #                    Start=datetime.fromtimestamp(start),
-    #                    Finish=datetime.fromtimestamp(end),
-    #                    Code=act.activity_code.short_description,
-    #                    Activity_id=act.id))
-
 
 def get_activities(machine_id, timestamp_start, timestamp_end):
     """ Returns the activities for a machine, between two times"""
@@ -448,3 +473,4 @@ def highlight_jobs(activities, layout):
     layout.annotations = annotations
 
     return layout
+

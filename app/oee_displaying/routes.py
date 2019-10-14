@@ -1,10 +1,12 @@
-from app.oee_displaying.graph_helper import create_machine_gantt, create_multiple_machines_gantt, create_dashboard_gantt
-from app.oee_displaying import bp
-from app.default.models import Machine
 from datetime import datetime, timedelta, time
+
 from flask import abort, request, render_template, current_app
 from flask_login import login_required
 
+from app.default.models import Machine
+from app.oee_displaying import bp
+from app.oee_displaying.graph_helper import create_machine_gantt, create_multiple_machines_gantt, \
+    create_dashboard_gantt
 from app.oee_displaying.helpers import get_machine_status
 
 
@@ -19,23 +21,40 @@ def dashboard():
 
     graph_title = f"Machine group {machine_group}"
 
-    start = datetime.combine(datetime.today(), time.min)
-    end = (start + timedelta(days=1))
-
+    # If start is given in the url arguments, start the graph at that time on today's date
+    # Start should be in the format HH:MM
     if 'start' in request.args:
         start_time = datetime.strptime(request.args['start'], "%H:%M")
-        start = start.replace(hour=start_time.hour, minute=start_time.minute)
+        start = datetime.now().replace(hour=start_time.hour, minute=start_time.minute)
+        start = start - timedelta(minutes=1)  # Quick hack to make sure the start time shows on the x axis
+    # If no start given, start at 8am
+    else:
+        start = datetime.now().replace(hour=8)
 
+    # If 'end' is in the url arguments, end the graph at that time on today's date
     if 'end' in request.args:
         end_time = datetime.strptime(request.args['end'], "%H:%M")
-        end = end.replace(hour=end_time.hour, minute=end_time.minute)
+        end = datetime.now().replace(hour=end_time.hour, minute=end_time.minute)
+    # If no end given, show a 8 hour long graph
+    else:
+        end = (start + timedelta(hours=8))
 
-    graph = create_dashboard_gantt(graph_start=start.timestamp(),
-                                   graph_end=end.timestamp(),
-                                   machine_ids=machine_ids,
-                                   title=graph_title)
-    return render_template("oee_displaying/dashboard.html",
-                           graph=graph)
+    if 'update' in request.args and request.args['update']:
+        return create_dashboard_gantt(graph_start=start.timestamp(),
+                                      graph_end=end.timestamp(),
+                                      machine_ids=machine_ids,
+                                      title=graph_title,
+                                      include_plotlyjs=False)
+    else:
+
+        graph = create_dashboard_gantt(graph_start=start.timestamp(),
+                                       graph_end=end.timestamp(),
+                                       machine_ids=machine_ids,
+                                       title=graph_title)
+        return render_template("oee_displaying/dashboard.html",
+                               graph=graph,
+                               start=request.args['start'],
+                               end=request.args['end'])
 
 
 @bp.route('/graphs')
@@ -46,7 +65,7 @@ def multiple_machine_graph():
     end_time = (start_time + timedelta(days=1))
     graph = create_multiple_machines_gantt(graph_start=start_time.timestamp(),
                                            graph_end=end_time.timestamp(),
-                                           machine_ids=(machine.id for machine in Machine.query.all()))
+                                           machine_ids=list(machine.id for machine in Machine.query.all()))
     nav_bar_title = "Machine Activity"
     current_app.logger.debug(f"Creating graph for all machines between {start_time} and {end_time}")
     return render_template('oee_displaying/machine.html',
@@ -54,7 +73,7 @@ def multiple_machine_graph():
                            nav_bar_title=nav_bar_title,
                            graph=graph)
 
-1568105560
+
 @bp.route('/allmachinesstatus')
 def all_machines_status():
     # Create a list of dictionaries containing the status for every machine
@@ -117,3 +136,32 @@ def update_graph():
         machine = Machine.query.get_or_404(machine_id)
         current_app.logger.debug(f"Creating graph for {machine} between {start_time} and {end_time}")
         return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine_id=machine.id)
+
+
+
+@bp.route('/updatelayout', methods=['GET'])
+def get_updated_layout():
+    if 'machine_group' not in request.args:
+        current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
+        return abort(400, "No machine_group provided in url")
+    machine_group = request.args['machine_group']
+    machine_ids = list(machine.id for machine in Machine.query.filter_by(group=machine_group).all())
+
+    graph_title = f"Machine group {machine_group}"
+
+    start = datetime.combine(datetime.today(), time.min)
+    end = (start + timedelta(days=1))
+
+    if 'start' in request.args:
+        start_time = datetime.strptime(request.args['start'], "%H:%M")
+        start = start.replace(hour=start_time.hour, minute=start_time.minute)
+
+    if 'end' in request.args:
+        end_time = datetime.strptime(request.args['end'], "%H:%M")
+        end = end.replace(hour=end_time.hour, minute=end_time.minute)
+
+    return create_dashboard_gantt(graph_start=start.timestamp(),
+                                  graph_end=end.timestamp(),
+                                  machine_ids=machine_ids,
+                                  title=graph_title,
+                                  include_plotlyjs=False)

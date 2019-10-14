@@ -11,7 +11,7 @@ from app import db
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, ActivityCode, Job, Settings, SHIFT_STRFTIME_FORMAT
+from app.default.models import Machine, Activity, ActivityCode, Job, Settings, SHIFT_STRFTIME_FORMAT
 from config import Config
 from app.login.models import User
 
@@ -218,18 +218,27 @@ def edit_machine():
         current_app.logger.warn("No machine_id specified in URL")
         return abort(400, error_message)
 
-    # Prevent duplicate machine names from being created
-    names = []
-    for m in Machine.query.all():
-        names.append(str(m.name))
-    # Don't prevent saving with its own current name
-    if machine.name in names:
-        names.remove(machine.name)
-    form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
+    # Don't allow duplicate IDs
     form.id.validators = [NoneOf(ids, message="A machine with that ID already exists"), DataRequired()]
 
-    if form.validate_on_submit():
+    # Create a list of existing names and IPs for validation
+    names = []
+    ips = []
+    for m in Machine.query.all():
+        names.append(str(m.name))
+        ips.append(str(m.device_ip))
+    # Don't prevent saving with its own current name/IP
+    if machine.name in names:
+        names.remove(machine.name)
+    if machine.device_ip in ips:
+        ips.remove(machine.device_ip)
+    # Don't allow duplicate names
+    form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
+    # Don't allow duplicate IPs
+    form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine"), DataRequired()]
 
+    if form.validate_on_submit():
+        current_app.logger.info(f"{machine} edited by {current_user}")
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
@@ -245,16 +254,25 @@ def edit_machine():
             machine.device_ip = None
         else:
             machine.device_ip = form.device_ip.data
-        # Only save the ID if creating a new machine
+
+        # If creating a new machine, save the ID and start an activity on the machine
         if 'new' in request.args and request.args['new'] == "true":
             machine.id = form.id.data
+            current_app.logger.info(f"{machine} created by {current_user}")
+            first_act = Activity(machine_id=machine.id,
+                                 timestamp_start=datetime.now().timestamp(),
+                                 machine_state=Config.MACHINE_STATE_OFF,
+                                 activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
+            db.session.add(first_act)
+            current_app.logger.debug(f"{first_act} started on machine creation")
+
         try:
             db.session.add(machine)
             db.session.commit()
+
         except IntegrityError as e:
             return str(e)
 
-        current_app.logger.debug(f"{machine} edited by {current_user}")
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page
