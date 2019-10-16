@@ -39,7 +39,7 @@ class Config(object):
         os.mkdir('logs')
 
     STREAM_LOGGING_LEVEL = logging.DEBUG
-    FILE_LOGGING_LEVEL = logging.INFO
+    FILE_LOGGING_LEVEL = logging.DEBUG
     FLASK_LOG_FILE = 'logs/oee_app.log'
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 

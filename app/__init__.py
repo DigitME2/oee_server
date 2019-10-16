@@ -3,10 +3,11 @@ import logging
 import os
 
 from logging.handlers import RotatingFileHandler
+from time import strftime
 
 from app import db_helpers
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask
+from flask import Flask, request
 from flask_mobility import Mobility
 from flask.logging import default_handler
 from flask_login import LoginManager
@@ -25,6 +26,8 @@ stream_handler = logging.StreamHandler()
 
 stream_handler.setLevel(Config.STREAM_LOGGING_LEVEL)
 file_handler.setLevel(Config.FILE_LOGGING_LEVEL)
+
+
 
 
 # Use seconds in the graphs and measurements. Useful in debugging
@@ -57,6 +60,11 @@ def create_app(config_class=Config):
     app.logger.removeHandler(default_handler)
     app.logger.addHandler(stream_handler)
     app.logger.addHandler(file_handler)
+
+    # Add gunicorn logger
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    for handler in gunicorn_logger.handlers:
+        app.logger.addHandler(handler)
 
     print("Logging level:", logging.getLevelName(app.logger.getEffectiveLevel()))
 
@@ -93,7 +101,12 @@ def create_app(config_class=Config):
     # app.register_blueprint(api_bp)
     # from app.api import bp as api_bp
 
-    app.logger.info(f"USE_SECONDS = {os.environ.get('USE_SECONDS')}")
-    app.logger.info(f"DEMO_MODE = {os.environ.get('DEMO_MODE')}")
+    # Function to log requests
+    @app.after_request
+    def after_request(response):
+        timestamp = strftime('[%Y-%b-%d %H:%M]')
+        app.logger.debug('%s %s %s %s %s %s', timestamp, request.remote_addr, request.method, request.scheme,
+                                request.full_path, response.status)
+        return response
 
     return app
