@@ -96,6 +96,7 @@ def create_app(config_class=Config):
         with app.app_context():
             from app.setup_database import setup_database
             setup_database()
+        return response
 
     # Function to log requests
     @app.before_request
