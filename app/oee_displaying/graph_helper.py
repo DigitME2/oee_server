@@ -254,6 +254,7 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     layout.width = None
     layout.autosize = True
     layout.margin['l'] = 150  # Create a bigger margin on the left to avoid cutting off title
+    layout.margin['pad'] = 1
     layout.yaxis.range = None
     layout.yaxis.autorange = True
 
@@ -274,10 +275,14 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     # The order of the tick texts in the layout is in the reverse order
     new_tick_texts.reverse()
     layout.yaxis.ticktext = tuple(new_tick_texts)
-    #TODO I dont like this method of changing the tick texts. It is possible to mix up machines
+    #TODO I dont like this method of changing the tick texts. It seems like it's possible to mix up machines
     # as there is nothing currently controlling this
 
-    #TODO This is getting the wrong user
+    # Change the text sizes
+    layout.yaxis.tickfont.size = 18
+    layout.xaxis.tickfont.size = 18
+    layout.titlefont.size = 24
+
     fig['layout'] = layout
 
     return plot(fig,
