@@ -67,10 +67,7 @@ def create_app(config_class=Config):
 
     app.config.from_object(config_class)
     db.init_app(app)
-    # Fill the database with default values
-    with app.app_context():
-        from app.setup_database import setup_database
-        setup_database()
+
 
     login_manager.init_app(app)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
@@ -94,13 +91,17 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
 
-    # api blueprint allows app to create activities via REST
-    # app.register_blueprint(api_bp)
-    # from app.api import bp as api_bp
+
+    @app.before_first_request
+    def initial_setup():
+        # Fill the database with default values
+        with app.app_context():
+            from app.setup_database import setup_database
+            setup_database()
 
     # Function to log requests
-    @app.after_request
-    def after_request(response):
+    @app.before_request
+    def before_request(response):
         timestamp = strftime('[%Y-%b-%d %H:%M]')
         app.logger.debug('%s %s %s %s %s %s', timestamp, request.remote_addr, request.method, request.scheme,
                                 request.full_path, response.status)
