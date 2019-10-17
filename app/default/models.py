@@ -93,7 +93,9 @@ class ActivityCode(db.Model):
 class Settings(db.Model):
     # Only allow one row in this table
     unique = db.Column(db.String, db.CheckConstraint('1'), primary_key=True, default="1")
+    dashboard_update_interval_s = db.Column(db.Integer)
     threshold = db.Column(db.Integer)
+
 
     def __repr__(self):
         return f"<Settings threshold:'{self.threshold}'>"

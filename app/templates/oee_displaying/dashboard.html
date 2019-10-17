@@ -45,8 +45,8 @@
     $body = $("body");
 
 
-    const updateInterval = setInterval(getLayout, 5000);
-    //const graph = document.getElementsByClassName("plotly-graph-div")[0];
+    const updateInterval = setInterval(getLayout, {{ update_interval_ms }});
+
     window.onload = getLayout();
 
 
@@ -63,29 +63,13 @@
                 update: true //This tells the server not to send plotly.js again
             },
             success: function (response) {
-                console.log("response = ", response);
-                update(response);
+                // Replace the graph with the response
+                $graph.replaceWith(response);
             },
             error: function (error) {
-                //console.log(error);
-                //$('#graph').html("Error getting graph");
-                //$body.removeClass("loading");
+                console.log(error);
             }
         });
     }
 
-    function update(response) {
-        console.log(typeof graph, "old graph = ", graph);
-        var elements = $(response);
-        var newGraph = $(elements).find('.plotly-graph-div')[0];
-        //console.log("new graph = ", newGraph);
-        //var layout = newGraph.layout;
-        //console.log("layout = ", layout);
-        //Plotly.relayout(graph, layout);
-
-        // Add the new graph to the page
-        $graph.replaceWith(response);
-    }
-
-        {#TODO if it fails once it wont load again#}
 </script>

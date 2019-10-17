@@ -5,6 +5,14 @@
         <form action="" method="post">
             {{ form.hidden_tag() }}
             <p>
+                {{ form.dashboard_update_interval.label }}<br>
+                {{ form.dashboard_update_interval(size=32) }}<br>
+                {% for error in form.dashboard_update_interval.errors %}
+                    <span class="formError">[{{ error }}]</span>
+                {% endfor %}
+
+            <p>
+            <p>
                 {{ form.explanation_threshold.label }}<br>
                 {{ form.explanation_threshold(size=32) }}<br>
                 {% for error in form.explanation_threshold.errors %}

@@ -61,9 +61,8 @@ def setup_database():
         current_app.logger.info("Created activity on first startup")
 
     if len(Settings.query.all()) == 0:
-        settings = Settings(threshold=500)
+        settings = Settings(threshold=500, dashboard_update_interval_s=10)
         db.session.add(settings)
         db.session.commit()
         current_app.logger.info("Created default settings on first startup")
-        current_app.logger.warn("Ending process to complete first time setup...")
-        os.abort()
+

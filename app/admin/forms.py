@@ -45,5 +45,6 @@ class RegisterForm(FlaskForm):
 
 
 class SettingsForm(FlaskForm):
+    dashboard_update_interval = IntegerField('Dashboard update frequency (Seconds)', validators=[DataRequired()])
     explanation_threshold = IntegerField('Explanation Threshold (Seconds)', validators=[DataRequired()])
     submit = SubmitField('Save')

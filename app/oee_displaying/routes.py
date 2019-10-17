@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, time
 from flask import abort, request, render_template, current_app
 from flask_login import login_required
 
-from app.default.models import Machine
+from app.default.models import Machine, Settings
 from app.oee_displaying import bp
 from app.oee_displaying.graph_helper import create_machine_gantt, create_multiple_machines_gantt, \
     create_dashboard_gantt
@@ -12,6 +12,10 @@ from app.oee_displaying.helpers import get_machine_status
 
 @bp.route('/dashboard')
 def dashboard():
+    # Get the update interval to send to the page
+    update_interval_seconds = Settings.query.get(1).dashboard_update_interval_s
+    update_interval_ms = update_interval_seconds * 1000  # The jquery function takes milliseconds
+
     # Get the group of machines to show
     if 'machine_group' not in request.args:
         current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
@@ -52,6 +56,7 @@ def dashboard():
                                        machine_ids=machine_ids,
                                        title=graph_title)
         return render_template("oee_displaying/dashboard.html",
+                               update_interval_ms = update_interval_ms,
                                graph=graph,
                                start=request.args['start'],
                                end=request.args['end'])

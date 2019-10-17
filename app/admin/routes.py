@@ -33,14 +33,20 @@ def admin_home():
 @login_required
 @admin_required
 def settings():
+    # Get the current settings. There can only be one row in the settings table.
     current_settings = Settings.query.get_or_404(1)
     form = SettingsForm()
     if form.validate_on_submit():
+        # Save the new settings
+        current_settings.dashboard_update_interval_s = form.dashboard_update_interval.data
         current_settings.threshold = form.explanation_threshold.data
         db.session.add(current_settings)
         db.session.commit()
         current_app.logger.info(f"Changed settings: {current_settings}")
         return redirect(url_for('admin.admin_home'))
+
+    # Set the form data to show the existing settings
+    form.dashboard_update_interval.data = current_settings.dashboard_update_interval_s
     form.explanation_threshold.data = current_settings.threshold
     return render_template('admin/settings.html',
                            form=form)
