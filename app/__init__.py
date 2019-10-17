@@ -91,19 +91,15 @@ def create_app(config_class=Config):
     app.register_blueprint(testing_bp)
 
     @app.before_first_request
-    def initial_setup(response):
+    def initial_setup():
         # Fill the database with default values
         with app.app_context():
             from app.setup_database import setup_database
             setup_database()
-        return response
 
     # Function to log requests
     @app.before_request
-    def before_request(response):
+    def before_request():
         timestamp = strftime('[%Y-%b-%d %H:%M]')
-        app.logger.debug('%s %s %s %s %s %s', timestamp, request.remote_addr, request.method, request.scheme,
-                                request.full_path, response.status)
-        return response
-
+        app.logger.debug(f'{timestamp}, {request.remote_addr}, {request.method}, {request.scheme}, {request.full_path}')
     return app
