@@ -68,7 +68,6 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     db.init_app(app)
 
-
     login_manager.init_app(app)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
     Mobility(app)  # To detect a when client is on a mobile
@@ -91,9 +90,8 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
 
-
     @app.before_first_request
-    def initial_setup():
+    def initial_setup(response):
         # Fill the database with default values
         with app.app_context():
             from app.setup_database import setup_database
