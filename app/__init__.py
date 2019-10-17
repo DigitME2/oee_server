@@ -27,9 +27,6 @@ stream_handler = logging.StreamHandler()
 stream_handler.setLevel(Config.STREAM_LOGGING_LEVEL)
 file_handler.setLevel(Config.FILE_LOGGING_LEVEL)
 
-
-
-
 # Use seconds in the graphs and measurements. Useful in debugging
 if os.environ.get('USE_SECONDS') == 'True':
     USE_SECONDS = True
