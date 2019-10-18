@@ -220,7 +220,7 @@ def create_daily_scheduled_activities(skip_if_already_done=True):
             .filter(ScheduledActivity.timestamp_end < next_midnight.timestamp()).all()
 
         if skip_if_already_done and len(existing_activities) > 0:
-            logger.warn(f"Scheduled activities already exist today for {machine} Skipping...")
+            logger.warning(f"Scheduled activities already exist today for {machine} Skipping...")
             continue
 
         # noinspection PyArgumentList

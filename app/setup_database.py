@@ -17,6 +17,14 @@ def setup_database():
     create_default_users()
 
     if len(ActivityCode.query.all()) == 0:
+
+        no_user_code = ActivityCode(id=Config.NO_USER_CODE_ID,
+                                    code="NU",
+                                    short_description="No User",
+                                    long_description="No user is logged onto the machine",
+                                    graph_colour="#ffffff")
+        db.session.add(no_user_code)
+
         unexplained_code = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                         code="DO",
                                         short_description='Down',
@@ -55,7 +63,7 @@ def setup_database():
         act = Activity(machine_id=machine1.id,
                        timestamp_start=datetime.now().timestamp(),
                        machine_state=Config.MACHINE_STATE_OFF,
-                       activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
+                       activity_code_id=Config.NO_USER_CODE_ID)
         db.session.add(act)
         db.session.commit()
         current_app.logger.info("Created activity on first startup")

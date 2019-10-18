@@ -268,7 +268,7 @@ def edit_machine():
             first_act = Activity(machine_id=machine.id,
                                  timestamp_start=datetime.now().timestamp(),
                                  machine_state=Config.MACHINE_STATE_OFF,
-                                 activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
+                                 activity_code_id=Config.NO_USER_CODE_ID)
             db.session.add(first_act)
             current_app.logger.debug(f"{first_act} started on machine creation")
 

@@ -42,7 +42,7 @@ login_manager.login_view = 'login.login'
 # TODO Scheduler needs a proper test. Seems to be working but haven't left it overnight or anything
 # Set up scheduler to produce machine schedules daily
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=db_helpers.create_daily_scheduled_activities, trigger="cron", hour=0, minute=1)
+scheduler.add_job(func=db_helpers.create_daily_scheduled_activities, trigger="cron", hour=10, minute=43)
 scheduler.start()
 
 # Shut down the scheduler when exiting the app
