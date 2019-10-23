@@ -13,15 +13,11 @@ class Machine(db.Model):
     group = db.Column(db.String)
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
-    schedule_start_1 = db.Column(db.String)
-    schedule_end_1 = db.Column(db.String)
-    schedule_start_2 = db.Column(db.String)
-    schedule_end_2 = db.Column(db.String)
-    schedule_start_3 = db.Column(db.String)
-    schedule_end_3 = db.Column(db.String)
-
     user_sessions = db.relationship("UserSession", backref="machine")
     activities = db.relationship('Activity', backref='machine')
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
+
+    scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
     jobs = db.relationship('Job', backref='machine')
 
     def __repr__(self):
@@ -65,6 +61,25 @@ class Activity(db.Model):
 
     def __repr__(self):
         return f"<Activity machine:{self.machine_id} machine_state:{self.machine_state} (ID {self.id})>"
+
+
+class Schedule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, unique=True, nullable=False)
+    mon_start = db.Column(db.String)
+    mon_end = db.Column(db.String)
+    tue_start = db.Column(db.String)
+    tue_end = db.Column(db.String)
+    wed_start = db.Column(db.String)
+    wed_end = db.Column(db.String)
+    thu_start = db.Column(db.String)
+    thu_end = db.Column(db.String)
+    fri_start = db.Column(db.String)
+    fri_end = db.Column(db.String)
+    sat_start = db.Column(db.String)
+    sat_end = db.Column(db.String)
+    sun_start = db.Column(db.String)
+    sun_end = db.Column(db.String)
 
 
 class ScheduledActivity(db.Model):

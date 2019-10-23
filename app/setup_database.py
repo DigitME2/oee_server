@@ -1,10 +1,10 @@
 import os
-from datetime import datetime
+from datetime import datetime, time
 
 from flask import current_app
 
 from app import db
-from app.default.models import Activity, ActivityCode, Machine, Settings
+from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, SHIFT_STRFTIME_FORMAT
 from app.login.models import create_default_users
 from config import Config
 
@@ -49,13 +49,7 @@ def setup_database():
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",
                            device_ip="127.0.0.1",
-                           group="1",
-                           schedule_start_1="0800",
-                           schedule_end_1="1200",
-                           schedule_start_2="1300",
-                           schedule_end_2="1700",
-                           schedule_start_3="1700",
-                           schedule_end_3="2000")
+                           group="1")
         db.session.add(machine1)
         db.session.commit()
         current_app.logger.info("Created default machine on first startup")
@@ -67,6 +61,25 @@ def setup_database():
         db.session.add(act)
         db.session.commit()
         current_app.logger.info("Created activity on first startup")
+
+    if len(Schedule.query.all()) == 0:
+        schedule1 = Schedule(name="Default",
+                             mon_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             mon_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
+                             tue_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             tue_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
+                             wed_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             wed_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
+                             thu_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             thu_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
+                             fri_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             fri_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
+                             sat_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             sat_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
+                             sun_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
+                             sun_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT))
+        db.session.add(schedule1)
+        db.session.commit()
 
     if len(Settings.query.all()) == 0:
         settings = Settings(threshold=500, dashboard_update_interval_s=10)

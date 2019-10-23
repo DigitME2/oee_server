@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField
-from wtforms.validators import DataRequired, NumberRange, EqualTo, IPAddress, Optional
+from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField
+from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional
 from wtforms.widgets import TextArea
 from wtforms_components import TimeField
 
@@ -21,18 +21,33 @@ class ActivityCodeForm(FlaskForm):
     submit = SubmitField('Save')
 
 
+class ScheduleForm(FlaskForm):
+    error_message = "Enter 00:00 if no shift on this day"
+    name = StringField(validators=[DataRequired(message=error_message)])
+    mon_start = TimeField(validators=[DataRequired(message=error_message)])
+    mon_end = TimeField(validators=[DataRequired(message=error_message)])
+    tue_start = TimeField(validators=[DataRequired(message=error_message)])
+    tue_end = TimeField(validators=[DataRequired(message=error_message)])
+    wed_start = TimeField(validators=[DataRequired(message=error_message)])
+    wed_end = TimeField(validators=[DataRequired(message=error_message)])
+    thu_start = TimeField(validators=[DataRequired(message=error_message)])
+    thu_end = TimeField(validators=[DataRequired(message=error_message)])
+    fri_start = TimeField(validators=[DataRequired(message=error_message)])
+    fri_end = TimeField(validators=[DataRequired(message=error_message)])
+    sat_start = TimeField(validators=[DataRequired(message=error_message)])
+    sat_end = TimeField(validators=[DataRequired(message=error_message)])
+    sun_start = TimeField(validators=[DataRequired(message=error_message)])
+    sun_end = TimeField(validators=[DataRequired(message=error_message)])
+    submit = SubmitField('Save')
+
+
 class MachineForm(FlaskForm):
     active = BooleanField()
     id = IntegerField()
     name = StringField(validators=[DataRequired()])
     group = StringField("Machine Group", validators=[DataRequired()])
     device_ip = StringField("Operator Device IP Address", validators=[Optional(), IPAddress(ipv4=True, ipv6=False)])
-    shift_1_start = TimeField(validators=[DataRequired()])
-    shift_1_end = TimeField(validators=[DataRequired()])
-    shift_2_start = TimeField(validators=[DataRequired()])
-    shift_2_end = TimeField(validators=[DataRequired()])
-    shift_3_start = TimeField(validators=[DataRequired()])
-    shift_3_end = TimeField(validators=[DataRequired()])
+    schedule = SelectField("Schedule")
     submit = SubmitField('Save')
 
 

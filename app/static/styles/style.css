@@ -52,7 +52,7 @@ body {
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
 }
 
-.centralForm input, textarea {
+.centralForm input, textarea, select {
     font-family: "Roboto", sans-serif;
     outline: 0;
     background: #f2f2f2;
@@ -72,6 +72,7 @@ body {
 
     vertical-align: middle;
 }
+
 
 .formInUseCheckboxContainer {
     display: inline;
@@ -123,6 +124,7 @@ body {
 .shiftEntry {
     width: 80%;
     justify-self: center;
+    text-align: center;
 }
 
 
@@ -178,6 +180,29 @@ body {
 
 /* ------/admin home -----------*/
 
+
+/* ----- schedule --------*/
+
+.scheduleGrid{
+    display: grid;
+    grid-template-columns: auto auto auto;
+    padding-right: 10px;
+    grid-template-areas: ". . machineScheduleList"
+                         ". . machineScheduleList"
+                         ". . machineScheduleList"
+                         ". . machineScheduleList"
+                         ". . machineScheduleList"
+                         ". . machineScheduleList"
+                         ". . machineScheduleList";
+}
+
+#machineScheduleList{
+    grid-area: machineScheduleList;
+}
+
+/* ----- /schedule --------*/
+
+
 /* ---- edit activity code ---------*/
 
 .jscolor {
@@ -186,11 +211,7 @@ body {
 
 /* ---- /edit activity code ---------*/
 
-/* ----- edit machine --------*/
 
-
-
-/* ----- /edit machine --------*/
 
 /* -------downtime explanation---------*/
 
@@ -336,18 +357,18 @@ body.loading .modal {
 
 /* ----- Job start screen -------*/
 
-/* Mobile Styles */
-    .jobStartForm {
-        position: relative;
-        z-index: 1;
-        margin: 0 auto 100px;
-        width: 100%;
-        text-align: center;
-    }
+/*!* Mobile Styles *!*/
+/*    .jobStartForm {*/
+/*        position: relative;*/
+/*        z-index: 1;*/
+/*        margin: 0 auto 100px;*/
+/*        width: 100%;*/
+/*        text-align: center;*/
+/*    }*/
 
-    .jobStartInput {
-        width: 100%;
-    }
+/*    .jobStartInput {*/
+/*        width: 100%;*/
+/*    }*/
 
 
 

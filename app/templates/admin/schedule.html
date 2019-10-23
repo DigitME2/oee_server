@@ -1,0 +1,182 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <form action="" method="post" >
+        <div class="centralForm">
+            <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+            {{ form.hidden_tag() }}
+            {{ form.csrf_token }}
+            <p>
+                {{ form.name.label }}<br>
+                {{ form.name(size=32, autocomplete="off") }}<br>
+                {% for error in form.name.errors %}
+                    <span class="formError">[{{ error }}]</span>
+                {% endfor %}
+
+            <p>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.mon_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.mon_end.label }}
+                </div>
+
+                <div class="formGriditem shiftEntry">
+                    {{ form.mon_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.mon_end(size=32) }}
+                </div>
+
+                {% for error in form.mon_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.mon_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.tue_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.tue_end.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.tue_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.tue_end(size=32) }}
+                </div>
+
+                {% for error in form.tue_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.tue_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.wed_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.wed_end.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.wed_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.wed_end(size=32) }}
+                </div>
+
+                {% for error in form.wed_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.wed_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.thu_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.thu_end.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.thu_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.thu_end(size=32) }}
+                </div>
+
+                {% for error in form.thu_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.thu_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.fri_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.fri_end.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.fri_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.fri_end(size=32) }}
+                </div>
+
+                {% for error in form.fri_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.fri_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.sat_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.sat_end.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.sat_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.sat_end(size=32) }}
+                </div>
+
+                {% for error in form.sat_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.sat_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="formGrid">
+                <div class="formGriditem shiftEntry">
+                    {{ form.sun_start.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.sun_end.label }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.sun_start(size=32) }}
+                </div>
+                <div class="formGriditem shiftEntry">
+                    {{ form.sun_end(size=32) }}
+                </div>
+
+                {% for error in form.sun_start.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                {% for error in form.sun_end.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <p>{{ form.submit() }}</p>
+        </div>
+    </form>
+
+
+    <script src="{{ url_for('static', filename='javascript/jscolor.js') }}"
+            type="text/javascript"></script>
+    </div>
+
+{% endblock %}

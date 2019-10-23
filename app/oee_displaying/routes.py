@@ -56,7 +56,7 @@ def dashboard():
                                        machine_ids=machine_ids,
                                        title=graph_title)
         return render_template("oee_displaying/dashboard.html",
-                               update_interval_ms = update_interval_ms,
+                               update_interval_ms=update_interval_ms,
                                graph=graph,
                                start=request.args['start'],
                                end=request.args['end'])

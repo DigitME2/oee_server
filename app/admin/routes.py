@@ -9,9 +9,9 @@ from wtforms.validators import NoneOf, DataRequired
 
 from app import db
 from app.admin import bp
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, Activity, ActivityCode, Job, Settings, SHIFT_STRFTIME_FORMAT
+from app.default.models import Machine, Activity, ActivityCode, Job, Settings, SHIFT_STRFTIME_FORMAT, Schedule
 from config import Config
 from app.login.models import User
 
@@ -23,8 +23,9 @@ def admin_home():
     """ The default page for a logged-in user"""
     # Create default database entries
     return render_template('admin/adminhome.html',
-                           machines=Machine.query.all(),
                            users=User.query.all(),
+                           schedules=Schedule.query.all(),
+                           machines=Machine.query.all(),
                            activity_codes=ActivityCode.query.all(),
                            jobs=Job.query.all())
 
@@ -94,6 +95,188 @@ def change_password():
                            user=user,
                            form=form)
 
+
+@bp.route('/schedule', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def machine_schedule():
+    form = ScheduleForm()
+
+    schedule_id = request.args.get("schedule_id", None)
+
+    if schedule_id is None or request.args.get('new'):
+        # Create a new schedule
+        schedule = Schedule(name="")
+        db.session.add(schedule)
+    else:
+        schedule = Schedule.query.get_or_404(schedule_id)
+
+    if form.validate_on_submit():
+        # Save the data from the form to the database
+        schedule.name = form.name.data
+        schedule.mon_start = form.mon_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.mon_end = form.mon_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.tue_start = form.tue_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.tue_end = form.tue_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.wed_start = form.wed_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.wed_end = form.wed_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.thu_start = form.thu_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.thu_end = form.thu_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.fri_start = form.fri_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.fri_end = form.fri_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.sat_start = form.sat_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.sat_end = form.sat_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.sun_start = form.sun_start.data.strftime(SHIFT_STRFTIME_FORMAT)
+        schedule.sun_end = form.sun_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        db.session.commit()
+        return redirect(url_for('admin.admin_home'))
+
+    # Set the form data to show data from the database
+    form.name.data = schedule.name
+    blank_time = time().strftime(SHIFT_STRFTIME_FORMAT)  # Replace empty times with 00:00
+    form.mon_start.data = datetime.strptime(schedule.mon_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.mon_end.data = datetime.strptime(schedule.mon_end or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.tue_start.data = datetime.strptime(schedule.tue_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.tue_end.data = datetime.strptime(schedule.tue_end or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.wed_start.data = datetime.strptime(schedule.wed_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.wed_end.data = datetime.strptime(schedule.wed_end or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.thu_start.data = datetime.strptime(schedule.thu_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.thu_end.data = datetime.strptime(schedule.thu_end or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.fri_start.data = datetime.strptime(schedule.fri_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.fri_end.data = datetime.strptime(schedule.fri_end or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.sat_start.data = datetime.strptime(schedule.sat_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.sat_end.data = datetime.strptime(schedule.sat_end or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.sun_start.data = datetime.strptime(schedule.sun_start or blank_time, SHIFT_STRFTIME_FORMAT)
+    form.sun_end.data = datetime.strptime(schedule.sun_end or blank_time, SHIFT_STRFTIME_FORMAT)
+
+    return render_template("admin/schedule.html",
+                           form=form)
+
+
+@bp.route('/editmachine', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_machine():
+    """The page to edit a machine (also used for creating a new machine)
+    This page will allow an ID to be specified for new machines being created, but will not allow the ID
+    to be changed for existing machines."""
+    form = MachineForm()
+    ids = []
+
+    # Get a list of schedules to create form dropdown
+    schedules = []
+    for s in Schedule.query.all():
+        schedules.append((str(s.id), str(s.name)))
+    # Add the list of schedules to the form
+    form.schedule.choices = schedules
+
+    # If new=true then the request is for a new machine to be created
+    if 'new' in request.args and request.args['new'] == "true":
+        creating_new_machine = True
+    else:
+        creating_new_machine = False
+
+    if creating_new_machine:
+        # Create a new machine
+        machine = Machine(name="", active=True)
+        # Add and flush now to retrieve an id for the new entry
+        db.session.add(machine)
+        db.session.flush()
+        message = "Create new machine"
+
+        # Create a list of existing machine IDs to pass to data validation
+        for m in Machine.query.all():
+            ids.append(m.id)
+        # Allow it to accept the id that has just been assigned for the new entry
+        if machine.id in ids:
+            ids.remove(machine.id)
+
+    # Otherwise get the machine to be edited
+    elif 'machine_id' in request.args:
+        # Prevent the ID from being edited for existing machines
+        form.id.render_kw = {'readonly': True}
+        try:
+            machine_id = int(request.args['machine_id'])
+            machine = Machine.query.get_or_404(machine_id)
+        except ValueError:
+            current_app.logger.warn(f"Error parsing machine_id in URL. "
+                                    f"machine_id provided : {request.args['machine_id']}")
+            error_message = f"Error parsing machine_id : {request.args['machine_id']}"
+            return abort(400, error_message)
+        # Show a warning to the user
+        message = f"This machine ID ({machine_id}) can only be set when a new machine is being created. " \
+                  "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."
+
+    else:
+        error_message = "No machine_id specified"
+        current_app.logger.warn("No machine_id specified in URL")
+        return abort(400, error_message)
+
+    # Create validators for the form
+    # Create a list of existing names and IPs to prevent duplicates being entered
+    names = []
+    ips = []
+    for m in Machine.query.all():
+        names.append(str(m.name))
+        ips.append(str(m.device_ip))
+    # Don't prevent saving with its own current name/IP
+    if machine.name in names:
+        names.remove(machine.name)
+    if machine.device_ip in ips:
+        ips.remove(machine.device_ip)
+    # Don't allow duplicate machine names
+    form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
+    # Don't allow duplicate device IPs
+    form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine"), DataRequired()]
+    # Don't allow duplicate IDs
+    form.id.validators = [NoneOf(ids, message="A machine with that ID already exists"), DataRequired()]
+
+    if form.validate_on_submit():
+        current_app.logger.info(f"{machine} edited by {current_user}")
+        # Save the new values on submit
+        machine.name = form.name.data
+        machine.active = form.active.data
+        machine.group = form.group.data
+        machine.schedule_id = form.schedule.data
+
+        # Save empty ip values as null to avoid unique constraint errors in the database
+        if form.device_ip.data == "":
+            machine.device_ip = None
+        else:
+            machine.device_ip = form.device_ip.data
+
+        # If creating a new machine, save the ID and start an activity on the machine
+        if creating_new_machine:
+            machine.id = form.id.data
+            current_app.logger.info(f"{machine} created by {current_user}")
+            first_act = Activity(machine_id=machine.id,
+                                 timestamp_start=datetime.now().timestamp(),
+                                 machine_state=Config.MACHINE_STATE_OFF,
+                                 activity_code_id=Config.NO_USER_CODE_ID)
+            db.session.add(first_act)
+            current_app.logger.debug(f"{first_act} started on machine creation")
+
+        try:
+            db.session.add(machine)
+            db.session.commit()
+
+        except IntegrityError as e:
+            return str(e)
+
+        return redirect(url_for('admin.admin_home'))
+
+    # Fill out the form with existing values to display on the page
+    form.id.data = machine.id
+    form.active.data = machine.active
+    form.schedule.data = machine.schedule_id
+    if not creating_new_machine:
+        form.name.data = machine.name
+        form.group.data = machine.group
+        form.device_ip.data = machine.device_ip
+
+    return render_template("admin/edit_machine.html",
+                           form=form,
+                           message=message)
 
 @bp.route('/editactivitycode', methods=['GET', 'POST'])
 @login_required
@@ -172,131 +355,7 @@ def edit_activity_code():
                            message=message)
 
 
-@bp.route('/editmachine', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def edit_machine():
-    """The page to edit a machine (also used for creating a new machine)
-    This page will allow an ID to be specified for new machines being created, but will not allow the ID
-    to be changed for existing machines."""
-    form = MachineForm()
-    ids = []
 
-    # If new=true then the request is for a new machine to be created
-    if 'new' in request.args and request.args['new'] == "true":
-        new_machine = True
-    else:
-        new_machine = False
-
-    if new_machine:
-        # Create a new machine
-        machine = Machine(name="", active=True)
-        # Add and flush now to retrieve an id for the new entry
-        db.session.add(machine)
-        db.session.flush()
-        message = "Create new machine"
-
-        # Create a list of existing machine IDs to pass to data validation
-        for m in Machine.query.all():
-            ids.append(m.id)
-        # Allow it to accept the id that has just been assigned for the new entry
-        if machine.id in ids:
-            ids.remove(machine.id)
-
-    # Otherwise get the machine to be edited
-    elif 'machine_id' in request.args:
-        # Prevent the ID from being edited for existing machines
-        form.id.render_kw = {'readonly': True}
-        try:
-            machine_id = int(request.args['machine_id'])
-            machine = Machine.query.get_or_404(machine_id)
-        except ValueError:
-            current_app.logger.warn(f"Error parsing machine_id in URL. "
-                                    f"machine_id provided : {request.args['machine_id']}")
-            error_message = f"Error parsing machine_id : {request.args['machine_id']}"
-            return abort(400, error_message)
-        # Show a warning to the user
-        message = f"This machine ID ({machine_id}) can only be set when a new machine is being created. " \
-                  "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."
-
-    else:
-        error_message = "No machine_id specified"
-        current_app.logger.warn("No machine_id specified in URL")
-        return abort(400, error_message)
-
-    # Don't allow duplicate IDs
-    form.id.validators = [NoneOf(ids, message="A machine with that ID already exists"), DataRequired()]
-
-    # Create a list of existing names and IPs for validation
-    names = []
-    ips = []
-    for m in Machine.query.all():
-        names.append(str(m.name))
-        ips.append(str(m.device_ip))
-    # Don't prevent saving with its own current name/IP
-    if machine.name in names:
-        names.remove(machine.name)
-    if machine.device_ip in ips:
-        ips.remove(machine.device_ip)
-    # Don't allow duplicate names
-    form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
-    # Don't allow duplicate IPs
-    form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine"), DataRequired()]
-
-    if form.validate_on_submit():
-        current_app.logger.info(f"{machine} edited by {current_user}")
-        # Save the new values on submit
-        machine.name = form.name.data
-        machine.active = form.active.data
-        machine.group = form.group.data
-        machine.schedule_start_1 = form.shift_1_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        machine.schedule_end_1 = form.shift_1_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        machine.schedule_start_2 = form.shift_2_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        machine.schedule_end_2 = form.shift_2_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        machine.schedule_start_3 = form.shift_3_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        machine.schedule_end_3 = form.shift_3_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        # Save empty ip values as null to avoid unique constraint errors in the database
-        if form.device_ip.data == "":
-            machine.device_ip = None
-        else:
-            machine.device_ip = form.device_ip.data
-
-        # If creating a new machine, save the ID and start an activity on the machine
-        if 'new' in request.args and request.args['new'] == "true":
-            machine.id = form.id.data
-            current_app.logger.info(f"{machine} created by {current_user}")
-            first_act = Activity(machine_id=machine.id,
-                                 timestamp_start=datetime.now().timestamp(),
-                                 machine_state=Config.MACHINE_STATE_OFF,
-                                 activity_code_id=Config.NO_USER_CODE_ID)
-            db.session.add(first_act)
-            current_app.logger.debug(f"{first_act} started on machine creation")
-
-        try:
-            db.session.add(machine)
-            db.session.commit()
-
-        except IntegrityError as e:
-            return str(e)
-
-        return redirect(url_for('admin.admin_home'))
-
-    # Fill out the form with existing values to display on the page
-    form.id.data = machine.id
-    form.active.data = machine.active
-    if not new_machine:
-        form.name.data = machine.name
-        form.group.data = machine.group
-        form.device_ip.data = machine.device_ip
-        form.shift_1_start.data = datetime.strptime(machine.schedule_start_1 or "", SHIFT_STRFTIME_FORMAT)
-        form.shift_1_end.data = datetime.strptime(machine.schedule_end_1, SHIFT_STRFTIME_FORMAT)
-        form.shift_2_start.data = datetime.strptime(machine.schedule_start_2, SHIFT_STRFTIME_FORMAT)
-        form.shift_2_end.data = datetime.strptime(machine.schedule_end_2, SHIFT_STRFTIME_FORMAT)
-        form.shift_3_start.data = datetime.strptime(machine.schedule_start_3, SHIFT_STRFTIME_FORMAT)
-        form.shift_3_end.data = datetime.strptime(machine.schedule_end_3, SHIFT_STRFTIME_FORMAT)
-    return render_template("admin/edit_machine.html",
-                           form=form,
-                           message=message)
 
 
 @bp.route('/export', methods=['GET'])
