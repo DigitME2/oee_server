@@ -66,6 +66,7 @@ class Activity(db.Model):
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
+
     mon_start = db.Column(db.String)
     mon_end = db.Column(db.String)
     tue_start = db.Column(db.String)
@@ -80,6 +81,17 @@ class Schedule(db.Model):
     sat_end = db.Column(db.String)
     sun_start = db.Column(db.String)
     sun_end = db.Column(db.String)
+
+    machines = db.relationship('Machine', backref='schedule')
+
+    def get_shifts(self):
+        return [(self.mon_start, self.mon_end),
+                (self.tue_start, self.tue_end),
+                (self.wed_start, self.wed_end),
+                (self.thu_start, self.thu_end),
+                (self.fri_start, self.fri_end),
+                (self.sat_start, self.sat_end),
+                (self.sun_start, self.sun_end)]
 
 
 class ScheduledActivity(db.Model):

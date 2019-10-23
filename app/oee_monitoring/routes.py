@@ -5,13 +5,13 @@ from flask import abort, render_template, request, redirect, url_for, current_ap
 from flask_login import login_required, current_user
 
 from app import db
-from app.db_helpers import complete_last_activity
+from app.default.db_helpers import complete_last_activity
 from app.default.models import Activity, ActivityCode, Machine, Job, Settings
 from app.oee_displaying.graph_helper import create_job_end_gantt
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
-from app.db_helpers import flag_activities, get_legible_duration, get_dummy_machine_activity
-from app.db_helpers import split_activity, get_current_activity_id
+from app.default.db_helpers import flag_activities, get_legible_duration, get_dummy_machine_activity
+from app.default.db_helpers import split_activity, get_current_activity_id
 from config import Config
 
 

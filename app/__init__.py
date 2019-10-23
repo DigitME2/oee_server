@@ -5,8 +5,8 @@ import os
 from logging.handlers import RotatingFileHandler
 from time import strftime
 
-from app import db_helpers
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask_apscheduler import APScheduler
 from flask import Flask, request
 from flask_mobility import Mobility
 from flask.logging import default_handler
@@ -35,18 +35,14 @@ else:
 
 
 db = SQLAlchemy()
+scheduler = APScheduler()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
 
 
-# TODO Scheduler needs a proper test. Seems to be working but haven't left it overnight or anything
-# Set up scheduler to produce machine schedules daily
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=db_helpers.create_daily_scheduled_activities, trigger="cron", hour=10, minute=43)
-scheduler.start()
+from app.default import db_helpers
 
-# Shut down the scheduler when exiting the app
-atexit.register(lambda: scheduler.shutdown())
+
 
 
 def create_app(config_class=Config):
@@ -72,6 +68,16 @@ def create_app(config_class=Config):
     app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
     Mobility(app)  # To detect a when client is on a mobile
 
+    # TODO Scheduler needs a proper test. Seems to be working but haven't left it overnight or anything
+    # Set up scheduler to produce machine schedules daily
+
+    scheduler.init_app(app)
+    scheduler.add_job(func=db_helpers.create_daily_scheduled_activities, id="1", trigger="cron", hour=15, minute=6)
+    scheduler.start()
+
+    # Shut down the scheduler when exiting the app
+    atexit.register(lambda: scheduler.shutdown())
+
     from app.admin import bp as admin_bp
     from app.default import bp as default_bp
     from app.errors import bp as errors_bp
@@ -90,6 +96,7 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
 
+
     @app.before_first_request
     def initial_setup():
         # Fill the database with default values
@@ -102,4 +109,5 @@ def create_app(config_class=Config):
     def before_request():
         timestamp = strftime('[%Y-%b-%d %H:%M]')
         app.logger.debug(f'{timestamp}, {request.remote_addr}, {request.method}, {request.scheme}, {request.full_path}')
+
     return app

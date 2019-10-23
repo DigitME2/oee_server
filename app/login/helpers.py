@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import current_app
 
 from app import db
-from app.db_helpers import complete_last_activity
+from app.default.db_helpers import complete_last_activity
 from app.default.models import Machine, Activity
 from app.login.models import UserSession
 from config import Config

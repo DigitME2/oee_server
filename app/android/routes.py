@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import request, current_app
 
 from app import db
-from app.db_helpers import get_current_activity_id, complete_last_activity
+from app.default.db_helpers import get_current_activity_id, complete_last_activity
 from app.default.models import Job, Activity, ActivityCode, Machine
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions

@@ -46,22 +46,6 @@ def setup_database():
         db.session.commit()
         current_app.logger.info("Created default activity codes on first startup")
 
-    if len(Machine.query.all()) == 0:
-        machine1 = Machine(name="Machine 1",
-                           device_ip="127.0.0.1",
-                           group="1")
-        db.session.add(machine1)
-        db.session.commit()
-        current_app.logger.info("Created default machine on first startup")
-
-        act = Activity(machine_id=machine1.id,
-                       timestamp_start=datetime.now().timestamp(),
-                       machine_state=Config.MACHINE_STATE_OFF,
-                       activity_code_id=Config.NO_USER_CODE_ID)
-        db.session.add(act)
-        db.session.commit()
-        current_app.logger.info("Created activity on first startup")
-
     if len(Schedule.query.all()) == 0:
         schedule1 = Schedule(name="Default",
                              mon_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
@@ -79,6 +63,27 @@ def setup_database():
                              sun_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
                              sun_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT))
         db.session.add(schedule1)
+        db.session.commit()
+        current_app.logger.info("Created default schedule on first startup")
+
+    if len(Machine.query.all()) == 0:
+        machine1 = Machine(name="Machine 1",
+                           device_ip="127.0.0.1",
+                           group="1")
+        db.session.add(machine1)
+        db.session.commit()
+        current_app.logger.info("Created default machine on first startup")
+
+        act = Activity(machine_id=machine1.id,
+                       timestamp_start=datetime.now().timestamp(),
+                       machine_state=Config.MACHINE_STATE_OFF,
+                       activity_code_id=Config.NO_USER_CODE_ID,
+                       schedule_id=1)
+        db.session.add(act)
+        db.session.commit()
+        current_app.logger.info("Created activity on first startup")
+
+
         db.session.commit()
 
     if len(Settings.query.all()) == 0:

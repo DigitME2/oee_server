@@ -8,7 +8,7 @@ from datetime import datetime
 from app.default.models import Activity, Machine, ActivityCode
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
-from app.db_helpers import get_current_activity_id
+from app.default.db_helpers import get_current_activity_id
 import plotly.figure_factory as ff
 
 
