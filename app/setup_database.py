@@ -69,7 +69,8 @@ def setup_database():
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",
                            device_ip="127.0.0.1",
-                           group="1")
+                           group="1",
+                           schedule_id=1)
         db.session.add(machine1)
         db.session.commit()
         current_app.logger.info("Created default machine on first startup")
@@ -77,8 +78,7 @@ def setup_database():
         act = Activity(machine_id=machine1.id,
                        timestamp_start=datetime.now().timestamp(),
                        machine_state=Config.MACHINE_STATE_OFF,
-                       activity_code_id=Config.NO_USER_CODE_ID,
-                       schedule_id=1)
+                       activity_code_id=Config.NO_USER_CODE_ID)
         db.session.add(act)
         db.session.commit()
         current_app.logger.info("Created activity on first startup")
