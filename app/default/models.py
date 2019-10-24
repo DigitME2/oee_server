@@ -85,13 +85,14 @@ class Schedule(db.Model):
     machines = db.relationship('Machine', backref='schedule')
 
     def get_shifts(self):
-        return [(self.mon_start, self.mon_end),
-                (self.tue_start, self.tue_end),
-                (self.wed_start, self.wed_end),
-                (self.thu_start, self.thu_end),
-                (self.fri_start, self.fri_end),
-                (self.sat_start, self.sat_end),
-                (self.sun_start, self.sun_end)]
+        """" Return a dictionary of tuples mapping the day of the week to the shift pattern"""
+        return {0: (self.mon_start, self.mon_end),
+                1: (self.tue_start, self.tue_end),
+                2: (self.wed_start, self.wed_end),
+                3: (self.thu_start, self.thu_end),
+                4: (self.fri_start, self.fri_end),
+                5: (self.sat_start, self.sat_end),
+                6: (self.sun_start, self.sun_end)}
 
 
 class ScheduledActivity(db.Model):

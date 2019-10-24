@@ -6,7 +6,6 @@ from random import randrange
 
 import pandas as pd
 from app import db
-from app.default.db_helpers import create_daily_scheduled_activities
 from app.default.models import *
 from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
