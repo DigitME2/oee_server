@@ -1,10 +1,8 @@
-APScheduler==3.6.1
 blinker==1.4
 Click==7.0
 Flask==1.1.1
 Flask-Admin==1.5.3
 Flask-Login==0.4.1
-Flask-Mobility==0.1.1
 Flask-SQLAlchemy==2.3.2
 Flask-WTF==0.14.2
 gunicorn==19.9.0

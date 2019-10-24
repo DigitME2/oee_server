@@ -5,9 +5,7 @@ from time import strftime
 
 from flask import Flask, request
 from flask.logging import default_handler
-from flask_apscheduler import APScheduler
 from flask_login import LoginManager
-from flask_mobility import Mobility
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -32,7 +30,6 @@ else:
 
 
 db = SQLAlchemy()
-scheduler = APScheduler()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
 
@@ -58,7 +55,6 @@ def create_app(config_class=Config):
 
     login_manager.init_app(app)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
-    Mobility(app)  # To detect a when client is on a mobile
 
     from app.admin import bp as admin_bp
     from app.default import bp as default_bp
