@@ -1,12 +1,14 @@
-from datetime import timedelta
+import json
+
+from flask import render_template, request, flash, redirect, url_for, current_app
+from flask_login import current_user, login_user, logout_user, login_required
+from werkzeug.urls import url_parse
+
 from app import db
 from app.login import bp
 from app.login.forms import LoginForm
 from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, create_default_users
-from flask import render_template, request, flash, redirect, url_for, current_app, session
-from flask_login import current_user, login_user, logout_user, login_required
-from werkzeug.urls import url_parse
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -51,10 +53,15 @@ def login():
 def logout():
     """ Logs the user out of the system. """
     current_app.logger.info(f"Logging out {current_user}")
-    end_user_sessions(user_id=current_user)
     logout_user()
     return redirect(url_for('login.login'))
 
+
+@bp.route('/end_all_sessions', methods=['POST'])
+def end_all_sessions():
+    """ Ends all user_sessions. This will stop all android sessions but does not log people out of flask_login"""
+    end_user_sessions()
+    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 

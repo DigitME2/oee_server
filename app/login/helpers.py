@@ -2,11 +2,17 @@ from datetime import datetime
 
 from flask import current_app
 
+
 from app import db
 from app.default.db_helpers import complete_last_activity
 from app.default.models import Machine, Activity
 from app.login.models import UserSession
 from config import Config
+
+
+def on_logout(app, user):
+    """ Catches a logout and ends the user_session"""
+    end_user_sessions(user_id=user.id)
 
 
 def start_user_session(user_id, device_ip):
@@ -53,6 +59,8 @@ def end_user_sessions(user_id=None, machine_id=None):
         sessions.extend(UserSession.query.filter_by(user_id=user_id, active=True).all())
     if machine_id:
         sessions.extend(UserSession.query.filter_by(machine_id=machine_id, active=True).all())
+    else:
+        sessions.extend(UserSession.query.filter_by(active=True).all())
     for us in sessions:
         current_app.logger.info(f"Ending user session {us}")
         us.timestamp_logout = timestamp

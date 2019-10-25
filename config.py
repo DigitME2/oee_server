@@ -42,6 +42,8 @@ class Config(object):
     STREAM_LOGGING_LEVEL = logging.DEBUG
     FILE_LOGGING_LEVEL = logging.DEBUG
     FLASK_LOG_FILE = 'logs/oee_app.log'
+    ROTATING_LOG_FILE_MAX_BYTES = 1024000
+    ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
     # The database IDs for activity codes

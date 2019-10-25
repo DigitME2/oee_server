@@ -6,6 +6,7 @@ from time import strftime
 from flask import Flask, request
 from flask.logging import default_handler
 from flask_login import LoginManager
+from flask_login import user_logged_out
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -14,7 +15,9 @@ from config import Config
 # Set up logging handlers
 if not os.path.exists('logs'):
     os.mkdir('logs')
-file_handler = RotatingFileHandler(filename=Config.FLASK_LOG_FILE, maxBytes=10240, backupCount=10)
+file_handler = RotatingFileHandler(filename=Config.FLASK_LOG_FILE,
+                                   maxBytes=Config.ROTATING_LOG_FILE_MAX_BYTES,
+                                   backupCount=Config.ROTATING_LOG_FILE_COUNT)
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s'))
 stream_handler = logging.StreamHandler()
@@ -74,6 +77,9 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
 
+    # Call a function to record when a user is logged out
+    from app.login.helpers import on_logout
+    user_logged_out.connect(on_logout, app)
 
     @app.before_first_request
     def initial_setup():
