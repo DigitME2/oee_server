@@ -77,10 +77,6 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(testing_bp)
 
-    # Call a function to record when a user is logged out
-    from app.login.helpers import on_logout
-    user_logged_out.connect(on_logout, app)
-
     @app.before_first_request
     def initial_setup():
         # Fill the database with default values

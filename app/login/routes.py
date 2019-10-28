@@ -33,7 +33,6 @@ def login():
             flash("Invalid username or password")
             return redirect(url_for('login.login'))
         login_user(user)
-        start_user_session(user_id=user.id, device_ip=request.remote_addr)
         current_app.logger.info(f"Logged in {user}")
         # If the user was redirected here, send the user back to the original page
         next_page = request.args.get('next')

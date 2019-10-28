@@ -10,11 +10,6 @@ from app.login.models import UserSession
 from config import Config
 
 
-def on_logout(app, user):
-    """ Catches a logout and ends the user_session"""
-    end_user_sessions(user_id=user.id)
-
-
 def start_user_session(user_id, device_ip):
     """ Start a new session. Usually called when a user logs in"""
     timestamp = datetime.now().timestamp()
