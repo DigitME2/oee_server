@@ -46,8 +46,10 @@ def android_check_state():
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # Send the list of downtime reasons to populate a dropdown
-    all_active_codes = ActivityCode.query.filter(ActivityCode.active, ActivityCode.id != Config.SETTING_CODE_ID).all()
+    # Send the list of downtime reasons to populate a dropdown. Exclude setting and no user
+    all_active_codes = ActivityCode.query.filter(ActivityCode.active,
+                                                 ActivityCode.id != Config.SETTING_CODE_ID,
+                                                 ActivityCode.id != Config.NO_USER_CODE_ID).all()
     # Get the current activity code to set the colour and dropdown
     try:
         machine = user_session.machine
