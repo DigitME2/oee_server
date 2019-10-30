@@ -65,7 +65,6 @@ def create_machines_csv(time_start, time_end):
     with open(filepath, 'w+') as csv_file:
         headers = [' ']  # No header for user column
         activity_code_descriptions = [code.short_description for code in act_codes]
-        activity_code_descriptions.append(-1)
         headers.extend(activity_code_descriptions)
 
         schedule_dict = get_schedule_dict(1, time_start, time_end)  # Get any dict to parse the keys
@@ -81,7 +80,7 @@ def create_machines_csv(time_start, time_end):
             machine_dict = get_activity_dict(time_start=time_start, time_end=time_end, machine_id=machine.id,
                                              use_description_as_key=True)
             machine_dict.update(get_schedule_dict(time_start=time_start, time_end=time_end, machine_id=machine.id))
-            format_dictionary_durations_for_csv(machine_dict)
+            machine_dict = format_dictionary_durations_for_csv(machine_dict)
             machine_dict[" "] = machine.name  # No header for user column
             writer.writerow(machine_dict)
 
