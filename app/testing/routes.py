@@ -6,6 +6,9 @@ from random import randrange
 
 import pandas as pd
 from app import db
+from app.data_analysis.oee import get_activity_dict
+from app.export.helpers import *
+from app.login.models import User
 from app.default.models import *
 from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
@@ -17,16 +20,14 @@ from flask_login import current_user
 
 @bp.route('/test')
 def test():
-    end = datetime.now().timestamp()  # a days worth
-    start = end - 86400
-    print(session["job_id3"])
-    graph = create_downtime_pie(machine_id=1, graph_start=start, graph_end=end)
-    session["job_id1"] = 13
-    return graph
+    create_users_csv(time_start=1572268033, time_end=1572280302)
+
+    #d = get_activity_dict(time_start=1572268033, time_end=1572280302, machine_id=1)
+    return "test"
 
 @bp.route('/test1')
 def test1():
-    create_daily_scheduled_activities()
+
     return "Create scheduled activities"
 
 

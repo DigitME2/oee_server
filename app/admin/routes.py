@@ -353,29 +353,3 @@ def edit_activity_code():
     return render_template("admin/edit_activity_code.html",
                            form=form,
                            message=message)
-
-
-
-
-
-@bp.route('/export', methods=['GET'])
-def export():
-    query = str(Job.query.filter_by(user_id=1).statement.compile(compile_kwargs={"literal_binds": True}))
-    df = pd.read_sql(sql=query, con=db.engine)
-
-    # Convert the times to a readable format
-    df['start_time'] = list(map(datetime.fromtimestamp, df["start_time"]))
-    df['end_time'] = list(map(datetime.fromtimestamp, df["end_time"]))
-
-    filename = 'output.csv'
-    directory = os.path.join('app', 'static', 'temp')
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    filepath = os.path.abspath(os.path.join(directory, filename))
-    # Delete the old temporary file
-    if os.path.exists(filepath):
-        os.remove(filepath)
-
-    df.to_csv(filepath)
-    new_file_name = "testy.csv"
-    return send_file(filename_or_fp=filepath, cache_timeout=-1, as_attachment=True, attachment_filename=new_file_name)

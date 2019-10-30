@@ -180,27 +180,29 @@ body {
 
 /* ------/admin home -----------*/
 
+/* -------export home---------*/
 
-/* ----- schedule --------*/
+.MainListHeader {
+    margin-right: 10px;
+    margin-bottom: 20px;
+}
 
-.scheduleGrid{
+.MainList {
     display: grid;
-    grid-template-columns: auto auto auto;
-    padding-right: 10px;
-    grid-template-areas: ". . machineScheduleList"
-                         ". . machineScheduleList"
-                         ". . machineScheduleList"
-                         ". . machineScheduleList"
-                         ". . machineScheduleList"
-                         ". . machineScheduleList"
-                         ". . machineScheduleList";
+    grid-template-columns: auto auto;
+    padding: 10px 25px 10px 10px;
+    float: left;
 }
 
-#machineScheduleList{
-    grid-area: machineScheduleList;
+.MainListItem {
+    padding: 8px;
+    text-align: left;
+    align-self: center;
 }
 
-/* ----- /schedule --------*/
+
+/* ------/export home -----------*/
+
 
 
 /* ---- edit activity code ---------*/
