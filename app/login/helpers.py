@@ -52,7 +52,7 @@ def end_user_sessions(user_id=None, machine_id=None):
     sessions = []
     if user_id:
         sessions.extend(UserSession.query.filter_by(user_id=user_id, active=True).all())
-    if machine_id:
+    elif machine_id:
         sessions.extend(UserSession.query.filter_by(machine_id=machine_id, active=True).all())
     else:
         sessions.extend(UserSession.query.filter_by(active=True).all())
