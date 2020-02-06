@@ -41,6 +41,7 @@ class Job(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
     active = db.Column(db.Boolean)  # This should either be true or null
+    notes = db.Column(db.String)
 
     activities = db.relationship('Activity', backref='job')
 

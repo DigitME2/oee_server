@@ -11,7 +11,7 @@ from app.oee_displaying.graph_helper import create_job_end_gantt
 from app.oee_monitoring import bp
 from app.oee_monitoring.forms import StartForm, EndForm
 from app.default.db_helpers import flag_activities, get_legible_duration, get_dummy_machine_activity
-from app.default.db_helpers import split_activity, get_current_activity_id
+from app.default.db_helpers import split_activity, get_current_machine_activity_id
 from config import Config
 
 
@@ -33,7 +33,7 @@ def production():
         # Check the status of the machine to determine the state of the job
         current_machine = Machine.query.get_or_404(active_job.machine_id)
         try:
-            current_activity = Activity.query.get(get_current_activity_id(current_machine.id))
+            current_activity = Activity.query.get(get_current_machine_activity_id(current_machine.id))
             machine_state = current_activity.machine_state
         except TypeError:
             # This could be raised if there are no activities
@@ -116,7 +116,7 @@ def start_job():
         else:
             # Automatic mode
             # Split the current activity so that it doesn't extend to before this job starts
-            current_activity = Activity.query.get(get_current_activity_id(target_machine_id=machine.id))
+            current_activity = Activity.query.get(get_current_machine_activity_id(target_machine_id=machine.id))
             if current_activity is not None:
                 current_app.logger.debug(f"Job started. Splitting {current_activity}")
                 split_activity(activity_id=current_activity.id)
@@ -213,7 +213,7 @@ def manual_job_paused():
                 return
 
             # Assign the activity code to the paused activity
-            paused_activity = Activity.query.get(get_current_activity_id(paused_job.machine_id))
+            paused_activity = Activity.query.get(get_current_machine_activity_id(paused_job.machine_id))
             paused_activity.activity_code_id = activity_code.id
             db.session.commit()
 
@@ -251,7 +251,7 @@ def automatic_job_in_progress():
         # On form submit, give the job an end time and assign activities since start time
 
         # Split the current activity first
-        current_activity = Activity.query.get(get_current_activity_id(target_machine_id=current_job.machine_id))
+        current_activity = Activity.query.get(get_current_machine_activity_id(target_machine_id=current_job.machine_id))
         if current_activity is not None:
             current_app.logger.debug(f"Job ended. Splitting {current_activity}")
             split_activity(activity_id=current_activity.id)

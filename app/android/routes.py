@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import request, current_app
 
 from app import db
-from app.default.db_helpers import get_current_activity_id, complete_last_activity
+from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity
 from app.default.models import Job, Activity, ActivityCode, Machine
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions
@@ -53,7 +53,7 @@ def android_check_state():
     # Get the current activity code to set the colour and dropdown
     try:
         machine = user_session.machine
-        current_activity = Activity.query.get(get_current_activity_id(machine.id))
+        current_activity = Activity.query.get(get_current_machine_activity_id(machine.id))
         current_activity_code = current_activity.activity_code
         colour = current_activity_code.graph_colour
     except TypeError:
@@ -130,7 +130,7 @@ def android_logout():
             job.end_time = timestamp
             job.active = None
     # End the current activity
-    current_activity_id = get_current_activity_id(user_session.machine_id)
+    current_activity_id = get_current_machine_activity_id(user_session.machine_id)
     if current_activity_id:
         act = Activity.query.get(current_activity_id)
         act.timestamp_end = timestamp

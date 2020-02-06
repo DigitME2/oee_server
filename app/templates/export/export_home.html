@@ -5,16 +5,16 @@
     <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
 
     <div class="centralBody">
-        <div class="centralWrapper">
-            <div id="exportRawList" class="MainList">
-                <div class="MainListHeader">
+        <div class="exportCentralWrapper">
+            <div id="exportRawList" class="exportColumn">
+                <div class="exportColumnHeader">
                     <h2>Raw Database Tables</h2>
                 </div>
                 <div></div>
                 {#empty cell#}
                 {% for table in tables %}
-                    <div class="MainListItem">{{ table }}</div>
-                    <div class="MainListItem">
+                    <div class="exportListItem">{{ table }}</div>
+                    <div class="exportListItem">
                         <form action="{{ url_for('export.export_raw') }}"
                               method="get">
                             <input type="hidden" name="table" value={{ table }}>
@@ -24,39 +24,70 @@
                 {% endfor %}
             </div>
 
-            <div id="exportUserList" class="MainList">
-                <div>
-                    <h2>Reports</h2>
+            <div id="exportUserList" class="exportColumn">
+                <div class="exportColumnHeader">
+                    <h2>Activity Durations</h2>
                 </div>
-                {#empty cell#}
                 <form action="{{ url_for('export.export_report') }}" method="get">
-                    <div class="graphSelectDiv">
-                        <label for="datePicker">Date: </label>
-                        <input type="text" id="datePicker" name="date" style="position: relative; z-index: 1000;">
-                        <br>
-                    </div>
-                    <div>
-                        <input type="submit" name="users_daily" value="Daily - Users">
-                        <br>
-                    </div>
-                    <div>
-                        <input type="submit" name="users_weekly" value="Weekly - Users">
-                    </div>
-                    <div>
-                        <input type="submit" name="users_monthly" value="Monthly - Users">
-                    </div>
-                    <div>
-                        <input type="submit" name="machines_daily" value="Daily - Machines">
-                    </div>
-                    <div>
-                        <input type="submit" name="machines_weekly" value="Weekly - Machines">
-                    </div>
-                    <div>
-                        <input type="submit" name="machines_monthly" value="Monthly - Machines">
-                    </div>
+                    <input type="hidden" name="chartType" value="activityDuration">
+                    <table class="exportExampleTable">
+                        <thead>
+                        <tr>
+                            <th>
+                                <select name="keyColumn">
+                                    <option value="Users">Users</option>
+                                    <option value="Machines">Machines</option>
+                                </select>
+                            </th>
+                            <th>Uptime</th>
+                            <th>Downtime</th>
+                            <th>...</th>
+                        </tr>
+                        </thead>
+                        <tbody class="align-center">
+                        <tr>
+                            <td>1</td>
+                            <td>123</td>
+                            <td>456</td>
+                            <td>...</td>
 
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>123</td>
+                            <td>456</td>
+                            <td>...</td>
+                        </tr>
+
+                        <tr>
+                            <td>...</td>
+                            <td>...</td>
+                            <td>...</td>
+                            <td>...</td>
+                        </tr>
+
+                        </tbody>
+                    </table>
+
+                    <div class="exportDateTimeSelect">
+                        <label for="startDatePicker">From: </label>
+                        <input type="text" id="startDatePicker" name="dateStart"
+                               style="position: relative; z-index: 1000;">
+                        <input type="time" id="startTimePicker" name="timeStart" class="exportTimePicker" value="00:00"/>
+                    </div>
+                    <div class="exportDateTimeSelect">
+                        <label for="endDatePicker">To: </label>
+                        <input type="text" id="endDatePicker" name="dateEnd" style="position: relative; z-index: 1000;">
+                        <input type="time" id="endTimePicker" name="timeEnd" class="exportTimePicker" value="00:00"/>
+                    </div>
+                    <div>
+                        <input type="submit" name="users_download" value="Download">
+                        <br>
+                    </div>
                 </form>
             </div>
+
+
         </div>
     </div>
 
@@ -68,7 +99,13 @@
 
     <script>
         $(function () {
-            $("#datePicker").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', new Date());
+            var today = new Date();
+            var yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+            var tomorrow = new Date();
+            tomorrow.setDate(today.getDate() + 1);
+            $("#startDatePicker").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', today);
+            $("#endDatePicker").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', tomorrow);
         });
     </script>
 

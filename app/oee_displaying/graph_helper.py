@@ -3,14 +3,13 @@ import operator
 from plotly.offline import plot
 from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
-from flask import current_app
 from datetime import datetime
 
 from app.data_analysis.oee import calculate_activity_percent
 from app.default.models import Activity, Machine, ActivityCode
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
-from app.default.db_helpers import get_current_activity_id
+from app.default.db_helpers import get_machine_activities
 import plotly.figure_factory as ff
 
 
@@ -45,7 +44,7 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
     if machine_id is None:
         return "This machine does not exist"
 
-    activities = get_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
+    activities = get_machine_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
     # Sort the activities so that uptime is always the first.
     # This is a workaround to make the graph always show uptime on the bottom
     activities.sort(key=sort_activities, reverse=True)
@@ -77,7 +76,7 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
     layout = apply_default_layout(layout)
 
     # Highlight jobs
-    layout = highlight_jobs(get_activities(machine_id, timestamp_start=graph_start, timestamp_end=graph_end), layout)
+    layout = highlight_jobs(activities, layout)
 
     # Pass the changed layout back to fig
     fig['layout'] = layout
@@ -96,7 +95,7 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     activities = []
     machine_ids.sort()
     for machine_id in machine_ids:
-        machine_activities = get_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
+        machine_activities = get_machine_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
         # If a machine has no activities, add a fake one so it still shows on the graph
         if len(machine_activities) == 0:
             activities.append(Activity(timestamp_start=graph_start, timestamp_end=graph_start))
@@ -217,9 +216,9 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     activities = []
     machine_ids.sort()
     for machine_id in machine_ids:
-        activities.extend(get_activities(machine_id=machine_id,
-                                         timestamp_start=graph_start,
-                                         timestamp_end=graph_end))
+        activities.extend(get_machine_activities(machine_id=machine_id,
+                                                 timestamp_start=graph_start,
+                                                 timestamp_end=graph_end))
 
     df = get_df(activities=activities,
                 group_by="machine_name",
@@ -365,30 +364,6 @@ def get_df(activities, group_by, graph_start, graph_end, crop_overflow=True):
                        Code=code))
 
     return df
-
-
-def get_activities(machine_id, timestamp_start, timestamp_end):
-    """ Returns the activities for a machine, between two times"""
-
-    machine = Machine.query.get(machine_id)
-    if machine is None:
-        current_app.logger.warn(f"Activities requested for non-existent Machine ID {machine_id}")
-        return
-    activities = Activity.query \
-        .filter(Activity.machine_id == machine.id) \
-        .filter(Activity.timestamp_end >= timestamp_start) \
-        .filter(Activity.timestamp_start <= timestamp_end).all()
-    # If required, add the current_activity (The above loop will not get it)
-    # and extend the end time to the end of the graph
-
-    current_activity_id = get_current_activity_id(target_machine_id=machine.id)
-    if current_activity_id is not None:
-        current_act = Activity.query.get(current_activity_id)
-        # Don't add the current activity if it started after the requested end of the graph
-        if current_act.timestamp_start <= timestamp_end:
-            activities.append(current_act)
-
-    return activities
 
 
 def highlight_jobs(activities, layout):

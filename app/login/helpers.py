@@ -34,7 +34,7 @@ def start_user_session(user_id, device_ip):
                          active=True)
     db.session.add(new_us)
     # Change the machine activity now that the user is logged in
-    complete_last_activity(machine.id, timestamp)
+    complete_last_activity(machine_id=machine.id, timestamp_end=timestamp)
     new_activity = Activity(machine_id=machine.id,
                             timestamp_start=timestamp,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
@@ -66,7 +66,7 @@ def end_user_sessions(user_id=None, machine_id=None):
             job.active = None
         db.session.commit()  # Not committing here would sometimes cause sqlite to have too many operations
         # Set the activity to "no user"
-        complete_last_activity(us.machine.id, timestamp)
+        complete_last_activity(machine_id=us.machine.id, timestamp_end=timestamp)
         new_activity = Activity(machine_id=us.machine.id,
                                 timestamp_start=timestamp,
                                 activity_code_id=Config.NO_USER_CODE_ID,

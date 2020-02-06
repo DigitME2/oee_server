@@ -6,7 +6,6 @@ from random import randrange
 
 import pandas as pd
 from app import db
-from app.data_analysis.oee import get_activity_dict
 from app.export.helpers import *
 from app.login.models import User
 from app.default.models import *

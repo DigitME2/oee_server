@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import current_app
 
 from app import db
-from app.default.db_helpers import get_legible_duration, get_current_activity_id
+from app.default.db_helpers import get_legible_duration, get_current_machine_activity_id
 from app.default.models import Machine, Activity
 from app.login.models import User, UserSession
 
@@ -23,7 +23,7 @@ def get_machine_status(machine_id):
             machine_user_text = "Error getting user"
 
     # Get the current activity on the machine
-    current_activity_id = get_current_activity_id(target_machine_id=machine.id)
+    current_activity_id = get_current_machine_activity_id(target_machine_id=machine.id)
     if current_activity_id is None:
         activity_text = "No Activity"
         job_text = "No Job"

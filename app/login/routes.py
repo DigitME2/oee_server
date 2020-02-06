@@ -23,9 +23,9 @@ def login():
     if current_user.is_authenticated:
         # Send admins and non-admins to different pages
         if current_user.admin:
-            return redirect(url_for('oee_displaying.multiple_machine_graph'))
+            return redirect(url_for('admin.admin_home'))
         else:
-            return redirect(url_for('oee_monitoring.production'))
+            return redirect(url_for('export.export_home'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -39,9 +39,9 @@ def login():
         if not next_page or url_parse(next_page).netloc != '':
             # If no next page given, default to these pages
             if user.admin:
-                next_page = url_for('oee_displaying.multiple_machine_graph')
+                next_page = url_for('admin.admin_home')
             else:
-                next_page = url_for('oee_monitoring.production')
+                next_page = url_for('export.export_home')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)

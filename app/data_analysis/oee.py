@@ -1,16 +1,19 @@
+from datetime import datetime
+
 from app.default.models import Activity, ActivityCode, ScheduledActivity
+from app.default.db_helpers import get_machine_activities, get_user_activities
 
 from config import Config
 
 
-def get_machine_runtime(machine_id, time_start, time_end):
+def get_machine_runtime(machine_id, requested_start, requested_end):
     """ Takes a machine id and two times, and returns the amount of time the machine was running """
     # Get all of the activities for the machine between the two given times, where the machine is up
     activities = Activity.query \
         .filter(Activity.machine_id == machine_id) \
         .filter(Activity.machine_state == Config.MACHINE_STATE_RUNNING) \
-        .filter(Activity.timestamp_end >= time_start) \
-        .filter(Activity.timestamp_start <= time_end).all()
+        .filter(Activity.timestamp_end >= requested_start) \
+        .filter(Activity.timestamp_start <= requested_end).all()
 
     run_time = 0
     for act in activities:
@@ -18,30 +21,31 @@ def get_machine_runtime(machine_id, time_start, time_end):
     return run_time
 
 
-def get_activity_dict(time_start, time_end, machine_id=None, user_id=None, use_description_as_key=False):
+def get_activity_duration_dict(requested_start, requested_end, machine_id=None, user_id=None, use_description_as_key=False):
     """ Returns a dict containing the total duration of each activity_code between two timestamps in the format:
     activity_code_id: duration(seconds) e.g. 1: 600
-    If use_code_description is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
+    If use_description_as_key is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
     if user_id:
         # Get all of the activities for a user
-        activities = Activity.query \
-            .filter(Activity.user_id == user_id) \
-            .filter(Activity.timestamp_end >= time_start) \
-            .filter(Activity.timestamp_start <= time_end).all()
+        activities = get_user_activities(user_id=user_id,
+                                         timestamp_start=requested_start,
+                                         timestamp_end=requested_end)
     elif machine_id:
         # Get all of the activities for a machine
-        activities = Activity.query \
-            .filter(Activity.machine_id == machine_id) \
-            .filter(Activity.timestamp_end >= time_start) \
-            .filter(Activity.timestamp_start <= time_end).all()
+        activities = get_machine_activities(machine_id=machine_id,
+                                            timestamp_start=requested_start,
+                                            timestamp_end=requested_end)
     else:
         # Get all the activities
         activities = Activity.query \
-            .filter(Activity.timestamp_end >= time_start) \
-            .filter(Activity.timestamp_start <= time_end).all()
+            .filter(Activity.timestamp_end >= requested_start) \
+            .filter(Activity.timestamp_start <= requested_end).all()
 
     # Initialise the dictionary that will hold the totals
     activities_dict = {}
+
+    # Add all activity codes to the dictionary.
+    # If use_descriptions_as_key, then the key is the description of the activity code. Otherwise it is the code id
     act_codes = ActivityCode.query.all()
     for code in act_codes:
         if use_description_as_key:
@@ -50,17 +54,19 @@ def get_activity_dict(time_start, time_end, machine_id=None, user_id=None, use_d
             activities_dict[code.id] = 0
 
     for act in activities:
-        # If the activity extends past the  start or end, crop it short
-        if act.timestamp_start < time_start:
-            start = time_start
-        else:
+        # If the activity starts before the requested start, crop it to the requested start time
+        if act.timestamp_start is not None and act.timestamp_start > requested_start:
             start = act.timestamp_start
-        if act.timestamp_end > time_end:
-            end = time_end
         else:
-            end = act.timestamp_end
+            start = requested_start
 
-        # Add the time to the dict
+        # If the activity extends past the requested end or has no end, crop it to the requested end (or current time)
+        if act.timestamp_end is None or act.timestamp_start > requested_end:
+            end = min([requested_end, datetime.now().timestamp()])
+        else:
+            end = requested_end
+
+        # Calculate the duration and add to the dict
         if use_description_as_key:
             activities_dict[act.activity_code.short_description] += (end - start)
         else:

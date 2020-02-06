@@ -8,11 +8,12 @@
       <excludeFolder url="file://$MODULE_DIR$/app/static/javascript" />
       <excludeFolder url="file://$MODULE_DIR$/app/templates/testing" />
       <excludeFolder url="file://$MODULE_DIR$/app/testing" />
+      <excludeFolder url="file://$MODULE_DIR$/flask" />
       <excludeFolder url="file://$MODULE_DIR$/logs" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/venv2" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.6 (oee_webapp_venv)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (oee_webapp_venv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="@types/plotly.js" level="application" />
   </component>

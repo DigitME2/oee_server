@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 
-from app.data_analysis.oee import get_activity_dict, get_schedule_dict
+from app.data_analysis.oee import get_activity_duration_dict, get_schedule_dict
 from app.default.models import ActivityCode, Machine
 from app.login.models import User
 
@@ -45,10 +45,11 @@ def create_users_csv(time_start, time_end):
         writer.writeheader()
 
         for user in users:
-            user_dict = get_activity_dict(time_start=time_start,
-                                          time_end=time_end,
-                                          user_id=user.id,
-                                          use_description_as_key=True)
+            # Get a dict with the activities in
+            user_dict = get_activity_duration_dict(requested_start=time_start,
+                                                   requested_end=time_end,
+                                                   user_id=user.id,
+                                                   use_description_as_key=True)
             user_dict.pop(no_user_description)  # Don't show a value for "No User" in the user CSV
             # Format the durations to be readable
             user_dict = format_dictionary_durations_for_csv(user_dict)
@@ -59,11 +60,14 @@ def create_users_csv(time_start, time_end):
 
 
 def create_machines_csv(time_start, time_end):
+    """ Create a CSV listing the amount of time spent for each activity_code.
+    This function returns the filepath where the file is saved"""
     machines = Machine.query.all()
     act_codes = ActivityCode.query.all()
-    filepath = get_temp_filepath("users.csv")
+    filepath = get_temp_filepath("machines.csv")
     with open(filepath, 'w+') as csv_file:
-        headers = [' ']  # No header for user column
+        # Create the headers
+        headers = [' ']  # First entry is blank so there is no header for machine column
         activity_code_descriptions = [code.short_description for code in act_codes]
         headers.extend(activity_code_descriptions)
 
@@ -76,12 +80,21 @@ def create_machines_csv(time_start, time_end):
         # Write the headers
         writer.writeheader()
 
+        # Get the data
         for machine in machines:
-            machine_dict = get_activity_dict(time_start=time_start, time_end=time_end, machine_id=machine.id,
-                                             use_description_as_key=True)
-            machine_dict.update(get_schedule_dict(time_start=time_start, time_end=time_end, machine_id=machine.id))
+            # Get a dictionary containing all the activities for the machine
+            machine_dict = get_activity_duration_dict(requested_start=time_start,
+                                                      requested_end=time_end,
+                                                      machine_id=machine.id,
+                                                      use_description_as_key=True)
+
+            # Get a dictionary containing the schedule for the machine
+            machine_dict.update(get_schedule_dict(time_start=time_start,
+                                                  time_end=time_end,
+                                                  machine_id=machine.id))
+
             machine_dict = format_dictionary_durations_for_csv(machine_dict)
-            machine_dict[" "] = machine.name  # No header for user column
+            machine_dict[" "] = machine.name  # The machine names go under the column with a blank header
             writer.writerow(machine_dict)
 
         return filepath
