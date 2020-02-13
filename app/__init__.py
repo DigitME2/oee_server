@@ -64,20 +64,22 @@ def create_app(config_class=Config):
     from app.errors import bp as errors_bp
     from app.export import bp as export_bp
     from app.login import bp as users_bp
-    from app.android import bp as android_bp
     from app.oee_displaying import bp as oee_displaying_bp
     from app.oee_monitoring import bp as oee_monitoring_bp
-    from app.testing import bp as testing_bp
+    from app.android import bp as android_bp
+
+    if os.path.exists('app/testing'):
+        from app.testing import bp as testing_bp
+        app.register_blueprint(testing_bp)
 
     app.register_blueprint(admin_bp)
     app.register_blueprint(default_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(export_bp)
     app.register_blueprint(users_bp)
-    app.register_blueprint(android_bp)
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(oee_monitoring_bp)
-    app.register_blueprint(testing_bp)
+    app.register_blueprint(android_bp)
 
     @app.before_first_request
     def initial_setup():
