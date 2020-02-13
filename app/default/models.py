@@ -31,6 +31,7 @@ class Job(db.Model):
     start_time = db.Column(db.Float, nullable=False)
     end_time = db.Column(db.Float)
     wo_number = db.Column(db.String, nullable=False)
+    part_number = db.Column(db.String)
     planned_set_time = db.Column(db.Integer)
     setup_scrap = db.Column(db.Integer)
     planned_run_time = db.Column(db.Integer)

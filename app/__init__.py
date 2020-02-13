@@ -6,7 +6,7 @@ from time import strftime
 from flask import Flask, request
 from flask.logging import default_handler
 from flask_login import LoginManager
-from flask_login import user_logged_out
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -33,6 +33,7 @@ else:
 
 
 db = SQLAlchemy()
+migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
 
@@ -55,6 +56,7 @@ def create_app(config_class=Config):
 
     app.config.from_object(config_class)
     db.init_app(app)
+    migrate.init_app(app, db)
 
     login_manager.init_app(app)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
