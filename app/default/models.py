@@ -10,6 +10,7 @@ SHIFT_STRFTIME_FORMAT = "%H%M"  # Time is stored in the database as a string and
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
+    workflow_type_id = db.Column(db.Integer, db.ForeignKey('workflow_type.id'))
     group = db.Column(db.String)
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
@@ -22,6 +23,14 @@ class Machine(db.Model):
 
     def __repr__(self):
         return f"<Machine '{self.name}' (ID {self.id})"
+
+
+class WorkflowType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, unique=True, nullable=False)
+    description = db.Column(db.String)
+
+    machines = db.relationship('Machine', backref='workflow_type')
 
 
 class Job(db.Model):

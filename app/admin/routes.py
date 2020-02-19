@@ -1,8 +1,6 @@
 from datetime import datetime, time
-import os
 
-import pandas as pd
-from flask import render_template, url_for, redirect, request, abort, current_app, send_file
+from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
@@ -11,9 +9,10 @@ from app import db
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, Activity, ActivityCode, Job, Settings, SHIFT_STRFTIME_FORMAT, Schedule
-from config import Config
+from app.default.models import Machine, Activity, ActivityCode, Job, Settings, Schedule, WorkflowType
+from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.login.models import User
+from config import Config
 
 
 @bp.route('/adminhome', methods=['GET'])
@@ -166,9 +165,17 @@ def edit_machine():
     # Get a list of schedules to create form dropdown
     schedules = []
     for s in Schedule.query.all():
-        schedules.append((str(s.id), str(s.name)))
+        schedules.append((str(s.id), str(s.name)))  # The ID has to be a string to match the data returned from client
     # Add the list of schedules to the form
     form.schedule.choices = schedules
+
+    # Get a list of workflow types to create dropdown
+    workflow_types = []
+    for t in WorkflowType.query.all():
+        workflow_types.append((str(t.id), str(t.name)))
+    # Add the list of workflow types to the form
+    form.workflow_type.choices = workflow_types
+
 
     # If new=true then the request is for a new machine to be created
     if 'new' in request.args and request.args['new'] == "true":
@@ -237,6 +244,7 @@ def edit_machine():
         machine.name = form.name.data
         machine.active = form.active.data
         machine.group = form.group.data
+        machine.workflow_type_id = form.workflow_type.data
         machine.schedule_id = form.schedule.data
 
         # Save empty ip values as null to avoid unique constraint errors in the database
@@ -268,11 +276,14 @@ def edit_machine():
     # Fill out the form with existing values to display on the page
     form.id.data = machine.id
     form.active.data = machine.active
-    form.schedule.data = machine.schedule_id
+    form.schedule.data = str(machine.schedule_id)
+    form.workflow_type.data = str(machine.workflow_type_id)
+
     if not creating_new_machine:
         form.name.data = machine.name
         form.group.data = machine.group
         form.device_ip.data = machine.device_ip
+
 
     return render_template("admin/edit_machine.html",
                            form=form,

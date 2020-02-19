@@ -5,40 +5,13 @@ from flask import request, current_app
 
 from app import db
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity
-from app.default.models import Job, Activity, ActivityCode, Machine
+from app.default.models import Job, Activity, ActivityCode
 from app.login import bp
-from app.login.helpers import start_user_session, end_user_sessions
-from app.login.models import User, UserSession
+from app.login.models import UserSession
 from config import Config
 
 
-@bp.route('/checkstate', methods=['GET'])
-def android_check_state():
-    """ The app calls this on opening, to see whether a user is logged in, or a job is active etc"""
-    # Get the user session based on the IP of the device accessing this page
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-
-    # If there is no user session, send to login screen
-    if user_session is None:
-        current_app.logger.debug(f"Returning state to {request.remote_addr}: no_user")
-        # Get the machine that should be assigned to this ip
-        assigned_machines = Machine.query.filter_by(device_ip=request.remote_addr, active=True).all()
-        # If no or multiple machines are assigned, show an error message
-        if len(assigned_machines) == 0:
-            current_app.logger.info(f"No machine assigned to {request.remote_addr}")
-            machine_text = f"Error: No machine assigned to this client IP ({request.remote_addr})"
-        elif len(assigned_machines) > 1:
-            current_app.logger.info(f"Multiple machines assigned to {request.remote_addr}")
-            machine_text = f"Error: Multiple machines assigned to this client IP ({request.remote_addr})"
-        else:
-            machine = assigned_machines[0]
-            machine_text = machine.name
-        return json.dumps({"state": "no_user",
-                           "machine": machine_text,
-                           "ip": request.remote_addr})
-
-    current_app.logger.debug(f"Checking state for session {user_session}")
-
+def check_pneumatrol_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
@@ -86,75 +59,8 @@ def android_check_state():
                            "colour": colour})
 
 
-@bp.route('/androidlogin', methods=['POST'])
-def android_login():
-    """The screen to log the user into the system."""
-
-    current_app.logger.debug("Login attempt to /androidlogin")
-    response = {}
-
-    # Return failure if correct arguments not supplied
-    if "user_id" not in request.get_json():
-        response["success"] = False
-        response["reason"] = "No user_id supplied"
-        return json.dumps(response), 200, {'ContentType': 'application/json'}
-    if "password" not in request.get_json():
-        response["success"] = False
-        response["reason"] = "No password supplied"
-        return json.dumps(response), 200, {'ContentType': 'application/json'}
-
-    user_id = request.get_json()["user_id"]
-    user = User.query.get(user_id)
-    if user is None:
-        response["success"] = False
-        response["reason"] = f"User {user_id} does not exist"
-        return json.dumps(response), 200, {'ContentType': 'application/json'}
-
-    # Check the password and log in if successful
-    if user.check_password(request.get_json()["password"]):
-        # Log out sessions on the same user
-        end_user_sessions(user.id)
-        current_app.logger.info(f"Logged in {user} (Android)")
-        response["success"] = True
-        if not start_user_session(user.id, request.remote_addr):
-            response["success"] = False
-            response["reason"] = f"Error getting assigned machine ({request.remote_addr})"
-        return json.dumps(response), 200, {'ContentType': 'application/json'}
-
-    else:
-        response["success"] = False
-        response["reason"] = "Wrong password"
-        print("authentication failure")
-        return json.dumps(response), 200, {'ContentType': 'application/json'}
-
-
-@bp.route('/androidlogout', methods=['POST'])
-def android_logout():
-    """ Logs the user out of the system. """
-    timestamp = datetime.now().timestamp()
-    # Get the current user session based on the IP of the device accessing this page
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-    if user_session is None:
-        return json.dumps({"success": False, "reason": "User is logged out"})
-    # End any jobs  under the current session
-    for job in user_session.jobs:
-        if job.active:
-            job.end_time = timestamp
-            job.active = None
-    # End the current activity
-    current_activity_id = get_current_activity_id(user_session.machine_id)
-    if current_activity_id:
-        act = Activity.query.get(current_activity_id)
-        act.timestamp_end = timestamp
-        db.session.commit()
-
-    current_app.logger.info(f"Logging out {user_session.user}")
-    end_user_sessions(user_session.user_id)
-    return json.dumps({"success": True})
-
-
-@bp.route('/androidstartjob', methods=['POST'])
-def android_start_job():
+@bp.route('/pneumatrolstartjob', methods=['POST'])
+def pneumatrol_1_start_job():
     if not request.is_json:
         return 404
     timestamp = datetime.now().timestamp()
@@ -209,11 +115,8 @@ def android_start_job():
     return json.dumps({"success": True})
 
 
-
-
-
-@bp.route('/androidpausejob', methods=['POST'])
-def android_pause_job():
+@bp.route('/pneumatrolpausejob', methods=['POST'])
+def pneumatrol_1_pause_job():
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if user_session is None:
@@ -235,8 +138,8 @@ def android_pause_job():
     return json.dumps({"success": True})
 
 
-@bp.route('/androidresumejob', methods=['POST'])
-def android_resume_job():
+@bp.route('/pneumatrolresumejob', methods=['POST'])
+def pneumatrol_1_resume_job():
     timestamp = datetime.now().timestamp()
     # Get the reason for the pause. The app will return the short_description of the activity code
     if "downtime_reason" not in request.json:
@@ -271,8 +174,8 @@ def android_resume_job():
     return json.dumps({"success": True})
 
 
-@bp.route('/androidendjob', methods=['POST'])
-def android_end_job():
+@bp.route('/pneumatrolendjob', methods=['POST'])
+def pneumatrol_1_end_job():
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if user_session is None:
@@ -312,42 +215,4 @@ def android_end_job():
     return json.dumps({"success": True})
 
 
-@DeprecationWarning
-@bp.route('/androidupdate', methods=['POST'])
-def android_update_activity():
-    """ Update an activity"""
-    timestamp = datetime.now().timestamp()
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-    if user_session is None:
-        return json.dumps({"success": False, "reason": "User is logged out"})
-    try:
-        selected_activity_description = request.json["selected_activity_code"]
-    except KeyError:
-        return json.dumps({"success": False})
-
-    # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
-
-    # Start a new activity
-    # The current job is the only active job belonging to the user session
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # The activity code is obtained from the request
-    activity_code = ActivityCode.query.filter_by(short_description=selected_activity_description).first()
-    # The machine state is calculated from the activity code
-    if activity_code.id == Config.UPTIME_CODE_ID:
-        machine_state = Config.MACHINE_STATE_RUNNING
-    else:
-        machine_state = Config.MACHINE_STATE_OFF
-    # Create the new activity
-    new_activity = Activity(machine_id=user_session.machine_id,
-                            machine_state=machine_state,
-                            activity_code_id=activity_code.id,
-                            user_id=user_session.user_id,
-                            job_id=current_job.id,
-                            timestamp_start=timestamp)
-    db.session.add(new_activity)
-    db.session.commit()
-    current_app.logger.debug(f"Started {new_activity} for {current_job}")
-    return json.dumps({"success": True,
-                       "colour": activity_code.graph_colour})
 

@@ -1,13 +1,16 @@
-import os
 from datetime import datetime, time
 
 from flask import current_app
 
 from app import db
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, SHIFT_STRFTIME_FORMAT
+from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, SHIFT_STRFTIME_FORMAT
 from app.login.models import create_default_users
 from config import Config
 
+# A dictionary to define which workflow_ids belong to. Edit when adding additional work flows.
+# I did this to avoid a database call for every android request
+WORKFLOW_IDS = {"Default": 1,
+                "Pneumatrol1": 2}
 
 def setup_database():
 
@@ -65,6 +68,32 @@ def setup_database():
         db.session.add(schedule1)
         db.session.commit()
         current_app.logger.info("Created default schedule on first startup")
+
+
+    if len(WorkflowType.query.all()) == 0:
+        default = WorkflowType(id=1,
+                               name="Default",
+                               description="start job > "
+                                           "screen to select machine status with live updates > "
+                                           "enter parts >"
+                                           "end job")
+        db.session.add(default)
+        db.session.commit()
+        current_app.logger.info("Created default workflow type on first startup")
+
+        pneumatrol1 = WorkflowType(name="Pneumatrol1",
+                                   description="start job or setting > "
+                                               "active screen with option to pause > "
+                                               "pause screen gives option to select reason for pause > "
+                                               "resume back to active screen >"
+                                               "enter parts >"
+                                               "end job")
+        db.session.add(pneumatrol1)
+        db.session.commit()
+
+
+
+        current_app.logger.info("Created pneumatrol1 workflow type on first startup")
 
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",

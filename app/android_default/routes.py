@@ -4,41 +4,54 @@ from datetime import datetime
 from flask import request, current_app
 
 from app import db
-from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity
-from app.default.models import Job, Activity, ActivityCode, Machine
+from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
+from app.default.models import Job, Activity, ActivityCode
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, UserSession
+from app.setup_database import WORKFLOW_IDS
 from config import Config
 
 
 @bp.route('/checkstate', methods=['GET'])
 def android_check_state():
+    # todo move to a method whereby different machines prompt different android_default activities
     """ The app calls this on opening, to see whether a user is logged in, or a job is active etc"""
+
     # Get the user session based on the IP of the device accessing this page
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
 
-    # If there is no user session, send to login screen
-    if user_session is None:
-        current_app.logger.debug(f"Returning state to {request.remote_addr}: no_user")
-        # Get the machine that should be assigned to this ip
-        assigned_machines = Machine.query.filter_by(device_ip=request.remote_addr, active=True).all()
-        # If no or multiple machines are assigned, show an error message
-        if len(assigned_machines) == 0:
-            current_app.logger.info(f"No machine assigned to {request.remote_addr}")
+    # Get the machine assigned to this device
+    machine = get_assigned_machine(request.remote_addr)
+
+    # If there is no user session, send to login screen. Also send here if there is no assigned machine
+    if user_session is None or machine is None:
+        # Show an error to the user if no machine is assigned
+        if machine is None:
             machine_text = f"Error: No machine assigned to this client IP ({request.remote_addr})"
-        elif len(assigned_machines) > 1:
-            current_app.logger.info(f"Multiple machines assigned to {request.remote_addr}")
-            machine_text = f"Error: Multiple machines assigned to this client IP ({request.remote_addr})"
         else:
-            machine = assigned_machines[0]
             machine_text = machine.name
         return json.dumps({"state": "no_user",
                            "machine": machine_text,
                            "ip": request.remote_addr})
 
     current_app.logger.debug(f"Checking state for session {user_session}")
+    current_app.logger.debug(f"Starting work flow for {machine.workflow_type}")
 
+    if machine.workflow_type_id == WORKFLOW_IDS["Default"]:
+        return check_default_machine_state(user_session)
+
+    if "android_pneumatrol" in current_app.blueprints.keys():
+        from app.android_pneumatrol.routes import check_pneumatrol_machine_state
+        if machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol1"]:
+            return check_pneumatrol_machine_state(user_session)
+
+    #todo should remove this eventually
+    else:
+        return check_default_machine_state(user_session)
+
+
+def check_default_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
@@ -124,6 +137,8 @@ def android_logout():
     timestamp = datetime.now().timestamp()
     # Get the current user session based on the IP of the device accessing this page
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    if user_session is None:
+        return json.dumps({"success": False, "reason": "User is logged out"})
     # End any jobs  under the current session
     for job in user_session.jobs:
         if job.active:

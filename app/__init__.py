@@ -68,7 +68,8 @@ def create_app(config_class=Config):
     from app.login import bp as users_bp
     from app.oee_displaying import bp as oee_displaying_bp
     from app.oee_monitoring import bp as oee_monitoring_bp
-    from app.android import bp as android_bp
+    from app.android_default import bp as android_bp
+    from app.android_pneumatrol import bp as pneumatrol_bp
 
     if os.path.exists('app/testing'):
         from app.testing import bp as testing_bp
@@ -82,6 +83,7 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(oee_monitoring_bp)
     app.register_blueprint(android_bp)
+    app.register_blueprint(pneumatrol_bp)
 
     @app.before_first_request
     def initial_setup():

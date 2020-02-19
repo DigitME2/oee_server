@@ -11,7 +11,7 @@ from config import Config
 
 
 def start_user_session(user_id, device_ip):
-    """ Start a new session. Usually called when a user logs in"""
+    """ Start a new session. Usually called when a user logs in. Fails if no machine is assigned to the device ip"""
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(user_id=user_id, device_ip=device_ip, active=True).first()
     # Close any user sessions that the current user has

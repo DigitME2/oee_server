@@ -60,6 +60,15 @@
 
             <p>
 
+            <p>
+                {{ form.workflow_type.label }}<br>
+                {{ form.workflow_type() }}<br>
+                {% for error in form.workflow_type.errors %}
+                    <span class="formError">[{{ error }}]</span>
+                {% endfor %}
+
+            <p>
+
             <p>{{ form.submit() }}</p>
 
         </form>

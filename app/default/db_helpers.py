@@ -1,13 +1,12 @@
 import math as maths
-from datetime import datetime, timedelta
+from datetime import datetime
 from random import randrange
 from time import time
 
 from flask import current_app
 
 from app import db
-from app.login.models import User
-from app.default.models import Activity, Machine, ScheduledActivity
+from app.default.models import Activity, Machine
 from config import Config
 
 
@@ -237,3 +236,16 @@ def get_user_activities(user_id, timestamp_start, timestamp_end):
             activities.append(current_act)
 
     return activities
+
+
+def get_assigned_machine(device_ip):
+    """ Get the machine assigned to a device (using its ip)"""
+    assigned_machines = Machine.query.filter_by(device_ip=device_ip, active=True).all()
+    # If no or multiple machines are assigned, show an error message
+    if len(assigned_machines) == 0:
+        current_app.logger.info(f"No machine assigned to {device_ip}")
+        return None
+    elif len(assigned_machines) > 1:
+        current_app.logger.info(f"Multiple machines assigned to {device_ip}")
+    else:
+        return assigned_machines[0]

@@ -75,7 +75,7 @@ body {
     padding: 15px;
     box-sizing: border-box;
     font-size: 14px;
-    text-align: cent
+    text-align: center;
 }
 
 .centralForm input[type="checkbox"] {
