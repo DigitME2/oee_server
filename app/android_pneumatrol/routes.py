@@ -15,7 +15,8 @@ def check_pneumatrol_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
-        return json.dumps({"state": "no_job"})
+        return json.dumps({"workflow_type": "pneumatrol",
+                           "state": "no_job"})
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
@@ -39,13 +40,15 @@ def check_pneumatrol_machine_state(user_session):
 
     # If the current activity is "setting", send to setting screen
     if current_activity_code.id == Config.SETTING_CODE_ID:
-        return json.dumps({"state": "setting",
+        return json.dumps({"workflow_type": "pneumatrol",
+                           "state": "setting",
                            "wo_number": current_job.wo_number,
                            "colour": colour})
 
     # If the machine is paused (indicated by the machine_state), send to pause screen
     elif current_machine_state == Config.MACHINE_STATE_OFF:
-        return json.dumps({"state": "paused",
+        return json.dumps({"workflow_type": "pneumatrol",
+                           "state": "paused",
                            "activity_codes": [code.short_description for code in selectable_codes],
                            "wo_number": current_job.wo_number,
                            "colour": colour})
@@ -53,7 +56,8 @@ def check_pneumatrol_machine_state(user_session):
     # Otherwise send to job in progress screen
     elif current_machine_state == Config.MACHINE_STATE_RUNNING:
         current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-        return json.dumps({"state": "active_job",
+        return json.dumps({"workflow_type": "pneumatrol",
+                           "state": "active_job",
                            "wo_number": current_job.wo_number,
                            "current_activity": current_activity_code.short_description,
                            "colour": colour})

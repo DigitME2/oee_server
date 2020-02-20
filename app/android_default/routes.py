@@ -31,7 +31,8 @@ def android_check_state():
             machine_text = f"Error: No machine assigned to this client IP ({request.remote_addr})"
         else:
             machine_text = machine.name
-        return json.dumps({"state": "no_user",
+        return json.dumps({"workflow_type": "",
+                           "state": "no_user",
                            "machine": machine_text,
                            "ip": request.remote_addr})
 
@@ -45,17 +46,17 @@ def android_check_state():
         from app.android_pneumatrol.routes import check_pneumatrol_machine_state
         if machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol1"]:
             return check_pneumatrol_machine_state(user_session)
-
-    #todo should remove this eventually
     else:
-        return check_default_machine_state(user_session)
+        current_app.logger.error(f"Incorrect workflow ID ({machine.workflow_type_id}) assigned to {machine}")
+        return 400
 
 
 def check_default_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
-        return json.dumps({"state": "no_job"})
+        return json.dumps({"workflow_type": "default",
+                           "state": "no_job"})
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
@@ -77,12 +78,14 @@ def check_default_machine_state(user_session):
 
     # If the current activity is "setting", send to setting screen
     if current_activity_code.id == Config.SETTING_CODE_ID:
-        return json.dumps({"state": "setting",
+        return json.dumps({"workflow_type": "default",
+                           "state": "setting",
                            "wo_number": current_job.wo_number,
                            "colour": colour})
 
     current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-    return json.dumps({"state": "active_job",
+    return json.dumps({"workflow_type": "default",
+                       "state": "active_job",
                        "wo_number": current_job.wo_number,
                        "current_activity": current_activity_code.short_description,
                        "activity_codes": [code.short_description for code in all_active_codes],
