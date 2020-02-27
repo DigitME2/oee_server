@@ -43,7 +43,8 @@ def check_pneumatrol_machine_state(user_session):
         return json.dumps({"workflow_type": "pneumatrol",
                            "state": "setting",
                            "wo_number": current_job.wo_number,
-                           "colour": colour})
+                           "colour": colour,
+                           "requested_data_on_end": {"scrap_quantity": "Scrap Quantity"}})
 
     # If the machine is paused (indicated by the machine_state), send to pause screen
     elif current_machine_state == Config.MACHINE_STATE_OFF:
@@ -60,7 +61,9 @@ def check_pneumatrol_machine_state(user_session):
                            "state": "active_job",
                            "wo_number": current_job.wo_number,
                            "current_activity": current_activity_code.short_description,
-                           "colour": colour})
+                           "colour": colour,
+                           "requested_data_on_end": {"actual_quantity": "Actual Quantity",
+                                                     "scrap_quantity": "Scrap Quantity"}})
 
 
 @bp.route('/pneumatrolstartjob', methods=['POST'])
@@ -180,27 +183,42 @@ def pneumatrol_1_resume_job():
 
 @bp.route('/pneumatrolendjob', methods=['POST'])
 def pneumatrol_1_end_job():
+    return pneumatrol_end_job_or_setting(False)
+
+
+@bp.route('/pneumatrolendsetting', methods=['POST'])
+def pneumatrol_1_end_setting():
+    return pneumatrol_end_job_or_setting(True)
+
+
+def pneumatrol_end_job_or_setting(setting):
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if user_session is None:
-        return json.dumps({"success": False, "reason": "User is logged out"})
-
-    try:
-        quantity = int(request.json["quantity"])
-        setting = request.json["setting"]
-    except KeyError:
-        return json.dumps({"success": False})
+        return json.dumps({"success": False,
+                           "reason": "User is logged out"})
 
     # End the current job
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     current_job.end_time = timestamp
     current_job.active = None
 
-    # If the job was being set, quantity = the scrap, otherwise it is actual quantity
     if setting:
-        current_job.setup_scrap = quantity
+        try:
+            scrap_quantity = int(request.json["scrap_quantity"])
+        except KeyError:
+            return json.dumps({"success": False,
+                               "reason": "Did not receive correct data from server"})
+        current_job.setup_scrap = scrap_quantity
     else:
-        current_job.actual_quantity = quantity
+        try:
+            actual_quantity = int(request.json["actual_quantity"])
+            scrap_quantity = int(request.json["scrap_quantity"])
+        except KeyError:
+            return json.dumps({"success": False,
+                               "reason": "Did not receive correct data from server"})
+        current_job.production_scrap = scrap_quantity
+        current_job.actual_quantity = actual_quantity
 
     db.session.commit()
 
@@ -217,6 +235,4 @@ def pneumatrol_1_end_job():
     db.session.commit()
     current_app.logger.debug(f"User {user_session.user} ended {current_job}")
     return json.dumps({"success": True})
-
-
 

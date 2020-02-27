@@ -47,6 +47,7 @@ class Job(db.Model):
     planned_quantity = db.Column(db.Integer)
     planned_cycle_time = db.Column(db.Integer)
     actual_quantity = db.Column(db.Integer)
+    production_scrap = db.Column(db.Integer)
     machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
