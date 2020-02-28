@@ -9,6 +9,7 @@ from app import db
 from app.export.helpers import *
 from app.login.models import User
 from app.default.models import *
+from app.default.db_helpers import get_machines_last_job
 from app.oee_displaying.graph_helper import create_downtime_pie
 from app.login.models import User
 from app.testing import bp
@@ -19,9 +20,9 @@ from flask_login import current_user
 
 @bp.route('/test')
 def test():
-    create_users_csv(time_start=1572268033, time_end=1572280302)
+    #create_users_csv(time_start=1572268033, time_end=1572280302)
 
-    #d = get_activity_dict(time_start=1572268033, time_end=1572280302, machine_id=1)
+    get_machines_last_job(1)
     return "test"
 
 @bp.route('/test1')

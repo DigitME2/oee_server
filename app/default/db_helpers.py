@@ -1,12 +1,13 @@
 import math as maths
 from datetime import datetime
+from operator import attrgetter
 from random import randrange
 from time import time
 
 from flask import current_app
 
 from app import db
-from app.default.models import Activity, Machine
+from app.default.models import Activity, Machine, Job
 from config import Config
 
 
@@ -249,3 +250,16 @@ def get_assigned_machine(device_ip):
         current_app.logger.info(f"Multiple machines assigned to {device_ip}")
     else:
         return assigned_machines[0]
+
+
+def get_machines_last_job(machine_id):
+    """ Get the last (completed) job a machine ran"""
+    machine = Machine.query.get(machine_id)
+    jobs = [j for j in machine.jobs if j.end_time is not None]
+    if len(jobs) == 0:
+        return None
+    most_recent_job = max(jobs, key=attrgetter('end_time'))
+    return most_recent_job
+
+
+

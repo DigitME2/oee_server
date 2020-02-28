@@ -10,7 +10,8 @@ from config import Config
 # A dictionary to define which workflow_ids belong to. Edit when adding additional work flows.
 # I did this to avoid a database call for every android request
 WORKFLOW_IDS = {"Default": 1,
-                "Pneumatrol1": 2}
+                "Pneumatrol_setting": 2,
+                "Pneumatrol_no_setting": 3}
 
 def setup_database():
 
@@ -81,8 +82,8 @@ def setup_database():
         db.session.commit()
         current_app.logger.info("Created default workflow type on first startup")
 
-        pneumatrol1 = WorkflowType(name="Pneumatrol1",
-                                   description="start job or setting > "
+        pneumatrol1 = WorkflowType(name="Pneumatrol_setting",
+                                   description="start job or setting decided by server > "
                                                "active screen with option to pause > "
                                                "pause screen gives option to select reason for pause > "
                                                "resume back to active screen >"
@@ -90,10 +91,18 @@ def setup_database():
                                                "end job")
         db.session.add(pneumatrol1)
         db.session.commit()
+        current_app.logger.info("Created pneumatrol_setting workflow type on first startup")
 
-
-
-        current_app.logger.info("Created pneumatrol1 workflow type on first startup")
+        pneumatrol2 = WorkflowType(name="Pneumatrol_no_setting",
+                                   description="start job screen> "
+                                               "active screen with option to pause > "
+                                               "pause screen gives option to select reason for pause > "
+                                               "resume back to active screen >"
+                                               "enter parts >"
+                                               "end job")
+        db.session.add(pneumatrol2)
+        db.session.commit()
+        current_app.logger.info("Created pneumatrol_no_setting workflow type on first startup")
 
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",

@@ -43,7 +43,8 @@ def android_check_state():
 
     if "android_pneumatrol" in current_app.blueprints.keys():
         from app.android_pneumatrol.routes import check_pneumatrol_machine_state
-        if machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol1"]:
+        if machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol_setting"] or \
+                machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol_no_setting"]:
             return check_pneumatrol_machine_state(user_session)
     else:
         current_app.logger.error(f"Incorrect workflow ID ({machine.workflow_type_id}) assigned to {machine}")
