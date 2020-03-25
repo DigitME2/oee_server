@@ -1,0 +1,89 @@
+{% macro graph_form(form) %}
+
+    <form method="post" id="{{ form.__class__.__name__ }}">
+        <input type="hidden" name="formType" value="{{ form.__class__.__name__ }}">
+
+        {#    GANTT FORM  #}
+
+        {% if form.__class__.__name__ == "GanttForm" %}
+            {% set gantt_form = form %}
+
+
+            {{ gantt_form.hidden_tag() }}
+            {{ gantt_form.csrf_token }}
+
+            {{ gantt_form.start_time.label }}
+            {{ gantt_form.start_time }}
+            {% for error in gantt_form.start_time.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            {{ gantt_form.end_time.label }}
+            {{ gantt_form.end_time }}
+            {% for error in gantt_form.end_time.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+            <br>
+            {{ gantt_form.start_date.label }}
+            {{ gantt_form.start_date }}
+            {% for error in gantt_form.start_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+
+            <br>
+            {{ gantt_form.end_date.label }}
+            {{ gantt_form.end_date }}
+            {% for error in gantt_form.end_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            {{ gantt_form.machines }}
+            {{ gantt_form.submit() }}
+
+        {% endif %}
+
+    {#    OEE LINE FORM  #}
+
+    {% if form.__class__.__name__ == "OeeLineForm" %}
+        {% set oee_line_form = form %}
+
+            {{ oee_line_form.hidden_tag() }}
+            {{ oee_line_form.csrf_token }}
+            <br>
+            {{ oee_line_form.start_date.label }}
+            {{ oee_line_form.start_date }}
+            {% for error in oee_line_form.start_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            <br>
+            {{ oee_line_form.end_date.label }}
+            {{ oee_line_form.end_date }}
+            {% for error in oee_line_form.end_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            {{ oee_line_form.submit() }}
+
+
+    {% endif %}
+    </form>
+
+    {#    DASHBOARD GANTT #}
+
+    {#    {% if form.__class__.__name__ == "DashboardGanttForm" %}#}
+    {#        <form method="post" id="DashboardGanttForm">#}
+    {#            {% for field in form %}#}
+    {#                {{ field.label }}#}
+    {#                {{ field }}#}
+    {#                {% for error in field.errors %}#}
+    {#                    <span class="formError">[{{ error }}]</span>#}
+    {#                {% endfor %}#}
+    {#            {% endfor %}#}
+    {#        </form>#}
+    {##}
+    {#    {% endif %}#}
+
+
+{% endmacro %}

@@ -64,3 +64,21 @@ def get_machine_current_user(machine_id):
         return user_sessions[0].user_id
     elif len(user_sessions) == 0:
         return -1
+
+
+def parse_requested_machine_list(requested_machines):
+    """Parse the machines selected in a dropdown list and return a list of the machine ids"""
+    if requested_machines == "all":
+        return list(machine.id for machine in Machine.query.all())
+
+    # If the machines argument begins with g_ it means a group of machines has been selected
+    elif requested_machines[0:2] == "g_":
+        group_name = requested_machines[2:]
+        return list(machine.id for machine in Machine.query.filter_by(group=group_name))
+
+    # If the argument begins with m_ it represents just one machine
+    elif requested_machines[0:2] == "m_":
+        return list(requested_machines[2:])
+
+    else:
+        return None

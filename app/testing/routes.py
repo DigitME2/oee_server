@@ -10,7 +10,7 @@ from app.export.helpers import *
 from app.login.models import User
 from app.default.models import *
 from app.default.db_helpers import get_machines_last_job
-from app.oee_displaying.graph_helper import create_downtime_pie
+from app.oee_displaying.graphs import create_downtime_pie
 from app.login.models import User
 from app.testing import bp
 from config import Config

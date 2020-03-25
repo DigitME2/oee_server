@@ -141,4 +141,5 @@ def get_oee(machine_id, time_start, time_end):
     scheduled_uptime = get_schedule_dict(machine_id, time_start, time_end)["scheduled_run_time"]
 
     availability = runtime / scheduled_uptime
-    return availability * 100
+    oee = availability * 100
+    return oee

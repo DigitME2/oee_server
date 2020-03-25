@@ -15,16 +15,16 @@ from app.setup_database import WORKFLOW_IDS
 
 REQUESTED_DATA_JOB_START = {"wo_number": "Job Number   10W",
                             "planned_run_time": "Planned Run Time",
-                            "planned_quantity": "Planned Quantity",
+                            "planned_quantity": "Planned Qty",
                             "planned_cycle_time": "Planned Cycle Time"}
 
 REQUESTED_DATA_SETTING_START = {"wo_number": "Job Number   10W",
                                 "planned_set_time": "Planned Set Time"}
 
-REQUESTED_DATA_JOB_END = {"actual_quantity": "Actual Quantity",
-                          "scrap_quantity": "Scrap Quantity"}
+REQUESTED_DATA_JOB_END = {"actual_quantity": "Actual Qty",
+                          "scrap_quantity": "Scrap Qty"}
 
-REQUESTED_DATA_SETTING_END = {"scrap_quantity": "Scrap Quantity"}
+REQUESTED_DATA_SETTING_END = {"scrap_quantity": "Scrap Qty"}
 
 
 def check_pneumatrol_machine_state(user_session):
@@ -94,6 +94,9 @@ def check_pneumatrol_machine_state(user_session):
     # Otherwise send to job in progress screen
     elif current_machine_state == Config.MACHINE_STATE_RUNNING:
         current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
+        requested_data_on_end = REQUESTED_DATA_JOB_END
+        # Change the actual quantity title to include the planned quantity
+        requested_data_on_end["actual_quantity"] = f"Actual Qty (Pl={current_job.planned_quantity})"
         return json.dumps({"workflow_type": "pneumatrol",
                            "state": "active_job",
                            "wo_number": current_job.wo_number,

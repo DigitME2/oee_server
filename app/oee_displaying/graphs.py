@@ -319,6 +319,24 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                 include_plotlyjs=True)
 
 
+def create_oee_line(graph_start, graph_end):
+    graph = None
+    #todo
+    return graph
+
+
+def create_downtime_bar(machine_ids, graph_start, graph_end):
+    graph = None
+    #todo
+    return graph
+
+
+def create_job_table(machine_ids, graph_start, graph_end):
+    graph = None
+    #todo
+    return graph
+
+
 def sort_activities(act):
     # Sort so uptime is always first in the list
     if act.activity_code_id == Config.UPTIME_CODE_ID:

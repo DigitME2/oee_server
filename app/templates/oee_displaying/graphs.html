@@ -1,0 +1,125 @@
+{% extends "default/base.html" %}
+{% import "oee_displaying/form_templates.html" as form_templates %}
+
+{% block content %}
+    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
+
+
+
+    <div class="centralBody">
+        <div class="centralWrapper">
+
+            <label for="graphType">Graph type</label>
+
+            <select id="graphType">
+                {% for form in forms %}
+                    <option value="{{ form.__class__.__name__ }}">{{ form.graph_name }}</option>
+                {% endfor %}
+            </select>
+
+            <div id="graphParametersForm">
+                {#            Create all the forms and set to display:none. The dropdown makes them visible #}
+                {% for form in forms %}
+                    <div id="{{ form.__class__.__name__ }}" class="disappearingGraphForm" style="display: none">
+                        {{ form_templates.graph_form(form) }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div id="test">
+
+            </div>
+
+
+            <div class="main_graph" id="main_graph">
+                {{ graph|safe }}
+            </div>
+        </div>
+    </div>
+
+
+    <script src="{{ url_for('static', filename='javascript/jquery-3.3.1.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='javascript/jquery-ui-1.12.1/jquery-ui.js') }}"
+            type="text/javascript"></script>
+
+    <script>
+    //todo do this for every date, every time the form reloads
+        $(function () {
+            var today = new Date();
+            var yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+            var tomorrow = new Date();
+            tomorrow.setDate(today.getDate() + 1);
+            $("#start_date").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', today);
+            $("#end_date").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', tomorrow);
+
+        });
+    </script>
+
+
+    <script>
+        {#    Reload the form when the dropdown is selected #}
+        document.getElementById("graphType").onchange = reloadForm;
+
+        function reloadForm() {
+            var selectedId = $("#graphType :selected").val();
+            var forms = document.getElementsByClassName("disappearingGraphForm");
+            if (forms != null) {
+                for (i = 0; i < forms.length; i++) {
+                    forms[i].style.display = "none"
+                }
+            }
+            document.getElementById(selectedId).style.display = "block";
+        }
+
+        // Run when the page first loads
+        window.onload = reloadForm;
+
+    </script>
+
+    <script type=text/javascript>
+        $body = $("body");
+
+        $('#createGraph').bind('click', function () {
+            $body.addClass("loading");
+            $.ajax({
+                url: '{{ url_for('oee_displaying.update_graph') }}',
+                method: "GET",
+                data: {
+                    date: $('#datePicker').val(),
+                    machine_id: $('#machineSelect').val()
+                },
+                success: function (response) {
+                    $('#graph').html(response);
+                    $body.removeClass("loading");
+                },
+                error: function (error) {
+                    console.log(error);
+                    $('#graph').html("Error getting graph");
+                    $body.removeClass("loading");
+                }
+            });
+        });
+    </script>
+
+
+    <script type="application/javascript">
+        /** Disable the dates when requesting a dashboard */
+        function handleCheck() {
+            document.getElementById("start_date").disabled = document.getElementById("dashboard").checked;
+            document.getElementById("end_date").disabled = document.getElementById("dashboard").checked;
+        }
+
+        $(document).ready(function () {
+            handleCheck();
+            // Add onclick to the dashboard
+            document.getElementById("dashboard").onclick = handleCheck
+        });
+    </script>
+
+
+
+
+{% endblock %}

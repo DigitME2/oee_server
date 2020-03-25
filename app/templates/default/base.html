@@ -25,7 +25,11 @@
             {% if current_user.admin %}
                 <li><a href="{{ url_for('export.export_home') }}">Export</a></li>
                 <li><a href="{{ url_for('admin.admin_home') }}">Admin</a></li>
-                <li><a href="{{ url_for('oee_displaying.multiple_machine_graph') }}">Graphs</a></li>
+                <li><a href="{{ url_for('oee_displaying.graphs') }}">Graphs</a></li>
+                <li><a href="{{ url_for('oee_displaying.dashboard',
+                    machine_group=1,
+                    start="09:00",
+                    end="18:00") }}">Dashboard</a></li>
             {% endif %}
 
 

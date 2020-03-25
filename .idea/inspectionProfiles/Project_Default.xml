@@ -101,6 +101,7 @@
         <list>
           <option value="app.oee_monitoring.helpers.Activity.machine_id" />
           <option value="app.oee_monitoring.helpers.Activity.*" />
+          <option value="datetime.date.strftime" />
         </list>
       </option>
     </inspection_tool>
