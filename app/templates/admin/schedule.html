@@ -4,6 +4,7 @@
     <form action="" method="post" >
         <div class="centralForm">
             <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
+            <h2>Edit Schedule</h2>
             {{ form.hidden_tag() }}
             {{ form.csrf_token }}
             <p>

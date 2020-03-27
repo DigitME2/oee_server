@@ -7,9 +7,10 @@ from wtforms.validators import NoneOf, DataRequired
 
 from app import db
 from app.admin import bp
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm, \
+    MachineGroupForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, Activity, ActivityCode, Job, Settings, Schedule, WorkflowType
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, WorkflowType
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.login.models import User
 from config import Config
@@ -19,12 +20,14 @@ from config import Config
 @login_required
 @admin_required
 def admin_home():
+    # todo add page to create machine groups and also add this to edit_machine page
     """ The default page for a logged-in user"""
     # Create default database entries
     return render_template('admin/adminhome.html',
                            users=User.query.all(),
                            schedules=Schedule.query.all(),
                            machines=Machine.query.all(),
+                           machine_groups=MachineGroup.query.all(),
                            activity_codes=ActivityCode.query.all(),
                            jobs=Job.query.all())
 
@@ -103,7 +106,7 @@ def machine_schedule():
 
     schedule_id = request.args.get("schedule_id", None)
 
-    if schedule_id is None or request.args.get('new'):
+    if schedule_id is None or 'new' in request.args and request.args['new'] == "True":
         # Create a new schedule
         schedule = Schedule(name="")
         db.session.add(schedule)
@@ -169,6 +172,13 @@ def edit_machine():
     # Add the list of schedules to the form
     form.schedule.choices = schedules
 
+    # Create machine group dropdown
+    groups = []
+    groups.append((str(0), str("No group")))
+    for g in MachineGroup.query.all():
+        groups.append((str(g.id), str(g.name)))
+    form.group.choices = groups
+
     # Get a list of workflow types to create dropdown
     workflow_types = []
     for t in WorkflowType.query.all():
@@ -176,9 +186,8 @@ def edit_machine():
     # Add the list of workflow types to the form
     form.workflow_type.choices = workflow_types
 
-
     # If new=true then the request is for a new machine to be created
-    if 'new' in request.args and request.args['new'] == "true":
+    if 'new' in request.args and request.args['new'] == "True":
         creating_new_machine = True
     else:
         creating_new_machine = False
@@ -243,7 +252,7 @@ def edit_machine():
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
-        machine.group = form.group.data
+        machine.group_id = form.group.data
         machine.workflow_type_id = form.workflow_type.data
         machine.schedule_id = form.schedule.data
 
@@ -277,17 +286,86 @@ def edit_machine():
     form.id.data = machine.id
     form.active.data = machine.active
     form.schedule.data = str(machine.schedule_id)
+    form.group.data = str(machine.group_id)
     form.workflow_type.data = str(machine.workflow_type_id)
 
     if not creating_new_machine:
         form.name.data = machine.name
-        form.group.data = machine.group
         form.device_ip.data = machine.device_ip
-
 
     return render_template("admin/edit_machine.html",
                            form=form,
                            message=message)
+
+
+@bp.route('/editmachinegroup', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_machine_group():
+    """The page to edit a machine (also used for creating a new machine)
+    This page will allow an ID to be specified for new machines being created, but will not allow the ID
+    to be changed for existing machines."""
+    form = MachineGroupForm()
+    all_machine_groups = MachineGroup.query.all()
+    ids = []
+
+    # If new=true then the request is for a new machine group to be created
+    if 'new' in request.args and request.args['new'] == "True":
+        creating_new_group = True
+    else:
+        creating_new_group = False
+
+    if creating_new_group:
+        # Create a new machine
+        machine_group = MachineGroup(name="")
+        db.session.add(machine_group)
+        group_machines = [] # A blank list because the group has no machines yet
+
+    # Otherwise get the machine group to be edited
+    elif 'machine_group_id' in request.args:
+        try:
+            machine_group_id = int(request.args['machine_group_id'])
+            machine_group = MachineGroup.query.get_or_404(machine_group_id)
+        except ValueError:
+            current_app.logger.warn(f"Error parsing machine_group_id in URL. "
+                                    f"machine_group_id provided : {request.args['machine_group_id']}")
+            error_message = f"Error parsing machine_group_id : {request.args['machine_group_id']}"
+            return abort(400, error_message)
+
+    else:
+        error_message = "No machine_group_id specified"
+        current_app.logger.warn("No machine_group_id specified in URL")
+        return abort(400, error_message)
+
+    # Create validators for the form
+    # Create a list of existing names to prevent duplicates being entered
+    names = []
+    for mg in all_machine_groups:
+        names.append(str(mg.name))
+    # Don't prevent saving with its own current name
+    if machine_group.name in names:
+        names.remove(machine_group.name)
+
+    # Don't allow duplicate machine names
+    form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
+
+    if form.validate_on_submit():
+        current_app.logger.info(f"{machine_group} edited by {current_user}")
+        # Save the new values on submit
+        machine_group.name = form.name.data
+        db.session.commit()
+
+        return redirect(url_for('admin.admin_home'))
+
+    # Fill out the form with existing values to display on the page
+    if not creating_new_group:
+        form.name.data = machine_group.name
+
+    return render_template("admin/edit_machine_group.html",
+                           form=form,
+                           group_machines=machine_group.machines)
+
+
 
 @bp.route('/editactivitycode', methods=['GET', 'POST'])
 @login_required
@@ -296,7 +374,7 @@ def edit_activity_code():
     """The page to edit an activity code"""
 
     # If new=true then the request is for a new activity code to be created
-    if 'new' in request.args and request.args['new'] == "true":
+    if 'new' in request.args and request.args['new'] == "True":
         # Create a new activity code
         activity_code = ActivityCode(active=True)
         message = "Create new activity code"

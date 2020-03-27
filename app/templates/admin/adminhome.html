@@ -4,127 +4,104 @@
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="centralBody">
         <div class="centralWrapper">
-            <div id="adminUserList" class="adminList">
-                <div class="adminListItem">
-                    <h2 class="adminListHeader">Settings</h2>
-                </div>
-                <div class="adminListItem">
-                    <form action="{{ url_for('admin.settings') }}"
-                          method="get">
-                        <input type="submit" id="settingsBTn" class="rightAlignButton" value="Edit"/>
-                    </form>
-                </div>
-
-
-            </div>
-            <div id="adminUserList" class="adminList">
-                <div class="adminListItem">
-                    <h2 class="adminListHeader">Users</h2>
-                </div>
-                <div class="adminListItem">
-                    <form action="{{ url_for('admin.new_user') }}"
-                          method="get">
-                        <input type="submit" id="newUserBtn" class="rightAlignButton" value="Create New"/>
-                    </form>
-                </div>
-
-                {% for user in users %}
-                    <div class="adminListItem">{{ user.username }} (ID: {{ user.id }})</div>
-                    <div class="adminListItem">
-                        <form action="{{ url_for('admin.change_password') }}"
-                              method="get">
-                            <input type="hidden" name="action" value="resetPassword">
-                            <input type="hidden" name="user_id" value="{{ user.id }}"/>
-                            <input type="submit" class="rightAlignButton" value="Change Password">
-                        </form>
-                    </div>
-                {% endfor %}
-
+            <div id="adminSettingsColumn" class="adminColumn">
+                <h2 class="adminListHeader">Settings</h2>
+                <ul class="adminList">
+                    <li class="adminListItem">
+                        <a href="{{ url_for('admin.settings') }}">
+                            Edit
+                        </a>
+                    </li>
+                </ul>
             </div>
 
-            <div id="adminScheduleList" class="adminList">
-                <div class="adminListItem">
-                    <h2 class="adminListHeader">Schedules</h2>
-                </div>
-                <div class="adminListItem">
-                    <form action="{{ url_for('admin.machine_schedule') }}"
-                          method="get"
-                          style="display: inline;">
-                        <input type="hidden" name="new" value="true"/>
-                        <input type="submit" class="rightAlignButton" value="Create New">
-                    </form>
-                </div>
+            <div id="adminUserColumn" class="adminColumn">
+                <h2 class="adminListHeader">Users</h2>
+                <ul class="adminList">
+                    <li class="adminListItem">
+                        <a href="{{ url_for('admin.new_user') }}">Create New</a>
+                    </li>
 
-                {% for s in schedules %}
-                    <div class="adminListItem">
-                        {{ s.name }}
-                    </div>
-                    <div class="adminListItem">
-                        <form action="{{ url_for('admin.machine_schedule') }}"
-                              method="get"
-                              style="display: inline;">
-                            <input type="hidden" name="schedule_id" value="{{ s.id }}"/>
-                            <input type="submit" class="rightAlignButton" value="Edit">
-                        </form>
-                    </div>
-                {% endfor %}
+                    {% for user in users %}
+                        <li class="adminListItem">
+                            <a href="{{ url_for('admin.change_password', user_id=user.id, action="reset_password") }}">
+                                {{ user.username }} (ID: {{ user.id }})
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
             </div>
 
-            <div id="adminMachineList" class="adminList">
-                <div class="adminListItem">
-                    <h2 class="adminListHeader">Machines</h2>
-                </div>
-                <div class="adminListItem">
-                    <form action="{{ url_for('admin.edit_machine') }}"
-                          method="get"
-                          style="display: inline;">
-                        <input type="hidden" name="new" value="true"/>
-                        <input type="submit" class="rightAlignButton" value="Create New">
-                    </form>
-                </div>
+            <div id="adminScheduleColumn" class="adminColumn">
+                <h2 class="adminListHeader">Schedules</h2>
+                <ul class="adminList">
+                    <li class="adminListItem">
+                        <a href="{{ url_for('admin.machine_schedule', new=true) }}">Create New</a>
+                    </li>
 
-                {% for m in machines %}
-                    <div class="adminListItem">
-                        {{ m.name }} (ID:{{ m.id }})
-                    </div>
-                    <div class="adminListItem">
-                        <form action="{{ url_for('admin.edit_machine') }}"
-                              method="get"
-                              style="display: inline;">
-                            <input type="hidden" name="machine_id" value="{{ m.id }}"/>
-                            <input type="submit" class="rightAlignButton" value="Edit">
-                        </form>
-                    </div>
-                {% endfor %}
+                    {% for s in schedules %}
+                        <li class="adminListItem">
+                            <a href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
+                                {{ s.name }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
             </div>
 
-            <div id="adminActivityCodeList" class="adminList">
-                <div class="adminListItem">
-                    <h2 class="adminListHeader">Activity Codes</h2>
-                </div>
-                <div class="adminListItem">
-                    <form action="{{ url_for('admin.edit_activity_code') }}"
-                          method="get"
-                          style="display: inline;">
-                        <input type="hidden" name="new" value="true"/>
-                        <input type="submit" class="rightAlignButton" value="Create New">
-                    </form>
-                </div>
 
-                {% for ac in activity_codes %}
-                    <div class="adminListItem">
-                        {{ ac.code }} - {{ ac.short_description }}
-                    </div>
-                    <div class="adminListItem">
-                        <form action="{{ url_for('admin.edit_activity_code') }}"
-                              method="get"
-                              style="display: inline;">
-                            <input type="hidden" name="ac_id" value="{{ ac.id }}"/>
-                            <input type="submit" class="rightAlignButton" value="Edit">
-                        </form>
-                    </div>
-                {% endfor %}
+            <div id="adminMachineColumn" class="adminColumn">
+                <h2 class="adminListHeader">Machines</h2>
+                <ul class="adminList">
+                    <li class="adminListItem">
+                        <a href="{{ url_for('admin.edit_machine', new=true) }}">Create New</a>
+                    </li>
+
+                    {% for m in machines %}
+                        <li class="adminListItem">
+                            <a href="{{ url_for('admin.edit_machine', machine_id=m.id) }}">
+                                {{ m.name }} (ID:{{ m.id }})
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
             </div>
+
+            <div id="adminMachineGroupColumn" class="adminColumn">
+                <h2 class="adminListHeader">Machine Groups</h2>
+                <ul class="adminList">
+                    <li class="adminListItem">
+                        <a href="{{ url_for('admin.edit_machine_group', new=true) }}">Create New</a>
+                    </li>
+
+                    {% for mg in machine_groups %}
+                        <li class="adminListItem">
+                            <a href="{{ url_for('admin.edit_machine_group', machine_group_id=mg.id) }}">
+                                {{ mg.name }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+
+            <div id="adminActivityCodeColumn" class="adminColumn">
+                <h2 class="adminListHeader">Activity Codes</h2>
+                <ul class="adminList">
+                    <li class="adminListItem">
+                        <a href="{{ url_for('admin.edit_activity_code', new=true) }}">Create New</a>
+                    </li>
+
+                    {% for ac in activity_codes %}
+                        <li class="adminListItem">
+                            <a href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">
+                                {{ ac.code }} - {{ ac.short_description }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
         </div>
     </div>
 

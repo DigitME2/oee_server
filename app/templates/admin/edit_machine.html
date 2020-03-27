@@ -34,18 +34,20 @@
                 {% endfor %}
 
             <p>
-            <p>
-                {{ form.group.label }}<br>
-                {{ form.group(size=32, autocomplete="off") }}<br>
-                {% for error in form.group.errors %}
-                    <span class="formError">[{{ error }}]</span>
-                {% endfor %}
 
-            <p>
             <p>
                 {{ form.device_ip.label }}<br>
                 {{ form.device_ip(size=32, autocomplete="off") }}<br>
                 {% for error in form.device_ip.errors %}
+                    <span class="formError">[{{ error }}]</span>
+                {% endfor %}
+
+            <p>
+
+            <p>
+                {{ form.group.label }}<br>
+                {{ form.group() }}<br>
+                {% for error in form.group.errors %}
                     <span class="formError">[{{ error }}]</span>
                 {% endfor %}
 

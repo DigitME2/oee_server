@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, time
 from flask import abort, request, render_template, current_app
 from flask_login import login_required
 
-from app.default.models import Machine, Settings
+from app.default.models import Machine, MachineGroup, Settings
 from app.oee_displaying import bp
 from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, state_gantt_chart, GanttForm, OeeLineForm, DowntimeBarForm, DashboardGanttForm, JobTableForm
 from app.oee_displaying.graphs import create_machine_gantt, create_multiple_machines_gantt, \
@@ -18,14 +18,12 @@ def graphs():
     """ The page showing options for graphs"""
     # Get each machine
     machines = Machine.query.all()
-    # Get each unique group from the machines
-    group_names = list(set(m.group for m in machines))
 
     # Put the machine and group names into a ("str", "str") tuple as required by wtforms selectfield
     machine_name_choices = [("m_" + str(m.id), m.name) for m in machines]
-    group__name_choices = [("g_" + name, name) for name in group_names]
+    group_name_choices = [("g_" + mg.name, mg.name) for mg in MachineGroup.query.all()]
     machines_choices = [("all", "All Machines")] + \
-                       [(MACHINES_CHOICES_HEADERS[0], MACHINES_CHOICES_HEADERS[0])] + group__name_choices + \
+                       [(MACHINES_CHOICES_HEADERS[0], MACHINES_CHOICES_HEADERS[0])] + group_name_choices + \
                        [(MACHINES_CHOICES_HEADERS[1], MACHINES_CHOICES_HEADERS[1])] + machine_name_choices
 
     gantt_form = GanttForm()
@@ -88,7 +86,7 @@ def graphs():
         graph = ""
 
     return render_template('oee_displaying/graphs.html',
-                           machines=Machine.query.all(),
+                           machines=machines,
                            nav_bar_title="Graphs",
                            forms=forms,
                            graph=graph)

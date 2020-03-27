@@ -175,12 +175,23 @@ body {
     margin-bottom: 20px;
 }
 
-.adminList {
-    display: grid;
-    grid-template-columns: auto auto;
+.adminColumn {
+    /*display: grid;*/
+    /*grid-template-columns: auto auto;*/
     padding: 10px 25px 10px 10px;
     float: left;
 }
+
+.adminList {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+ol{
+    text-align: left;
+}
+
+
 
 .adminListItem {
     padding: 8px;

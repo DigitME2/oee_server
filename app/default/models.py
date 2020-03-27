@@ -11,7 +11,7 @@ class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
     workflow_type_id = db.Column(db.Integer, db.ForeignKey('workflow_type.id'))
-    group = db.Column(db.String)
+    group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
     user_sessions = db.relationship("UserSession", backref="machine")
@@ -23,6 +23,13 @@ class Machine(db.Model):
 
     def __repr__(self):
         return f"<Machine '{self.name}' (ID {self.id})"
+
+
+class MachineGroup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, unique=True, nullable=False)
+
+    machines = db.relationship('Machine', backref='machine_group')
 
 
 class WorkflowType(db.Model):

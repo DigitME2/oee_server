@@ -45,10 +45,17 @@ class MachineForm(FlaskForm):
     active = BooleanField()
     id = IntegerField()
     name = StringField(validators=[DataRequired()])
-    group = StringField("Machine Group", validators=[DataRequired()])
     device_ip = StringField("Operator Device IP Address", validators=[Optional(), IPAddress(ipv4=True, ipv6=False)])
+    group = SelectField("Machine Group")
     workflow_type = SelectField("Workflow Type")
     schedule = SelectField("Schedule")
+    submit = SubmitField('Save')
+
+
+class MachineGroupForm(FlaskForm):
+    id = IntegerField()
+    name = StringField(validators=[DataRequired()])
+
     submit = SubmitField('Save')
 
 
