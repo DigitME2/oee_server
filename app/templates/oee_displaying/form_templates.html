@@ -3,71 +3,118 @@
     <form method="post" id="{{ form.__class__.__name__ }}">
         <input type="hidden" name="formType" value="{{ form.__class__.__name__ }}">
 
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+
         {#    GANTT FORM  #}
 
         {% if form.__class__.__name__ == "GanttForm" %}
-            {% set gantt_form = form %}
 
-
-            {{ gantt_form.hidden_tag() }}
-            {{ gantt_form.csrf_token }}
-
-            {{ gantt_form.start_time.label }}
-            {{ gantt_form.start_time }}
-            {% for error in gantt_form.start_time.errors %}
+            {{ form.start_time.label }}
+            {{ form.start_time }}
+            {% for error in form.start_time.errors %}
                 <span class="formError">[{{ error }}]</span>
             {% endfor %}
 
-            {{ gantt_form.end_time.label }}
-            {{ gantt_form.end_time }}
-            {% for error in gantt_form.end_time.errors %}
+            {{ form.end_time.label }}
+            {{ form.end_time }}
+            {% for error in form.end_time.errors %}
                 <span class="formError">[{{ error }}]</span>
             {% endfor %}
             <br>
-            {{ gantt_form.start_date.label }}
-            {{ gantt_form.start_date }}
-            {% for error in gantt_form.start_date.errors %}
+            {{ form.start_date.label }}
+            {{ form.start_date }}
+            {% for error in form.start_date.errors %}
                 <span class="formError">[{{ error }}]</span>
             {% endfor %}
 
 
             <br>
-            {{ gantt_form.end_date.label }}
-            {{ gantt_form.end_date }}
-            {% for error in gantt_form.end_date.errors %}
+            {{ form.end_date.label }}
+            {{ form.end_date }}
+            {% for error in form.end_date.errors %}
                 <span class="formError">[{{ error }}]</span>
             {% endfor %}
 
-            {{ gantt_form.machines }}
-            {{ gantt_form.submit() }}
+            {{ form.machines }}
 
         {% endif %}
 
-    {#    OEE LINE FORM  #}
+        {#    OEE LINE FORM  #}
 
-    {% if form.__class__.__name__ == "OeeLineForm" %}
-        {% set oee_line_form = form %}
+        {% if form.__class__.__name__ == "OeeLineForm" %}
 
-            {{ oee_line_form.hidden_tag() }}
-            {{ oee_line_form.csrf_token }}
-            <br>
-            {{ oee_line_form.start_date.label }}
-            {{ oee_line_form.start_date }}
-            {% for error in oee_line_form.start_date.errors %}
+            {{ form.start_date.label }}
+            {{ form.start_date }}
+            {% for error in form.start_date.errors %}
                 <span class="formError">[{{ error }}]</span>
             {% endfor %}
 
             <br>
-            {{ oee_line_form.end_date.label }}
-            {{ oee_line_form.end_date }}
-            {% for error in oee_line_form.end_date.errors %}
+            {{ form.end_date.label }}
+            {{ form.end_date }}
+            {% for error in form.end_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+        {% endif %}
+
+
+        {#    DOWNTIME BAR FORM  #}
+
+        {% if form.__class__.__name__ == "DowntimeBarForm" %}
+
+            {{ form.start_date.label }}
+            {{ form.start_date }}
+            {% for error in form.start_date.errors %}
                 <span class="formError">[{{ error }}]</span>
             {% endfor %}
 
-            {{ oee_line_form.submit() }}
+            <br>
+            {{ form.end_date.label }}
+            {{ form.end_date }}
+            {% for error in form.end_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            {{ form.start_time.label }}
+            {{ form.start_time }}
+            {% for error in form.start_time.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            {{ form.end_time.label }}
+            {{ form.end_time }}
+            {% for error in form.end_time.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+            {{ form.machines }}
+        {% endif %}
 
 
-    {% endif %}
+    {#    JOB TABLE FORM and WO TABLE FORM  #}
+
+        {% if form.__class__.__name__ == "JobTableForm" or  form.__class__.__name__ == "WOTableForm" %}
+
+            {{ form.start_date.label }}
+            {{ form.start_date }}
+            {% for error in form.start_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+            <br>
+            {{ form.end_date.label }}
+            {{ form.end_date }}
+            {% for error in form.end_date.errors %}
+                <span class="formError">[{{ error }}]</span>
+            {% endfor %}
+
+        {% endif %}
+
+
+
+
+        <br>
+        {{ form.submit() }}
     </form>
 
     {#    DASHBOARD GANTT #}

@@ -350,7 +350,7 @@ def end_automatic_job():
     # This must be done after creating a graph because the graph sorts the list
     for act in activities:
         act.index = activities.index(act)
-    # Create a dictionary of colours for javascript to change graph colours from the dropdown selection
+    # Create a dictionary of colours for libraries to change graph colours from the dropdown selection
     colours = {}
     for ac in ActivityCode.query.all():
         colours[ac.id] = ac.graph_colour

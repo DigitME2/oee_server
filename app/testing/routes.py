@@ -1,11 +1,11 @@
 import time
 import os
-from datetime import datetime
-from datetime import datetime
+from datetime import datetime, date, time
 from random import randrange
 
 import pandas as pd
 from app import db
+from app.data_analysis.oee import *
 from app.export.helpers import *
 from app.login.models import User
 from app.default.models import *
@@ -20,9 +20,8 @@ from flask_login import current_user
 
 @bp.route('/test')
 def test():
-    #create_users_csv(time_start=1572268033, time_end=1572280302)
 
-    get_machines_last_job(1)
+
     return "test"
 
 @bp.route('/test1')
@@ -35,7 +34,7 @@ def sort_activities(act):
     return act.activity_code.id
 
 
-#@bp.route('/createdata')
+@bp.route('/createdata')
 def create_data():
     """ Creates fake data to use for testing purposes"""
     db.create_all()
@@ -46,13 +45,13 @@ def create_data():
     # db.session.add(unexplainedcode)
     # uptimecode = ActivityCode(id=UPTIME_CODE_ID, code="UP", short_description='uptime', graph_colour='rgb(0, 255, 128)')
     # db.session.add(uptimecode)
-    error1code = ActivityCode(id=2, code="ER1", short_description='error1', graph_colour='rgb(255,64,0)')
-    db.session.add(error1code)
-    error2code = ActivityCode(id=3, code="ER2", short_description='error2', graph_colour='rgb(255,0,0)')
-    db.session.add(error2code)
-    error3code = ActivityCode(id=4, code="ER3", short_description='error3', graph_colour='rgb(255,255,0)')
-    db.session.add(error3code)
-    db.session.commit()
+    # error1code = ActivityCode(id=2, code="ER1", short_description='error1', graph_colour='rgb(255,64,0)')
+    # db.session.add(error1code)
+    # error2code = ActivityCode(id=3, code="ER2", short_description='error2', graph_colour='rgb(255,0,0)')
+    # db.session.add(error2code)
+    # error3code = ActivityCode(id=4, code="ER3", short_description='error3', graph_colour='rgb(255,255,0)')
+    # db.session.add(error3code)
+    # db.session.commit()
 
 
 
@@ -66,12 +65,12 @@ def create_data():
             db.session.add(new_machine)
             db.session.commit()
 
-        job_start = datetime(year=2018, month=12, day=25, hour=9, minute=0)
-        job_end = datetime(year=2018, month=12, day=25, hour=17, minute=0)
+        job_start = datetime(year=2020, month=1, day=1, hour=1, minute=0)
+        job_end = datetime.now()
 
 
-        start = datetime(year=2018, month=12, day=25, hour=9, minute=0).timestamp()
-        finish = datetime(year=2018, month=12, day=25, hour=17, minute=0).timestamp()
+        start = datetime(year=2020, month=1, day=1, hour=1, minute=0).timestamp()
+        finish = datetime.now().timestamp()
         time = start
         current_job = None
         while time <= finish:
@@ -85,7 +84,7 @@ def create_data():
             uptime_activity = Activity(machine_id=i,
                                        timestamp_start=time,
                                        machine_state=1,
-                                       activity_code_id=UPTIME_CODE_ID,
+                                       activity_code_id=Config.UPTIME_CODE_ID,
                                        job_id=job_id)
             time += randrange(400, 10000)
             uptime_activity.timestamp_end = time
@@ -112,7 +111,8 @@ def change_job(current_job, time, machine_id):
         current_job.end_time = time
 
     new_job = Job(start_time=time,
-                  job_number="X-" + str(randrange(1, 1000)),
+                  user_session_id=1,
+                  wo_number="X-" + str(randrange(1, 1000)),
                   machine_id=machine_id,
                   user_id=randrange(0,5))
     db.session.add(new_job)

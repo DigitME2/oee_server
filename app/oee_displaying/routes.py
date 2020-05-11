@@ -5,10 +5,11 @@ from flask_login import login_required
 
 from app.default.models import Machine, MachineGroup, Settings
 from app.oee_displaying import bp
-from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, state_gantt_chart, GanttForm, OeeLineForm, DowntimeBarForm, DashboardGanttForm, JobTableForm
+from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, state_gantt_chart, GanttForm, OeeLineForm, DowntimeBarForm, DashboardGanttForm, JobTableForm, WOTableForm
 from app.oee_displaying.graphs import create_machine_gantt, create_multiple_machines_gantt, \
     create_dashboard_gantt, create_oee_line, create_downtime_bar, create_job_table
-from app.oee_displaying.helpers import get_machine_status, parse_requested_machine_list
+from app.oee_displaying.helpers import get_machine_status, parse_requested_machine_list, get_job_table, \
+    get_work_order_table
 
 
 @bp.route('/graphs', methods=['GET', 'POST'])
@@ -20,8 +21,9 @@ def graphs():
     machines = Machine.query.all()
 
     # Put the machine and group names into a ("str", "str") tuple as required by wtforms selectfield
+    # The list returns m_1 for machine with id 1, and g_2 for a group with id 2
     machine_name_choices = [("m_" + str(m.id), m.name) for m in machines]
-    group_name_choices = [("g_" + mg.name, mg.name) for mg in MachineGroup.query.all()]
+    group_name_choices = [("g_" + str(mg.id), mg.name) for mg in MachineGroup.query.all()]
     machines_choices = [("all", "All Machines")] + \
                        [(MACHINES_CHOICES_HEADERS[0], MACHINES_CHOICES_HEADERS[0])] + group_name_choices + \
                        [(MACHINES_CHOICES_HEADERS[1], MACHINES_CHOICES_HEADERS[1])] + machine_name_choices
@@ -31,9 +33,10 @@ def graphs():
     oee_line_form = OeeLineForm()
     dashboard_gantt = DashboardGanttForm()
     downtime_bar_form = DowntimeBarForm()
-    job_table_form = JobTableForm()
+    downtime_bar_form.machines.choices = machines_choices
 
-    forms = [gantt_form, oee_line_form, dashboard_gantt, downtime_bar_form, job_table_form]
+
+    forms = [gantt_form, oee_line_form, dashboard_gantt, downtime_bar_form]
 
     # form.graph_type.choices = [(k, v) for k, v in GRAPH_TYPES.items()]
 
@@ -46,7 +49,7 @@ def graphs():
 
     # todo work out which form has been sent and only validate that one
 
-    # Check which form has been sent by the user by comparing the csrf token in the request and comparing to all forms
+    # Check which form has been sent by the user
     form_sent = next((form for form in forms if form.__class__.__name__ == request.form.get('formType')), None)
     if isinstance(form_sent, GanttForm) and gantt_form.validate_on_submit():
         start = datetime.combine(date=gantt_form.start_date.data, time=gantt_form.start_time.data)
@@ -62,26 +65,18 @@ def graphs():
                                                    graph_end=end.timestamp())
 
     elif isinstance(form_sent, OeeLineForm) and oee_line_form.validate_on_submit():
-        start = oee_line_form.start_date.data
-        end = oee_line_form.end_date.data
-        graph = create_oee_line(graph_start=start.timestamp(),
-                                graph_end=end.timestamp())
+        graph = create_oee_line(graph_start_date=oee_line_form.start_date.data,
+                                graph_end_date=oee_line_form.end_date.data)
 
     elif isinstance(form_sent, DowntimeBarForm) and downtime_bar_form.validate_on_submit():
         start = datetime.combine(date=downtime_bar_form.start_date.data, time=downtime_bar_form.start_time.data)
         end = datetime.combine(date=downtime_bar_form.end_date.data, time=downtime_bar_form.end_time.data)
         machine_ids = parse_requested_machine_list(downtime_bar_form.machines.data)
         graph = create_downtime_bar(machine_ids=machine_ids,
-                                    graph_start=start.timestamp(),
-                                    graph_end=end.timestamp())
+                                    graph_start_timestamp=start.timestamp(),
+                                    graph_end_timestamp=end.timestamp())
 
-    elif isinstance(form_sent, JobTableForm) and downtime_bar_form.validate_on_submit():
-        start = datetime.combine(date=job_table_form.start_date.data, time=job_table_form.start_time.data)
-        end = datetime.combine(date=job_table_form.end_date.data, time=job_table_form.end_time.data)
-        machine_ids = parse_requested_machine_list(job_table_form.machines.data)
-        graph = create_job_table(machine_ids=machine_ids,
-                                 graph_start=start.timestamp(),
-                                 graph_end=end.timestamp())
+
     else:
         graph = ""
 
@@ -90,6 +85,41 @@ def graphs():
                            nav_bar_title="Graphs",
                            forms=forms,
                            graph=graph)
+
+
+@bp.route('/tables', methods=['GET', 'POST'])
+def tables():
+    # Get each machine
+    machines = Machine.query.all()
+
+    # Put the machine and group names into a ("str", "str") tuple as required by wtforms selectfield
+    # The list returns m_1 for machine with id 1, and g_2 for a group with id 2
+    machine_name_choices = [("m_" + str(m.id), m.name) for m in machines]
+    group_name_choices = [("g_" + str(mg.id), mg.name) for mg in MachineGroup.query.all()]
+    machines_choices = [("all", "All Machines")] + \
+                       [(MACHINES_CHOICES_HEADERS[0], MACHINES_CHOICES_HEADERS[0])] + group_name_choices + \
+                       [(MACHINES_CHOICES_HEADERS[1], MACHINES_CHOICES_HEADERS[1])] + machine_name_choices
+    job_table_form = JobTableForm()
+    wo_table_form = WOTableForm()
+    forms = [job_table_form, wo_table_form]
+
+    # Check which form has been sent by the user
+    form_sent = next((form for form in forms if form.__class__.__name__ == request.form.get('formType')), None)
+    if isinstance(form_sent, JobTableForm) and job_table_form.validate_on_submit():
+        table = get_job_table(start_date=job_table_form.start_date.data,
+                              end_date=job_table_form.end_date.data)
+    elif isinstance(form_sent, WOTableForm) and wo_table_form.validate_on_submit():
+        table = get_work_order_table(start_date=wo_table_form.start_date.data,
+                                     end_date=wo_table_form.end_date.data)
+    else:
+        table = ""
+
+    return render_template('oee_displaying/table.html',
+                           machines=machines,
+                           nav_bar_title="Tables",
+                           forms=forms,
+                           table=table)
+
 
 
 @bp.route('/dashboard')

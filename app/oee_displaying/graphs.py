@@ -1,12 +1,15 @@
 import operator
+import plotly.graph_objects as go
+import pandas as pd
 
 from plotly.offline import plot
 from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
-from datetime import datetime
+from datetime import datetime, timedelta, date, time
 
-from app.data_analysis.oee import calculate_activity_percent
-from app.default.models import Activity, Machine, ActivityCode
+from app.data_analysis.oee import calculate_activity_percent, get_daily_group_oee, calculate_activity_time, \
+    get_schedule_dict, get_machine_runtime
+from app.default.models import Activity, Machine, ActivityCode, MachineGroup, Job
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
 from app.default.db_helpers import get_machine_activities
@@ -49,7 +52,8 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
     # This is a workaround to make the graph always show uptime on the bottom
     activities.sort(key=sort_activities, reverse=True)
 
-    df = get_df(activities=activities, group_by="activity_code", graph_start=graph_start, graph_end=graph_end)
+    df = get_activities_df(activities=activities, group_by="activity_code", graph_start=graph_start,
+                           graph_end=graph_end)
 
     if len(df) == 0:
         return "No machine activity"
@@ -95,18 +99,19 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     activities = []
     machine_ids.sort()
     for machine_id in machine_ids:
-        machine_activities = get_machine_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
+        machine_activities = get_machine_activities(machine_id=machine_id, timestamp_start=graph_start,
+                                                    timestamp_end=graph_end)
         # If a machine has no activities, add a fake one so it still shows on the graph
         if len(machine_activities) == 0:
             activities.append(Activity(timestamp_start=graph_start, timestamp_end=graph_start))
         else:
             activities.extend(machine_activities)
 
-    df = get_df(activities=activities,
-                group_by="machine_name",
-                graph_start=graph_start,
-                graph_end=graph_end,
-                crop_overflow=True)
+    df = get_activities_df(activities=activities,
+                           group_by="machine_name",
+                           graph_start=graph_start,
+                           graph_end=graph_end,
+                           crop_overflow=True)
 
     if len(df) == 0:
         return "No machine activity"
@@ -220,11 +225,11 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
                                                  timestamp_start=graph_start,
                                                  timestamp_end=graph_end))
 
-    df = get_df(activities=activities,
-                group_by="machine_name",
-                graph_start=graph_start,
-                graph_end=graph_end,
-                crop_overflow=True)
+    df = get_activities_df(activities=activities,
+                           group_by="machine_name",
+                           graph_start=graph_start,
+                           graph_end=graph_end,
+                           crop_overflow=True)
 
     if len(df) == 0:
         return "No machine activity"
@@ -240,7 +245,6 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
                           index_col='Code',
                           bar_width=0.4,
                           width=1800)
-
 
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
@@ -276,7 +280,7 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     # The order of the tick texts in the layout is in the reverse order
     new_tick_texts.reverse()
     layout.yaxis.ticktext = tuple(new_tick_texts)
-    #TODO I dont like this method of changing the tick texts. It seems like it's possible to mix up machines
+    # TODO I dont like this method of changing the tick texts. It seems like it's possible to mix up machines
     # as there is nothing currently controlling this
 
     # Change the text sizes
@@ -319,22 +323,95 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                 include_plotlyjs=True)
 
 
-def create_oee_line(graph_start, graph_end):
-    graph = None
-    #todo
-    return graph
+# todo I havent really finished off the ooe line, downtime bar or job table
+
+def create_oee_line(graph_start_date, graph_end_date):
+    """ Takes two timestamps and creates a line graph of the OEE for each machine group between these times
+    The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
+    # todo dont show times if only on dates
+    groups = MachineGroup.query.all()
+    d = date(2020, 1, 1)
+    dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
+    if len(dates) == 0:
+        return 0
+    df = []
+    fig = go.Figure()
+    for group in groups:
+        group_oee_list = []
+        for d in dates:
+            daily_group_oee = get_daily_group_oee(group_id=group.id, date=d)
+            group_oee_list.append(daily_group_oee)
+
+        fig.add_trace(go.Scatter(x=dates, y=group_oee_list, name=group.name, mode='lines'))
+        # todo faff about making the graph look nice later
+    fig['layout']['xaxis'].update(range=[graph_start_date, graph_end_date])
+    # fig['layout'].update(autosize=True)
+
+    return plot(fig,
+                output_type="div",
+                include_plotlyjs=True,
+                config={"showLink": False})
 
 
-def create_downtime_bar(machine_ids, graph_start, graph_end):
-    graph = None
-    #todo
-    return graph
+def create_downtime_bar(machine_ids, graph_start_timestamp, graph_end_timestamp):
+    all_activity_codes = ActivityCode.query.all()
+    activity_code_names = [ac.short_description for ac in all_activity_codes]
+    activities_dict = {}
+    for machine_id in machine_ids:
+        machine = Machine.query.filter_by(id=machine_id).first()
+        activity_durations = []
+        bars = []
+        for ac in all_activity_codes:
+            activity_durations.append(calculate_activity_time(machine_id,
+                                                              ac.id,
+                                                              timestamp_start=graph_start_timestamp,
+                                                              timestamp_end=graph_end_timestamp))
+        bars.append(go.Bar(name=machine.name, x=activity_code_names, y=activity_durations))
+
+    fig = go.Figure(data=bars)
+    return plot(fig,
+                output_type="div",
+                include_plotlyjs=True,
+                config={"showLink": False})
 
 
-def create_job_table(machine_ids, graph_start, graph_end):
-    graph = None
-    #todo
-    return graph
+def create_job_table(machine_ids, start_date, end_date):
+    #todo I think probably use a libraries library to create a table here. https://datatables.net/ maybe?
+    start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
+    end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
+    headers = ["Wo Number", "Scheduled Runtime", "Uptime"]
+    wo_numbers = []
+    runtimes = []
+    scheduled_runtimes = []
+    for machine_id in machine_ids:
+        jobs = Job.query.filter(Job.machine_id == machine_id) \
+            .filter(Job.start_time <= end_timestamp) \
+            .filter(Job.end_time >= start_timestamp)
+
+        for job in jobs:
+            sched_dict = get_schedule_dict(machine_id, time_start=start_timestamp, time_end=end_timestamp)
+            runtime = get_machine_runtime(machine_id, requested_start=start_timestamp, requested_end=end_timestamp)
+            wo_number = job.wo_number
+            scheduled_runtime = sched_dict["scheduled_run_time"]
+
+            runtimes.append(runtime)
+            wo_numbers.append(wo_number)
+            scheduled_runtimes.append(scheduled_runtime)
+    d = {"WO Number": wo_numbers, "Scheduled Runtime": scheduled_runtimes, "Runtime": runtimes}
+    df = pd.DataFrame(d)
+
+    fig = go.Figure(data=[go.Table(
+        header=dict(values=list(df.columns),
+                    fill_color='paleturquoise',
+                    align='left'),
+        cells=dict(values=[wo_numbers, runtimes, scheduled_runtimes],
+                   fill_color='lavender',
+                   align='left'))])
+
+    return plot(fig,
+                output_type="div",
+                include_plotlyjs=True,
+                config={"showLink": False})
 
 
 def sort_activities(act):
@@ -346,7 +423,7 @@ def sort_activities(act):
     return act.activity_code_id
 
 
-def get_df(activities, group_by, graph_start, graph_end, crop_overflow=True):
+def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflow=True):
     """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
     crop_overflow will crop activities that extend past the requested graph start and end times"""
 
@@ -435,4 +512,3 @@ def highlight_jobs(activities, layout):
     layout.annotations = annotations
 
     return layout
-

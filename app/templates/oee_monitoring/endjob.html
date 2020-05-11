@@ -18,7 +18,7 @@
                                     onchange="selectDowntimeReason(this, {{ activity.ud_index }})"
                                     {# name is used by flask to assign the code once posted#}
                                     name="{{ activity.ud_index }}"
-                                    {# id is used by javascript to change the plot#}
+                                    {# id is used by libraries to change the plot#}
                                     id="select{{ activity.ud_index }}">
                                 {% for ac in activity_codes %}
                                     <option value="{{ ac.id }}">{{ ac.code }} - {{ ac.short_description }}</option>

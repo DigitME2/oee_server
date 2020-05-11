@@ -1,13 +1,14 @@
-from datetime import datetime
-
-from app.default.models import Activity, ActivityCode, ScheduledActivity
+from datetime import datetime, timedelta, time
+from app import db
+from app.data_analysis.models import DailyOEE
+from app.default.models import Activity, ActivityCode, ScheduledActivity, MachineGroup
 from app.default.db_helpers import get_machine_activities, get_user_activities
 
 from config import Config
 
 
 def get_machine_runtime(machine_id, requested_start, requested_end):
-    """ Takes a machine id and two times, and returns the amount of time the machine was running """
+    """ Takes a machine id and two timestamps, and returns the amount of time the machine was running """
     # Get all of the activities for the machine between the two given times, where the machine is up
     activities = Activity.query \
         .filter(Activity.machine_id == machine_id) \
@@ -115,15 +116,15 @@ def get_schedule_dict(machine_id, time_start, time_end):
             "unscheduled_time": unscheduled_time}
 
 
-def calculate_activity_percent(machine_id, activity_code_id, time_start, time_end):
+def calculate_activity_percent(machine_id, activity_code_id, timestamp_start, timestamp_end):
     """ Returns the percent of time a certain activity code takes up for a certain machine over two timestamps"""
     activities = Activity.query \
         .filter(Activity.machine_id == machine_id) \
         .filter(Activity.activity_code_id == activity_code_id) \
-        .filter(Activity.timestamp_end >= time_start) \
-        .filter(Activity.timestamp_start <= time_end).all()
+        .filter(Activity.timestamp_end >= timestamp_start) \
+        .filter(Activity.timestamp_start <= timestamp_end).all()
 
-    total_time = time_end - time_start
+    total_time = timestamp_end - timestamp_start
     activity_code_time = 0
     for act in activities:
         activity_code_time += (act.timestamp_end - act.timestamp_start)
@@ -134,12 +135,62 @@ def calculate_activity_percent(machine_id, activity_code_id, time_start, time_en
         return (total_time / activity_code_time) * 100
 
 
-def get_oee(machine_id, time_start, time_end):
+def calculate_activity_time(machine_id, activity_code_id, timestamp_start, timestamp_end):
+    """ Returns the time a certain activity code takes up for a certain machine over two timestamps"""
+    activities = Activity.query \
+        .filter(Activity.machine_id == machine_id) \
+        .filter(Activity.activity_code_id == activity_code_id) \
+        .filter(Activity.timestamp_end >= timestamp_start) \
+        .filter(Activity.timestamp_start <= timestamp_end).all()
+
+    activity_code_time = 0
+    for act in activities:
+        activity_code_time += (act.timestamp_end - act.timestamp_start)
+    return activity_code_time
+
+
+def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
     """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
     Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
-    runtime = get_machine_runtime(machine_id, time_start, time_end)
-    scheduled_uptime = get_schedule_dict(machine_id, time_start, time_end)["scheduled_run_time"]
+    #todo need to have a think about what happens here if there are no activities or scheduled activities
+    # Do we save a 0 or None?
 
+    #todo sanity check - warn user if over 100 or if there are no scheduled times
+
+    #todo test this make sure answers are correct
+    runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end)
+    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end)["scheduled_run_time"]
+    if scheduled_uptime == 0:
+        return 0
     availability = runtime / scheduled_uptime
     oee = availability * 100
     return oee
+
+
+def get_daily_machine_oee(machine_id, date):
+    """ Takes a machine id and a dates, then gets the oee for the day and saves the figure to database """
+    #todo dont run for current day or future. Maybe add future validation to web form
+    daily_machine_oee = DailyOEE.query.filter_by(machine_id=machine_id, date=date).first()
+    # If the OEE figure is missing, call the function to calculate the missing values and save in database
+    if daily_machine_oee is None:
+        start = datetime.combine(date=date, time=time(hour=0, minute=0, second=0, microsecond=0))
+        end = start + timedelta(days=1)
+        oee = calculate_machine_oee(machine_id, timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
+        daily_machine_oee = DailyOEE(machine_id=machine_id, date=date, oee=oee)
+        db.session.add(daily_machine_oee)
+        db.session.commit()
+
+    return daily_machine_oee.oee
+
+
+def get_daily_group_oee(group_id, date):
+    """Get the mean OEE figure for a group of machines on a particular day"""
+    group = MachineGroup.query.filter_by(id=group_id).first()
+    machine_oees = []
+    for machine in group.machines:
+        # For each machine add the oee figure to the list
+        machine_oees.append(get_daily_machine_oee(machine.id, date))
+    if machine_oees is None:
+        return 0
+    mean_oee = sum(machine_oees) / len(machine_oees)
+    return mean_oee

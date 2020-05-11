@@ -3,7 +3,8 @@ from datetime import datetime, time
 from flask import current_app
 
 from app import db
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, SHIFT_STRFTIME_FORMAT
+from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, SHIFT_STRFTIME_FORMAT, \
+    MachineGroup
 from app.login.models import create_default_users
 from config import Config
 
@@ -104,10 +105,17 @@ def setup_database():
         db.session.commit()
         current_app.logger.info("Created pneumatrol_no_setting workflow type on first startup")
 
+
+    if len(MachineGroup.query.all()) == 0:
+        group1 = MachineGroup(name="Group 1")
+        current_app.logger.info("Created default machine group on first startup")
+        db.session.add(group1)
+        db.session.commit()
+
     if len(Machine.query.all()) == 0:
         machine1 = Machine(name="Machine 1",
                            device_ip="127.0.0.1",
-                           group="1",
+                           group_id=1,
                            schedule_id=1)
         db.session.add(machine1)
         db.session.commit()
@@ -120,9 +128,10 @@ def setup_database():
         db.session.add(act)
         db.session.commit()
         current_app.logger.info("Created activity on first startup")
-
-
         db.session.commit()
+
+
+
 
     if len(Settings.query.all()) == 0:
         settings = Settings(threshold=500, dashboard_update_interval_s=10)

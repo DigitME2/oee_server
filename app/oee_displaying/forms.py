@@ -54,12 +54,23 @@ class DowntimeBarForm(FlaskForm):
     end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT)
     start_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight)
     end_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight)
-    graph_type = SelectField(choices=[(v, v) for v in GRAPH_TYPES])
     machines = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")])
     dashboard = BooleanField(label="Create Dashboard View")
+
+    submit = SubmitField('Submit')
 
 
 class JobTableForm(FlaskForm):
     graph_name = "Job Table"
     start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT)
     end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT)
+
+    submit = SubmitField('Submit')
+
+
+class WOTableForm(FlaskForm):
+    graph_name = "Work Order Table"
+    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT)
+    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT)
+
+    submit = SubmitField('Submit')

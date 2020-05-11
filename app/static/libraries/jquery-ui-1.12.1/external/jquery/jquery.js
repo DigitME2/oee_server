@@ -9382,7 +9382,7 @@ jQuery.extend( {
 			text: "text/plain",
 			html: "text/html",
 			xml: "application/xml, text/xml",
-			json: "application/json, text/javascript"
+			json: "application/json, text/libraries"
 		},
 
 		contents: {
@@ -10361,7 +10361,7 @@ function createActiveXHR() {
 // Install script dataType
 jQuery.ajaxSetup( {
 	accepts: {
-		script: "text/javascript, application/javascript, " +
+		script: "text/libraries, application/libraries, " +
 			"application/ecmascript, application/x-ecmascript"
 	},
 	contents: {

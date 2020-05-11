@@ -7,7 +7,7 @@ from time import time
 from flask import current_app
 
 from app import db
-from app.default.models import Activity, Machine, Job
+from app.default.models import Activity, Machine
 from config import Config
 
 

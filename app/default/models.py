@@ -48,7 +48,7 @@ class Job(db.Model):
     end_time = db.Column(db.Float)
     wo_number = db.Column(db.String, nullable=False)
     part_number = db.Column(db.String)
-    planned_set_time = db.Column(db.Integer)
+    planned_set_time = db.Column(db.Integer)  # This is also used to decide whether a job is setting or not
     setup_scrap = db.Column(db.Integer)
     planned_run_time = db.Column(db.Integer)
     planned_quantity = db.Column(db.Integer)
