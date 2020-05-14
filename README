@@ -1,16 +1,12 @@
+# OEE Monitoring Webapp
+
 This project was made to monitor OEE for machines
 
-This webapp works with an Android app for the user. It has the ability to be used via a browser but I haven't fully
-tested this.
+This constites the central server, which can receive live OEE data from client and is accessed through a flask webapp.
 
-Machine activity is recorded as an "activity" in the database. An activity is created by the Kafka consumer whenever a
-machine changes state, and ended when the machine changes state again.
-Additional detail to the activity is handled by the flask app, and is added to the same entry in the activity table.
-This additional detail is in the form of "activity code" e.g. UP = uptime, NO = No Operator, stored in the activity
-code table.
-A "Job" is a single unique instance of a user working on a machine. When the user stops working, that job ends and
-every activity during the job's runtime is given a reference back to that job (only for the job's machine)
 
+
+## Documentation
 
 POSTing to /run_schedule causes the machines schedules to be run for that day, and saved to the scheduled_activity
 table. It can be ran on a different date by giving it the argument date=dd-mm-yy
