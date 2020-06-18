@@ -1,105 +1,114 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
-    <div class="centralBody">
-        <div class="centralWrapper">
-            <div id="adminSettingsColumn" class="adminColumn">
-                <h2 class="adminListHeader">Settings</h2>
-                <ul class="adminList">
-                    <li class="adminListItem">
-                        <a href="{{ url_for('admin.settings') }}">
-                            Edit
-                        </a>
-                    </li>
-                </ul>
+    <div class="container mt-2">
+        <div class="card-group">
+
+
+            <div id="adminUserColumn" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Users</h2>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 30rem;">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{{ url_for('admin.new_user') }}">Create New</a>
+                        </li>
+
+                        {% for user in users %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('admin.change_password', user_id=user.id, action="reset_password") }}">
+                                    {{ user.username }} (ID: {{ user.id }})
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
 
-            <div id="adminUserColumn" class="adminColumn">
-                <h2 class="adminListHeader">Users</h2>
-                <ul class="adminList">
-                    <li class="adminListItem">
-                        <a href="{{ url_for('admin.new_user') }}">Create New</a>
-                    </li>
-
-                    {% for user in users %}
-                        <li class="adminListItem">
-                            <a href="{{ url_for('admin.change_password', user_id=user.id, action="reset_password") }}">
-                                {{ user.username }} (ID: {{ user.id }})
-                            </a>
+            <div id="adminScheduleColumn" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Schedules</h2>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 30rem;">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{{ url_for('admin.machine_schedule', new=true) }}">Create New</a>
                         </li>
-                    {% endfor %}
-                </ul>
+
+                        {% for s in schedules %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
+                                    {{ s.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
 
-            <div id="adminScheduleColumn" class="adminColumn">
-                <h2 class="adminListHeader">Schedules</h2>
-                <ul class="adminList">
-                    <li class="adminListItem">
-                        <a href="{{ url_for('admin.machine_schedule', new=true) }}">Create New</a>
-                    </li>
-
-                    {% for s in schedules %}
-                        <li class="adminListItem">
-                            <a href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
-                                {{ s.name }}
-                            </a>
+            <div id="adminMachineColumn" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Machines</h2>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 30rem;">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{{ url_for('admin.edit_machine', new=true) }}">Create New</a>
                         </li>
-                    {% endfor %}
-                </ul>
+
+                        {% for m in machines %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('admin.edit_machine',  machine_id=m.id) }}">
+                                    {{ m.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
 
-
-            <div id="adminMachineColumn" class="adminColumn">
-                <h2 class="adminListHeader">Machines</h2>
-                <ul class="adminList">
-                    <li class="adminListItem">
-                        <a href="{{ url_for('admin.edit_machine', new=true) }}">Create New</a>
-                    </li>
-
-                    {% for m in machines %}
-                        <li class="adminListItem">
-                            <a href="{{ url_for('admin.edit_machine', machine_id=m.id) }}">
-                                {{ m.name }} (ID:{{ m.id }})
-                            </a>
+            <div id="adminMachineGroupColumn" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Machine Groups</h2>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 30rem;">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{{ url_for('admin.edit_machine_group', new=true) }}">Create New</a>
                         </li>
-                    {% endfor %}
-                </ul>
-            </div>
 
-            <div id="adminMachineGroupColumn" class="adminColumn">
-                <h2 class="adminListHeader">Machine Groups</h2>
-                <ul class="adminList">
-                    <li class="adminListItem">
-                        <a href="{{ url_for('admin.edit_machine_group', new=true) }}">Create New</a>
-                    </li>
-
-                    {% for mg in machine_groups %}
-                        <li class="adminListItem">
-                            <a href="{{ url_for('admin.edit_machine_group', machine_group_id=mg.id) }}">
-                                {{ mg.name }}
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
+                        {% for mg in machine_groups %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('admin.edit_machine_group', machine_group_id=mg.id) }}">
+                                    {{ mg.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
 
 
-            <div id="adminActivityCodeColumn" class="adminColumn">
-                <h2 class="adminListHeader">Activity Codes</h2>
-                <ul class="adminList">
-                    <li class="adminListItem">
-                        <a href="{{ url_for('admin.edit_activity_code', new=true) }}">Create New</a>
-                    </li>
-
-                    {% for ac in activity_codes %}
-                        <li class="adminListItem">
-                            <a href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">
-                                {{ ac.code }} - {{ ac.short_description }}
-                            </a>
+            <div id="adminActivityCodeColumn" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Activity Codes</h2>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 30rem;">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{{ url_for('admin.edit_activity_code', new=true) }}">Create New</a>
                         </li>
-                    {% endfor %}
-                </ul>
+
+                        {% for ac in activity_codes %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">
+                                    {{ ac.code }} - {{ ac.short_description }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
 
         </div>

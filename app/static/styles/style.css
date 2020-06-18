@@ -1,0 +1,8 @@
+:root {
+    --main-bg-color: #AD1920;
+}
+
+
+.main_bg_color {
+    background: var(--main-bg-color);
+}

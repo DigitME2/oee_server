@@ -1,52 +1,83 @@
+{#TODO do bootstrap manually using https://getbootstrap.com/docs/4.2/getting-started/introduction/ #}
+
 <!doctype html>
 <html lang="en">
 <head>
-    {% if title %}
-        <title>{{ title }} - Prodapp</title>
-    {% else %}
-        <title>Production</title>
-    {% endif %}
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='libraries/bootstrap-4.2.1/css/bootstrap.min.css') }}">
+
+    {# JS Needed for Bootstrap #}
+    <script src="{{ url_for('static', filename='libraries/jquery-3.3.1.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/popper.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/bootstrap-4.2.1/js/bootstrap.min.js') }}" type="text/javascript"></script>
+
+    {% block title %}
+        {% if title %}
+            <title>{{ title }} - Prodapp</title>
+        {% else %}
+            <title>Production</title>
+        {% endif %}
+    {% endblock %}
 </head>
 
 <body>
-<div id="navBar">
-    <div id="navBarLeft">
-        <a id="navBarTitle">{{ nav_bar_title }}</a>
-    </div>
-    <div id="navBarRight">
-        <ul class="navList">
-            {% if current_user.is_anonymous %}
-                <li><a href="{{ url_for('login.login') }}">Login</a></li>
-            {% else %}
-                <li><a href="{{ url_for('login.logout') }}">Logout</a></li>
-            {% endif %}
-            {% if current_user.admin %}
-                <li><a href="{{ url_for('export.export_home') }}">Export</a></li>
-                <li><a href="{{ url_for('admin.admin_home') }}">Admin</a></li>
-                <li><a href="{{ url_for('oee_displaying.graphs') }}">Graphs</a></li>
-                <li><a href="{{ url_for('oee_displaying.dashboard',
+
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">OEE - DigitME2</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                {% if current_user.admin %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('export.export_home') }}">Export</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.admin_home') }}">Admin</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.graphs') }}">Graphs</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.dashboard',
                     machine_group=1,
                     start="09:00",
                     end="18:00") }}">Dashboard</a></li>
-            {% endif %}
-
-
-        </ul>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.settings') }}">Settings</a></li>
+                {% endif %}
+            </ul>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    {% if current_user.is_anonymous %}
+                        <li class="nav-item  navbar-dark"><a class="nav-link" href="{{ url_for('login.login') }}">Login</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login.logout') }}">Logout</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
     </div>
-</div>
-{% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li class="flashedMessage">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
+</nav>
 
 
+{% block content %}
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-{% block content %}{% endblock %}
+        {# application content needs to be provided in the app_content block #}
+        {% block app_content %}{% endblock %}
+    </div>
+{% endblock %}
+
+
 </body>
 </html>

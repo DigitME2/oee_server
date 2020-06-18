@@ -1,7 +1,7 @@
 import operator
 import plotly.graph_objects as go
 import pandas as pd
-
+from logging import getLogger
 from plotly.offline import plot
 from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
@@ -15,6 +15,7 @@ from config import Config
 from app.default.db_helpers import get_machine_activities
 import plotly.figure_factory as ff
 
+logger = getLogger()
 
 def apply_default_layout(layout):
     layout.xaxis.rangeselector.buttons = [
@@ -429,6 +430,9 @@ def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflo
 
     df = []
     for act in activities:
+        if not act.activity_code:
+            logger.warning("Found activity without activity code ID=" + str(act.id))
+            continue
         # Don't show values outside of graph time range
         if crop_overflow:
             if act.timestamp_start < graph_start:
@@ -449,8 +453,9 @@ def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflo
         else:
             start = act.timestamp_start
             end = act.timestamp_end
-
         code = act.activity_code.short_description
+
+
         task = operator.attrgetter("machine.name")(act)
 
         df.append(dict(Task=task,

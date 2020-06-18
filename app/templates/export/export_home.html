@@ -4,40 +4,33 @@
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
 
-    <div class="centralBody">
-        <div class="exportCentralWrapper">
-            <div id="exportRawList" class="exportColumn">
-                <div class="exportColumnHeader">
-                    <h2>Raw Database Tables</h2>
+    <div class="container">
+        <div class="card-group">
+            <div id="exportRawList" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Raw Database Tables</h2>
                 </div>
-                <div></div>
-                {#empty cell#}
-                {% for table in tables %}
-                    <div class="exportListItem">{{ table }}</div>
-                    <div class="exportListItem">
-                        <form action="{{ url_for('export.export_raw') }}"
-                              method="get">
-                            <input type="hidden" name="table" value={{ table }}>
-                            <input type="submit" class="rightAlignButton" value="Download">
-                        </form>
-                    </div>
-                {% endfor %}
+                <div class="card-body overflow-auto mr-4" style="max-height: 30rem;">
+                    <ul class="list-group">
+                        {% for table in tables %}
+                            <a href="{{ url_for('export.export_raw', table=table) }}" class="list-group-item list-group-item-action">{{ table }}</a>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
 
-            <div id="exportUserList" class="exportColumn">
-                <div class="exportColumnHeader">
+
+            <div id="exportUserList" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
                     <h2>Activity Durations</h2>
                 </div>
                 <form action="{{ url_for('export.export_report') }}" method="get">
                     <input type="hidden" name="chartType" value="activityDuration">
-                    <table class="exportExampleTable">
+                    <table class="table">
                         <thead>
                         <tr>
                             <th>
-                                <select name="keyColumn">
-                                    <option value="Users">Users</option>
-                                    <option value="Machines">Machines</option>
-                                </select>
+                                User/Machine #
                             </th>
                             <th>Uptime</th>
                             <th>Downtime</th>
@@ -68,21 +61,32 @@
 
                         </tbody>
                     </table>
-
-                    <div class="exportDateTimeSelect">
-                        <label for="startDatePicker">From: </label>
-                        <input type="text" id="startDatePicker" name="dateStart"
-                               style="position: relative; z-index: 1000;">
-                        <input type="time" id="startTimePicker" name="timeStart" class="exportTimePicker" value="00:00"/>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="keySelect">Key</label>
+                            <select class="form-control" name="keyColumn" id="keySelect">
+                                <option value="Users">Users</option>
+                                <option value="Machines">Machines</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="exportDateTimeSelect">
-                        <label for="endDatePicker">To: </label>
-                        <input type="text" id="endDatePicker" name="dateEnd" style="position: relative; z-index: 1000;">
-                        <input type="time" id="endTimePicker" name="timeEnd" class="exportTimePicker" value="00:00"/>
+                    <div class="form-row">
+                        <div class="form-group mr-4">
+                            <label for="startDatePicker">From: </label>
+                            <input type="text" id="startDatePicker" name="dateStart" class="form-control">
+                            <input type="time" id="startTimePicker" name="timeStart" class="form-control" value="00:00"/>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="endDatePicker">To: </label>
+                            <input type="text" id="endDatePicker" name="dateEnd" class="form-control">
+                            <input type="time" id="endTimePicker" name="timeEnd" class="form-control" value="00:00"/>
+                        </div>
                     </div>
                     <div>
-                        <input type="submit" name="users_download" value="Download">
+                        <input type="submit" name="users_download" value="Download" class="btn btn-success">
                         <br>
+
                     </div>
                 </form>
             </div>

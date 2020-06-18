@@ -23,7 +23,7 @@ class ActivityCodeForm(FlaskForm):
 
 class ScheduleForm(FlaskForm):
     error_message = "Enter 00:00 if no shift on this day"
-    name = StringField(validators=[DataRequired(message=error_message)])
+    name = StringField(label="Schedule Name", validators=[DataRequired(message=error_message)])
     mon_start = TimeField(validators=[DataRequired(message=error_message)])
     mon_end = TimeField(validators=[DataRequired(message=error_message)])
     tue_start = TimeField(validators=[DataRequired(message=error_message)])

@@ -1,2 +1,4 @@
-/app/static/
 /.idea
+app/static/images
+app/static/libraries
+app/static/temp

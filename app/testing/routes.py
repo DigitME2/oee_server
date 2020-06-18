@@ -22,12 +22,13 @@ from flask_login import current_user
 def test():
 
 
-    return "test"
+    return render_template("testing/test.html")
 
-@bp.route('/test1')
-def test1():
+@bp.route('/test2')
+def test2():
 
-    return "Create scheduled activities"
+
+    return render_template("testing/test2.html")
 
 
 def sort_activities(act):
