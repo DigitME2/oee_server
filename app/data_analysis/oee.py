@@ -65,7 +65,7 @@ def get_activity_duration_dict(requested_start, requested_end, machine_id=None, 
         if act.timestamp_end is None or act.timestamp_start > requested_end:
             end = min([requested_end, datetime.now().timestamp()])
         else:
-            end = requested_end
+            end = act.timestamp_end
 
         # Calculate the duration and add to the dict
         if use_description_as_key:
@@ -75,7 +75,7 @@ def get_activity_duration_dict(requested_start, requested_end, machine_id=None, 
     return activities_dict
 
 
-def get_schedule_dict(machine_id, time_start, time_end):
+def get_schedule_dict(machine_id, timestamp_start, timestamp_end):
     """ Takes a machine id and two times, and returns a dict with:
     scheduled_run_time
     scheduled_down_time
@@ -83,21 +83,21 @@ def get_schedule_dict(machine_id, time_start, time_end):
     # Get all the scheduled activities
     activities = ScheduledActivity.query \
         .filter(ScheduledActivity.machine_id == machine_id) \
-        .filter(ScheduledActivity.timestamp_end >= time_start) \
-        .filter(ScheduledActivity.timestamp_start <= time_end).all()
+        .filter(ScheduledActivity.timestamp_end >= timestamp_start) \
+        .filter(ScheduledActivity.timestamp_start <= timestamp_end).all()
 
-    total_time = time_end - time_start
+    total_time = timestamp_end - timestamp_start
     scheduled_run_time = 0
     scheduled_down_time = 0
     unscheduled_time = 0
     for act in activities:
         # If the activity extends past the  start or end, crop it short
-        if act.timestamp_start < time_start:
-            start = time_start
+        if act.timestamp_start < timestamp_start:
+            start = timestamp_start
         else:
             start = act.timestamp_start
-        if act.timestamp_end > time_end:
-            end = time_end
+        if act.timestamp_end > timestamp_end:
+            end = timestamp_end
         else:
             end = act.timestamp_end
 
