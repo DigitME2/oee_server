@@ -9,7 +9,7 @@
                 {{ form.wo_number.label }}<br>
                 {{ form.wo_number(size=32, autocomplete="off", class_="jobStartInput") }}<br>
                 {% for error in form.wo_number.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
             </p>
         {% if assigned_machine == None %}
@@ -17,7 +17,7 @@
                 {{ form.machine.label }}<br>
                 {{ form.machine(class_="jobStartInput") }}<br>
                 {% for error in form.machine.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
             </p>
         {% endif %}
@@ -25,21 +25,21 @@
                 {{ form.planned_set_time.label }}<br>
                 {{ form.planned_set_time(size=32, autocomplete="off", class_="jobStartInput") }}<br>
                 {% for error in form.planned_set_time.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
             </p>
         <p>
                 {{ form.planned_cycle_time.label }}<br>
                 {{ form.planned_cycle_time(size=32, autocomplete="off", class_="jobStartInput") }}<br>
                 {% for error in form.planned_cycle_time.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
             </p>
         <p>
                 {{ form.planned_cycle_quantity.label }}<br>
                 {{ form.planned_cycle_quantity(size=32, autocomplete="off", class_="jobStartInput") }}<br>
                 {% for error in form.planned_cycle_quantity.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
             </p>
             <p>{{ form.submit() }}</p>

@@ -1,56 +1,49 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-    <div class="centralForm">
+    <div class="container mt-2">
         <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
         <p>{{ message|safe }}</p> <br>
 
         <form action="" method="post">
             {{ form.hidden_tag() }}
-            <div class="formGrid">
-                <div class="formGriditem">
-                    {{ form.code.label }}
-                </div>
-                <div class="formGriditem">
-                    {{ form.active.label }}
-                </div>
-                <div class="formGriditem">
-                    {{ form.code(size=32) }}
-                </div>
-                <div class="formGriditem">
-                    {{ form.active(size=32) }}
+            <div class="form-group">
+                <div class="form-check">
+                    {{ form.active(size=32, class_="form-check-input") }}
+                    {{ form.active.label(class_="form-check-label") }}
                 </div>
 
+                {{ form.code.label }}
+                {{ form.code(size=32, class_="form-control") }}
                 {% for error in form.code.errors %}
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
-            </div>
 
-            <p>
+
                 {{ form.short_description.label }}<br>
-                {{ form.short_description(size=32) }}<br>
+                {{ form.short_description(size=32, class_="form-control") }}<br>
                 {% for error in form.short_description.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
 
-            <p>
-                {{ form.long_description.label }}<br>
-                {{ form.long_description(size=32) }}<br>
-                {% for error in form.long_description.errors %}
-                    <span class="formError">[{{ error }}]</span>
-                {% endfor %}
+                <p>
+                    {{ form.long_description.label }}<br>
+                    {{ form.long_description(size=32, class_="form-control") }}<br>
+                    {% for error in form.long_description.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
 
-            <p>
-                {{ form.graph_colour.label }}<br>
-                {{ form.graph_colour(size=32, class_="jscolor") }}<br>
-                {% for error in form.long_description.errors %}
-                    <span class="formError">[{{ error }}]</span>
-                {% endfor %}
-            <p>
+                <p>
+                    {{ form.graph_colour.label }}<br>
+                    {{ form.graph_colour(size=32, class_="jscolor form-control") }}<br>
+                    {% for error in form.long_description.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                <p>
 
 
-            <p>{{ form.submit() }}</p>
-
+                {{ form.submit(class_="btn btn-success") }}
+            </div>
         </form>
 
 

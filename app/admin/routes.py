@@ -114,6 +114,8 @@ def machine_schedule():
         schedule = Schedule.query.get_or_404(schedule_id)
 
     if form.validate_on_submit():
+        #TODO Validate that start time isnt after end, for each entry
+
         # Save the data from the form to the database
         schedule.name = form.name.data
         schedule.mon_start = form.mon_start.data.strftime(SHIFT_STRFTIME_FORMAT)

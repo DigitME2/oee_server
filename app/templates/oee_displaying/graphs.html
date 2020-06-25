@@ -2,61 +2,71 @@
 {% import "oee_displaying/form_templates.html" as form_templates %}
 
 {% block content %}
-    <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='styles/jquery-ui.css') }}" type="text/css" rel="stylesheet">
 
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/datepicker.css') }}">
 
+    <div class="container mt-2">
+        <label for="graphType">Graph type</label>
 
-    <div class="centralBody">
-        <div class="centralWrapper">
+        <select id="graphType" class="form-control">
+            {% for form in forms %}
 
-            <label for="graphType">Graph type</label>
+                <option value="{{ form.__class__.__name__ }}"
+                        {% if form.__class__.__name__ == last_form.__class__.__name__ %}
+                            {#                 If this option was selected last time, set it as selected now #}
+                            selected="selected"
+                        {% endif %}
+                >
+                    {{ form.graph_name }}
+                </option>
+            {% endfor %}
+        </select>
 
-            <select id="graphType">
-                {% for form in forms %}
-                    <option value="{{ form.__class__.__name__ }}">{{ form.graph_name }}</option>
-                {% endfor %}
-            </select>
-
-            <div id="graphParametersForm">
-                {#            Create all the forms and set to display:none. The dropdown makes them visible #}
-                {% for form in forms %}
-                    <div id="{{ form.__class__.__name__ }}" class="disappearingGraphForm" style="display: none">
-                        {{ form_templates.graph_form(form) }}
-                    </div>
-                {% endfor %}
-            </div>
-
-            <div id="test">
-
-            </div>
-
-
-            <div class="main_graph" id="main_graph">
-                {{ graph|safe }}
-            </div>
+        <div id="graphParametersForm">
+            {#            Create all the forms and set to display:none. The dropdown makes them visible #}
+            {% for form in forms %}
+                <div id="{{ form.__class__.__name__ }}" class="disappearingGraphForm" style="display: none">
+                    {{ form_templates.graph_form(form) }}
+                </div>
+            {% endfor %}
         </div>
     </div>
 
+    <div class="container-fluid mt-5">
+        <div class="main_graph" id="main_graph">
+            {{ graph|safe }}
+        </div>
+    </div>
+    </div>
 
-    <script src="{{ url_for('static', filename='libraries/jquery-3.3.1.min.js') }}"
-            type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/jquery-ui-1.12.1/jquery-ui.js') }}"
-            type="text/javascript"></script>
 
-    <script>
-    //todo do this for every date, every time the form reloads
-        $(function () {
+    <script src="{{ url_for('static', filename='libraries/jquery-3.3.1.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/bootstrap-datepicker-master/js/bootstrap-datepicker.js') }}" type="text/javascript"></script>
+
+
+
+
+
+    <script type="application/javascript">
+        {#    Add the datepicker to all forms with class "form-datepicker" #}
+        $(document).ready(function () {
+            {# Create values for today and tomorrow to set as default#}
             var today = new Date();
             var yesterday = new Date();
             yesterday.setDate(today.getDate() - 1);
             var tomorrow = new Date();
-            tomorrow.setDate(today.getDate() + 1);
-            $("#start_date").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', today);
-            $("#end_date").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', tomorrow);
 
+            tomorrow.setDate(today.getDate() + 1);
+            var date_inputs = $(".form-datepicker");
+            var options = {
+                format: 'dd-mm-yyyy',
+                todayHighlight: true,
+                autoclose: true,
+            };
+            date_inputs.datepicker(options);
         });
     </script>
+
 
 
     <script>
@@ -64,14 +74,18 @@
         document.getElementById("graphType").onchange = reloadForm;
 
         function reloadForm() {
-            var selectedId = $("#graphType :selected").val();
-            var forms = document.getElementsByClassName("disappearingGraphForm");
-            if (forms != null) {
-                for (i = 0; i < forms.length; i++) {
-                    forms[i].style.display = "none"
+            try {
+                var selectedId = $("#graphType :selected").val();
+                var forms = document.getElementsByClassName("disappearingGraphForm");
+                if (forms != null) {
+                    for (i = 0; i < forms.length; i++) {
+                        forms[i].style.display = "none"
+                    }
                 }
+                document.getElementById(selectedId).style.display = "block";
+            } catch (err) {
+                console.log("Failed to set form")
             }
-            document.getElementById(selectedId).style.display = "block";
         }
 
         // Run when the page first loads
@@ -79,45 +93,50 @@
 
     </script>
 
-    <script type=text/javascript>
-        $body = $("body");
+    {#    To apply datatables library to the table#}
+    <link href="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/css/dataTables.jqueryui.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='libraries/DataTables/datatables.min.css') }}" type="text/css" rel="stylesheet">
 
-        $('#createGraph').bind('click', function () {
-            $body.addClass("loading");
-            $.ajax({
-                url: '{{ url_for('oee_displaying.update_graph') }}',
-                method: "GET",
-                data: {
-                    date: $('#datePicker').val(),
-                    machine_id: $('#machineSelect').val()
-                },
-                success: function (response) {
-                    $('#graph').html(response);
-                    $body.removeClass("loading");
-                },
-                error: function (error) {
-                    console.log(error);
-                    $('#graph').html("Error getting graph");
-                    $body.removeClass("loading");
-                }
-            });
-        });
-    </script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/jquery.dataTables.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/datatables.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.jqueryui.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/dataTables.buttons.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.flash.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/pdfmake.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/vfs_fonts.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.print.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/JSZip-2.5.0/jszip.min.js') }}"></script>
 
-
-    <script type="application/javascript">
-        /** Disable the dates when requesting a dashboard */
-        function handleCheck() {
-            document.getElementById("start_date").disabled = document.getElementById("dashboard").checked;
-            document.getElementById("end_date").disabled = document.getElementById("dashboard").checked;
-        }
-
+    <script>
+        {#Script to add the datatable library to the table#}
         $(document).ready(function () {
-            handleCheck();
-            // Add onclick to the dashboard
-            document.getElementById("dashboard").onclick = handleCheck
-        });
+                $('.dataTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'excel', 'csv', 'pdf'
+                    ]
+                });
+            }
+        );
+
+
     </script>
+
+
+    {#    <script type="application/javascript">#}
+    {#        /** Disable the dates when requesting a dashboard graph, so the graph is full screen*/#}
+    {#        function handleCheck() {#}
+    {#            document.getElementById("start_date").disabled = document.getElementById("dashboard").checked;#}
+    {#            document.getElementById("end_date").disabled = document.getElementById("dashboard").checked;#}
+    {#        }#}
+    {##}
+    {#        $(document).ready(function () {#}
+    {#            handleCheck();#}
+    {#            // Add onclick to the dashboard#}
+    {#            document.getElementById("dashboard").onclick = handleCheck#}
+    {#        });#}
+    {#    </script>#}
 
 
 
