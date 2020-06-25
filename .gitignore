@@ -1,4 +1,5 @@
 /.idea
 app/static/images
-app/static/libraries
 app/static/temp
+/app/templates/testing/
+/app/testing/
