@@ -37,6 +37,7 @@ def apply_default_layout(layout):
     layout.yaxis.tickfont = {
         'size': 16
     }
+    layout.xaxis.rangeselector.visible = False
     layout.autosize = False
     layout.margin = dict(l=100, r=50, b=50, t=50, pad=10)
     return layout
@@ -390,7 +391,7 @@ def create_job_table(machine_ids, start_date, end_date):
             .filter(Job.end_time >= start_timestamp)
 
         for job in jobs:
-            sched_dict = get_schedule_dict(machine_id, time_start=start_timestamp, time_end=end_timestamp)
+            sched_dict = get_schedule_dict(machine_id, timestamp_start=start_timestamp, timestamp_end=end_timestamp)
             runtime = get_machine_runtime(machine_id, requested_start=start_timestamp, requested_end=end_timestamp)
             wo_number = job.wo_number
             scheduled_runtime = sched_dict["scheduled_run_time"]

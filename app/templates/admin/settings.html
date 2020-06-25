@@ -8,14 +8,14 @@
                 {{ form.dashboard_update_interval.label }}<br>
                 {{ form.dashboard_update_interval(size=32, class_="form-control") }}<br>
                 {% for error in form.dashboard_update_interval.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
 
 
                 {{ form.explanation_threshold.label }}<br>
                 {{ form.explanation_threshold(size=32, class_="form-control") }}<br>
                 {% for error in form.explanation_threshold.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
 
                 {{ form.submit(class_="form-control") }}

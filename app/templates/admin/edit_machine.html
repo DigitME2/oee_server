@@ -31,14 +31,14 @@
                     {{ form.name.label }}<br>
                     {{ form.name(size=32, autocomplete="off", class_="form-control") }}<br>
                     {% for error in form.name.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
                 <div class="form-group col-md-6">
                     {{ form.device_ip.label }}<br>
                     {{ form.device_ip(size=32, autocomplete="off", class_="form-control") }}<br>
                     {% for error in form.device_ip.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>
@@ -48,14 +48,14 @@
                     {{ form.group.label }}<br>
                     {{ form.group(class_="form-control") }}<br>
                     {% for error in form.group.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
                 <div class="form-group col-md-6">
                     {{ form.schedule.label }}<br>
                     {{ form.schedule(class_="form-control") }}<br>
                     {% for error in form.schedule.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>
@@ -64,7 +64,7 @@
                 {{ form.workflow_type.label }}<br>
                 {{ form.workflow_type(class_="form-control") }}<br>
                 {% for error in form.workflow_type.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
             </div>
             <br>

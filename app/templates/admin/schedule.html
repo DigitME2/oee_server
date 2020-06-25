@@ -11,7 +11,7 @@
                     {{ form.name.label }}
                     {{ form.name(size=32, autocomplete="off", class_="form-control") }}
                     {% for error in form.name.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>

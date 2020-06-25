@@ -23,21 +23,21 @@
                 {{ form.short_description.label }}<br>
                 {{ form.short_description(size=32, class_="form-control") }}<br>
                 {% for error in form.short_description.errors %}
-                    <span class="formError">[{{ error }}]</span>
+                    <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
 
                 <p>
                     {{ form.long_description.label }}<br>
                     {{ form.long_description(size=32, class_="form-control") }}<br>
                     {% for error in form.long_description.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
 
                 <p>
                     {{ form.graph_colour.label }}<br>
                     {{ form.graph_colour(size=32, class_="jscolor form-control") }}<br>
                     {% for error in form.long_description.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 <p>
 

@@ -8,8 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='libraries/bootstrap-4.2.1/css/bootstrap.min.css') }}">
 
     {# JS Needed for Bootstrap #}
     <script src="{{ url_for('static', filename='libraries/jquery-3.3.1.min.js') }}" type="text/javascript"></script>
@@ -38,10 +36,8 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 {% if current_user.admin %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('export.export_home') }}">Export</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.admin_home') }}">Admin</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.graphs') }}">Graphs</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.data') }}">Data</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.dashboard',
                     machine_group=1,
                     start="09:00",
@@ -78,6 +74,8 @@
     </div>
 {% endblock %}
 
+<!-- Bootstrap CSS (last to override any other css) -->
+    <link rel="stylesheet" media="screen" href="{{ url_for('static', filename='libraries/bootstrap-4.2.1/css/bootstrap.min.css') }}">
 
 </body>
 </html>

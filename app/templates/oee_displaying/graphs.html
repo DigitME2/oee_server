@@ -10,7 +10,15 @@
 
         <select id="graphType" class="form-control">
             {% for form in forms %}
-                <option value="{{ form.__class__.__name__ }}">{{ form.graph_name }}</option>
+
+                <option value="{{ form.__class__.__name__ }}"
+                        {% if form.__class__.__name__ == last_form.__class__.__name__ %}
+                            {#                 If this option was selected last time, set it as selected now #}
+                            selected="selected"
+                        {% endif %}
+                >
+                    {{ form.graph_name }}
+                </option>
             {% endfor %}
         </select>
 
@@ -24,7 +32,7 @@
         </div>
     </div>
 
-    <div class="container-fluid">
+    <div class="container-fluid mt-5">
         <div class="main_graph" id="main_graph">
             {{ graph|safe }}
         </div>
@@ -37,32 +45,21 @@
 
 
 
-    {#    <script src="{{ url_for('static', filename='libraries/jquery-3.3.1.min.js') }}" type="text/javascript"></script>#}
-    {#    <script src="{{ url_for('static', filename='libraries/jquery-ui-1.12.1/jquery-ui.js') }}" type="text/javascript"></script>#}
-    {##}
-    {#    <script>#}
-    {#Add the datepicker to the date inputs#}
-    {#        //todo do this for every date, every time the form reloads#}
-    {#        $(function () {#}
-    {#            var today = new Date();#}
-    {#            var yesterday = new Date();#}
-    {#            yesterday.setDate(today.getDate() - 1);#}
-    {#            var tomorrow = new Date();#}
-    {#            tomorrow.setDate(today.getDate() + 1);#}
-    {##}
-    {#            $(".start_date").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', today);#}
-    {#            $(".end_date").datepicker({dateFormat: 'dd-mm-yy'}).datepicker('setDate', tomorrow);#}
-    {##}
-    {#        });#}
-    {#    </script>#}
 
 
     <script type="application/javascript">
         {#    Add the datepicker to all forms with class "form-datepicker" #}
         $(document).ready(function () {
+            {# Create values for today and tomorrow to set as default#}
+            var today = new Date();
+            var yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+            var tomorrow = new Date();
+
+            tomorrow.setDate(today.getDate() + 1);
             var date_inputs = $(".form-datepicker");
             var options = {
-                format: 'dd/mm/yyyy',
+                format: 'dd-mm-yyyy',
                 todayHighlight: true,
                 autoclose: true,
             };
@@ -70,22 +67,6 @@
         });
     </script>
 
-
-
-    {#    <link href="{{ url_for('static', filename='styles/datepicker.css') }}" type="text/css" rel="stylesheet">#}
-    {#    <script>#}
-    {#        $(document).ready(function () {#}
-    {#            var date_input = $('input[name="start_date"]');#}
-    {#            var container = $('.bootstrap-iso form').length > 0 ? $('.bootstrap-iso form').parent() : "body";#}
-    {#            var options = {#}
-    {#                format: 'dd/mm/yyyy',#}
-    {#                container: container,#}
-    {#                todayHighlight: true,#}
-    {#                autoclose: true,#}
-    {#            };#}
-    {#            date_input.datepicker(options);#}
-    {#        })#}
-    {#    </script>#}
 
 
     <script>
@@ -112,6 +93,34 @@
 
     </script>
 
+    {#    To apply datatables library to the table#}
+    <link href="{{ url_for('static', filename='libraries/DataTables-1.10.20/css/dataTables.jqueryui.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='libraries/DataTables/datatables.min.css') }}" type="text/css" rel="stylesheet">
+    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/jquery.dataTables.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/datatables.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.jqueryui.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/dataTables.buttons.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.flash.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/pdfmake.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/vfs_fonts.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.print.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/JSZip-2.5.0/jszip.min.js') }}"></script>
+
+    <script>
+        {#Script to add the datatable library to the table#}
+        $(document).ready(function () {
+                $('.dataTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'excel', 'csv', 'pdf'
+                    ]
+                });
+            }
+        );
+
+
+    </script>
 
 
     {#    <script type="application/javascript">#}

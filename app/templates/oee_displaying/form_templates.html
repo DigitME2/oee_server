@@ -6,21 +6,23 @@
         {{ form.hidden_tag() }}
         {{ form.csrf_token }}
 
-        {#    GANTT FORM  #}
+        {#    STANDARD KEY + TIME + DATE FORM  #}
 
-        {% if form.__class__.__name__ == "GanttForm" %}
-
+        {% if (form.form_template == "key_date_time") %}
             <div class="form-row">
+                {{ form.description }}
+            </div>
+            <div class="form-row mt-2">
                 <div class="form-group pr-2">
-                    {{ form.machines.label }}
-                    {{ form.machines(class_="form-control") }}
+                    {{ form.key.label }}
+                    {{ form.key(class_="form-control") }}
                 </div>
 
                 <div class="form-group pr-2">
                     {{ form.start_time.label }}
                     {{ form.start_time(class_="form-control") }}
                     {% for error in form.start_time.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
 
@@ -28,7 +30,7 @@
                     {{ form.start_date.label }}
                     {{ form.start_date(class_="form-control form-datepicker") }}
                     {% for error in form.start_date.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
 
@@ -36,7 +38,7 @@
                     {{ form.end_time.label }}
                     {{ form.end_time(class_="form-control") }}
                     {% for error in form.end_time.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
 
@@ -44,22 +46,25 @@
                     {{ form.end_date.label }}
                     {{ form.end_date(class_="form-control form-datepicker") }}
                     {% for error in form.end_date.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>
         {% endif %}
 
-        {#    OEE LINE FORM  #}
+        {#    DATE ONLY  #}
 
-        {% if form.__class__.__name__ == "OeeLineForm" %}
+        {% if (form.form_template == "date") %}
 
             <div class="form-row">
+                {{ form.description }}
+            </div>
+            <div class="form-row mt-2">
                 <div class="form-group pr-2">
                     {{ form.start_date.label }}
                     {{ form.start_date(class_="form-control form-datepicker") }}
                     {% for error in form.start_date.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
 
@@ -67,85 +72,28 @@
                     {{ form.end_date.label }}
                     {{ form.end_date(class_="form-control form-datepicker") }}
                     {% for error in form.end_date.errors %}
-                        <span class="formError">[{{ error }}]</span>
+                        <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>
         {% endif %}
 
 
-        {#    DOWNTIME BAR FORM  #}
+        {# KEY ONLY #}
 
-        {% if form.__class__.__name__ == "DowntimeBarForm" %}
-
-            {{ form.start_date.label }}
-            {{ form.start_date(class_="form-control  form-datepicker") }}
-            {% for error in form.start_date.errors %}
-                <span class="formError">[{{ error }}]</span>
-            {% endfor %}
-
-            <br>
-            {{ form.end_date.label }}
-            {{ form.end_date(class_="form-control  form-datepicker") }}
-            {% for error in form.end_date.errors %}
-                <span class="formError">[{{ error }}]</span>
-            {% endfor %}
-
-            {{ form.start_time.label }}
-            {{ form.start_time }}
-            {% for error in form.start_time.errors %}
-                <span class="formError">[{{ error }}]</span>
-            {% endfor %}
-
-            {{ form.end_time.label }}
-            {{ form.end_time }}
-            {% for error in form.end_time.errors %}
-                <span class="formError">[{{ error }}]</span>
-            {% endfor %}
-            {{ form.machines }}
+        {% if form.form_template == "key" %}
+            <div class="form-row">
+                {{ form.description }}
+            </div>
+            <div class="form-group pr-2 mt-2">
+                {{ form.key.label }}
+                {{ form.key(class_="form-control") }}
+            </div>
         {% endif %}
-
-
-        {#    JOB TABLE FORM and WO TABLE FORM  #}
-
-        {% if form.__class__.__name__ == "JobTableForm" or  form.__class__.__name__ == "WOTableForm" %}
-
-            {{ form.start_date.label }}
-            {{ form.start_date(class_="form-control  form-datepicker") }}
-            {% for error in form.start_date.errors %}
-                <span class="formError">[{{ error }}]</span>
-            {% endfor %}
-
-            <br>
-            {{ form.end_date.label }}
-            {{ form.end_date(class_="form-control  form-datepicker") }}
-            {% for error in form.end_date.errors %}
-                <span class="formError">[{{ error }}]</span>
-            {% endfor %}
-
-        {% endif %}
-
-
-
-
         <br>
         {{ form.submit(class_="btn btn-success") }}
     </form>
 
-    {#    DASHBOARD GANTT #}
-
-    {#    {% if form.__class__.__name__ == "DashboardGanttForm" %}#}
-    {#        <form method="post" id="DashboardGanttForm">#}
-    {#            {% for field in form %}#}
-    {#                {{ field.label }}#}
-    {#                {{ field }}#}
-    {#                {% for error in field.errors %}#}
-    {#                    <span class="formError">[{{ error }}]</span>#}
-    {#                {% endfor %}#}
-    {#            {% endfor %}#}
-    {#        </form>#}
-    {##}
-    {#    {% endif %}#}
 
 
 {% endmacro %}
