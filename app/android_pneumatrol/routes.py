@@ -216,7 +216,7 @@ def pneumatrol_1_resume_job():
     time = datetime.now().strftime("%H:%M")
     if not current_job.notes:
         current_job.notes = ""  # Initialise the string if null
-    if notes is not "":
+    if notes != "":
         current_job.notes += f"{time} - {downtime_reason} - {notes} \n"
     # Mark the most recent activity in the database as complete
     complete_last_activity(machine_id=user_session.machine_id,

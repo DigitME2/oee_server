@@ -8,5 +8,5 @@ export DATABASE_URI=sqlite:///test.db
 
 source venv/bin/activate
 #flask run
-gunicorn --workers 5 --bind localhost:8001 -m 007 "app:create_app()"
+exec gunicorn -b :8000 -m 007 "app:create_app()"
 deactivate

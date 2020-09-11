@@ -110,9 +110,16 @@ def android_login():
 
     user_id = request.get_json()["user_id"]
     user = User.query.get(user_id)
+
     if user is None:
         response["success"] = False
         response["reason"] = f"User {user_id} does not exist"
+        return json.dumps(response), 200, {'ContentType': 'application/json'}
+
+    if user.has_job():
+        job = Job.query.filter_by(user_id=user_id, active=True).first()
+        response["success"] = False
+        response["reason"] = f"User already has an active job {job.wo_number} on machine {job.machine.name}"
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
     # Check the password and log in if successful

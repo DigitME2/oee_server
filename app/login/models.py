@@ -18,7 +18,10 @@ class User(db.Model, UserMixin):
     jobs = db.relationship('Job', backref="user")
 
     def has_job(self):
-        return self.active_job_id is not None
+        for job in self.jobs:
+            if job.active:
+                return True
+        return False
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
