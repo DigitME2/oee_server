@@ -19,6 +19,9 @@ from flask_login import current_user
 
 @bp.route('/test')
 def test():
+    # delete
+    from app.testing import machine_simulator
+    machine_simulator.simulate_machines()
     return render_template("testing/test.html")
 
 

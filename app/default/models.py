@@ -55,7 +55,7 @@ class Job(db.Model):
     planned_cycle_time = db.Column(db.Integer)
     actual_quantity = db.Column(db.Integer)
     production_scrap = db.Column(db.Integer)
-    machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
     active = db.Column(db.Boolean)  # This should either be true or null
@@ -69,7 +69,7 @@ class Job(db.Model):
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
     activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), nullable=False)
     machine_state = db.Column(db.Integer, nullable=False)
     timestamp_start = db.Column(db.Float, nullable=False)
@@ -116,7 +116,7 @@ class Schedule(db.Model):
 
 class ScheduledActivity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    machine_id = db.Column(db.String, db.ForeignKey('machine.id'), nullable=False)
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
     scheduled_machine_state = db.Column(db.Integer, nullable=False)
     timestamp_start = db.Column(db.Float, nullable=False)
     timestamp_end = db.Column(db.Float)
@@ -139,7 +139,7 @@ class ActivityCode(db.Model):
 
 class Settings(db.Model):
     # Only allow one row in this table
-    unique = db.Column(db.String, db.CheckConstraint('1'), primary_key=True, default="1")
+    id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
     dashboard_update_interval_s = db.Column(db.Integer)
     threshold = db.Column(db.Integer)
 

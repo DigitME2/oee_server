@@ -2,7 +2,7 @@
 
 This project was made to monitor OEE for machines
 
-This constites the central server, which can receive live OEE data from client and is accessed through a flask webapp.
+This constitutes the central server, which can receive live OEE data from client and is accessed through a flask webapp.
 
 
 
@@ -14,3 +14,6 @@ e.g. curl -X POST http://localhost:5000/run_schedule?date=18-08-19
 
 This is suggested to be run via crontab
 0 1 * * * /usr/bin/curl -X POST http://localhost:8001/run_schedule
+
+
+If run with DEMO_MODE=True, the software will create fake activities to simulate inputs 

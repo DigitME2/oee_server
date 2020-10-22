@@ -25,6 +25,11 @@
                     {{ form.submit(class_="btn btn-success") }}
                 </div>
             </form>
+            {% if demo_mode %}
+                <div class="alert alert-danger" role="alert">
+                    This server is running in demo mode. Fake data can be created through the CLI command
+                    <p class="text-monospace">flask default create-fake-data</p>
+                </div>{% endif %}
         </div>
     </div>
 {% endblock %}

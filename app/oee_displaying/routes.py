@@ -132,10 +132,17 @@ def dashboard():
     if 'machine_group' not in request.args:
         current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
         return abort(400, "No machine_group provided in url")
-    machine_group = request.args['machine_group']
-    machine_ids = list(machine.id for machine in Machine.query.filter_by(group=machine_group).all())
+    requested_machine_group = request.args['machine_group']
+    machine_group = MachineGroup.query.filter_by(name=requested_machine_group).first()
+    if not machine_group:
+        # try selecting by ID
+        machine_group = MachineGroup.query.get(int(requested_machine_group))
+        if not machine_group:
+            return abort(400, "Could not find that machine group")
+    machines = machine_group.machines
+    machine_ids = list(machine.id for machine in machines)
 
-    graph_title = f"Machine group {machine_group}"
+    graph_title = f"Machine group {machine_group.name}"
 
     # If start is given in the url arguments, start the graph at that time on today's date
     # Start should be in the format HH:MM

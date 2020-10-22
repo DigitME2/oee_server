@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import datetime, timedelta
 
 from flask import current_app, render_template, redirect, url_for, request
@@ -84,3 +85,14 @@ def create_scheduled_activities():
         db.session.commit()
 
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+@bp.cli.command()
+def create_fake_data():
+    if not Config.DEMO_MODE:
+        """Create fake data if in demo mode"""
+        print("Cannot fake data: App is not in demo mode.")
+        return
+    from app.testing.machine_simulator import simulate_machines
+    for machine in Machine.query.all():
+        simulate_machines()
