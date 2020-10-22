@@ -176,7 +176,7 @@ def edit_machine():
 
     # Create machine group dropdown
     groups = []
-    groups.append((str(0), str("No group")))
+    groups.append(("0", str("No group")))
     for g in MachineGroup.query.all():
         groups.append((str(g.id), str(g.name)))
     form.group.choices = groups
@@ -254,10 +254,13 @@ def edit_machine():
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
-        machine.group_id = form.group.data
         machine.workflow_type_id = form.workflow_type.data
         machine.schedule_id = form.schedule.data
-
+        # If no machine group is selected, null the column instead of 0
+        if form.group.data == '0':
+            machine.group_id = None
+        else:
+            machine.group_id = form.group.data
         # Save empty ip values as null to avoid unique constraint errors in the database
         if form.device_ip.data == "":
             machine.device_ip = None
