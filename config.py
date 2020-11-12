@@ -5,7 +5,7 @@ import os
 class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
-    DEMO_MODE = True
+    DEMO_MODE = False
 
     # PostgreSQL database
     DATABASE_USER = os.environ.get('DATABASE_USER') or "postgres"

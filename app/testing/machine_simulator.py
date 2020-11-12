@@ -2,7 +2,9 @@ import json
 import random
 from datetime import datetime
 from random import randrange
-from time import time, sleep
+
+from flask import current_app
+
 from app import db
 from app import Config
 from app.default.db_helpers import complete_last_activity
@@ -28,14 +30,14 @@ def create_new_demo_user(username, machine):
 
 
 def end_job(job):
-    print(f"ending job")
+    current_app.logger.debug(f"ending job")
     job.end_time = datetime.now().timestamp()
     job.active = None
     db.session.commit()
 
 
 def start_new_job(machine, user):
-    print(f"starting new job")
+    current_app.logger.debug(f"Starting new job")
     session = UserSession.query.filter_by(user_id=user.id, active=True).first()
     job = Job(start_time=datetime.now().timestamp(),
               user_id=user.id,
@@ -50,7 +52,7 @@ def start_new_job(machine, user):
 
 
 def change_activity(machine, job, user):
-    print(f"changing activity")
+    current_app.logger.debug(f"changing activity")
     complete_last_activity(machine_id=machine.id)
     # 80% chance the activity is uptime
     if random.random() < 0.8:
@@ -74,10 +76,10 @@ def change_activity(machine, job, user):
 
 def simulate_machines():
     for machine in Machine.query.all():
-        print(f"simulating machine action for machine {machine.id}")
+        current_app.logger.debug(f"simulating machine action for machine {machine.id}")
         # 66% chance to skip doing anything
         if random.random() < 0:
-            print(f"not doing anything for machine {machine.id}")
+            current_app.logger.debug(f"not doing anything for machine {machine.id}")
             continue
 
         # Each machine has its own fake user. Create it if it does not exist
@@ -98,6 +100,6 @@ def simulate_machines():
 
 
         else:
-            # 30% chance of starting a new job
+            # 30% chance of starting a new job if there is no job
             if random.random() < 0.3:
                 start_new_job(machine, user)

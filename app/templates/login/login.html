@@ -27,8 +27,7 @@
             </form>
             {% if demo_mode %}
                 <div class="alert alert-danger" role="alert">
-                    This server is running in demo mode. Fake data can be created through the CLI command
-                    <p class="text-monospace">flask default create-fake-data</p>
+                    This server is running in demo mode. Fake data can be created by sending a POST request to /create_fake_data
                 </div>{% endif %}
         </div>
     </div>

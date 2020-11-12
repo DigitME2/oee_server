@@ -1,8 +1,6 @@
-import json
-import time
 from datetime import datetime, timedelta
 
-from flask import current_app, render_template, redirect, url_for, request
+from flask import current_app, render_template, redirect, url_for, request, jsonify
 from flask_login import current_user, login_required
 
 from app import db
@@ -84,7 +82,7 @@ def create_scheduled_activities():
 
         db.session.commit()
 
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 @bp.route('/create_fake_data', methods=['POST'])
@@ -95,3 +93,4 @@ def create_fake_data():
         return
     from app.testing.machine_simulator import simulate_machines
     simulate_machines()
+    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
