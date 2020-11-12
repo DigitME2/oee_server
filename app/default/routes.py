@@ -87,12 +87,11 @@ def create_scheduled_activities():
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
-@bp.cli.command()
+@bp.route('/create_fake_data', methods=['POST'])
 def create_fake_data():
+    """Create fake data if in demo mode"""
     if not Config.DEMO_MODE:
-        """Create fake data if in demo mode"""
         print("Cannot fake data: App is not in demo mode.")
         return
     from app.testing.machine_simulator import simulate_machines
-    for machine in Machine.query.all():
-        simulate_machines()
+    simulate_machines()
