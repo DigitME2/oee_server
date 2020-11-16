@@ -7,7 +7,7 @@ from app.default.db_helpers import get_machine_activities, get_user_activities
 from config import Config
 
 
-def get_machine_runtime(machine_id, requested_start, requested_end):
+def get_machine_runtime(machine_id, requested_start, requested_end, units="seconds"):
     """ Takes a machine id and two timestamps, and returns the amount of time the machine was running """
     # Get all of the activities for the machine between the two given times, where the machine is up
     activities = Activity.query \
@@ -19,10 +19,13 @@ def get_machine_runtime(machine_id, requested_start, requested_end):
     run_time = 0
     for act in activities:
         run_time += (act.timestamp_end - act.timestamp_start)
-    return run_time
+    if units == "minutes":
+        return run_time/60
+    elif units == "seconds":
+        return run_time
 
 
-def get_activity_duration_dict(requested_start, requested_end, machine_id=None, user_id=None, use_description_as_key=False):
+def get_activity_duration_dict(requested_start, requested_end, machine_id=None, user_id=None, use_description_as_key=False, units="seconds"):
     """ Returns a dict containing the total duration of each activity_code between two timestamps in the format:
     activity_code_id: duration(seconds) e.g. 1: 600
     If use_description_as_key is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
@@ -72,10 +75,14 @@ def get_activity_duration_dict(requested_start, requested_end, machine_id=None, 
             activities_dict[act.activity_code.short_description] += (end - start)
         else:
             activities_dict[act.activity_code_id] += (end - start)
+    # Convert to minutes if requested
+    if units == "minutes":
+        for n in activities_dict:
+            activities_dict[n] = activities_dict[n]/60
     return activities_dict
 
 
-def get_schedule_dict(machine_id, timestamp_start, timestamp_end):
+def get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds"):
     """ Takes a machine id and two times, and returns a dict with:
     scheduled_run_time
     scheduled_down_time
@@ -110,10 +117,14 @@ def get_schedule_dict(machine_id, timestamp_start, timestamp_end):
 
     # Add any time unaccounted for
     unscheduled_time += (total_time - (scheduled_down_time + scheduled_run_time))
+    if units == "minutes":
+        scheduled_run_time = scheduled_run_time/60
+        scheduled_down_time = scheduled_down_time/60
+        unscheduled_time = unscheduled_time/60
 
-    return {"scheduled_run_time": scheduled_run_time,
-            "scheduled_down_time": scheduled_down_time,
-            "unscheduled_time": unscheduled_time}
+    return {"Scheduled Run Time": scheduled_run_time,
+            "Scheduled Down Time": scheduled_down_time,
+            "Unscheduled Time": unscheduled_time}
 
 
 def calculate_activity_percent(machine_id, activity_code_id, timestamp_start, timestamp_end):
@@ -159,7 +170,7 @@ def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
 
     #todo test this make sure answers are correct
     runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end)
-    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end)["scheduled_run_time"]
+    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="minutes")["scheduled_run_time"]
     if scheduled_uptime == 0:
         return 0
     availability = runtime / scheduled_uptime

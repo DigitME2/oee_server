@@ -18,7 +18,6 @@ from app.oee_displaying.tables import get_work_order_table, get_job_table, get_r
 @bp.route('/data', methods=['GET', 'POST'])
 @login_required
 def data():
-    # todo could this just show any requested graph? Why have I made a separate html for each different one?
     """ The page showing options for graphs"""
     # Get each machine
     machines = Machine.query.all()
@@ -57,9 +56,6 @@ def data():
     #     form1.end_date.validators = []
     #     form1.start_date.data = datetime.now().date
     #     form1.end_date.data = datetime.now().date
-
-    # todo work out which form has been sent and only validate that one
-    #todo these forms arent validating for some reason with the bootstrap date
 
     # Check which form has been sent by the user
     form_sent = next((form for form in forms if form.__class__.__name__ == request.form.get('formType')), None)

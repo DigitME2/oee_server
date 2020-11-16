@@ -21,7 +21,7 @@ class WOTable(Table):
     setting_operator = Col('Setting Operator')
     operator = Col('Operator')
     actual_run_time = Col('Duration')
-    planned_run_time = Col("Planned Duration")
+    planned_run_time = Col("Planned Duration (minutes)")
     actual_quantity = Col("Actual Quantity")
     planned_quantity = Col("Planned Quantity")
 
@@ -167,7 +167,7 @@ def get_user_activity_table(timestamp_start, timestamp_end):
     """Create a table listing the amount of time spent for each activity_code"""
 
     # Dynamically create the table using flask-table
-    Tbl = create_table("UserActivityTable").add_column('user', Col('User'))
+    Tbl = create_table("UserActivityTable").add_column('user', Col('User Activity Durations (minutes)'))
 
     # The column names will be the short descriptions of each activity code
     act_codes = ActivityCode.query.all()
@@ -180,7 +180,7 @@ def get_user_activity_table(timestamp_start, timestamp_end):
     for activity_description in activity_code_descriptions:
         Tbl.add_column(activity_description, Col(activity_description))
 
-    # Add the class to the table so it's picked up by datatables
+    # Add the html class to the table so it's picked up by datatables
     Tbl.classes = ["dataTable"]
 
     users = User.query.all()
@@ -192,7 +192,8 @@ def get_user_activity_table(timestamp_start, timestamp_end):
         user_dict = get_activity_duration_dict(requested_start=timestamp_start,
                                                requested_end=timestamp_end,
                                                user_id=user.id,
-                                               use_description_as_key=True)
+                                               use_description_as_key=True,
+                                               units="minutes")
         user_dict = format_dictionary_durations(user_dict)
         user_dict["user"] = user.username
 
@@ -208,7 +209,7 @@ def get_user_activity_table(timestamp_start, timestamp_end):
 def get_machine_activity_table(timestamp_start, timestamp_end):
     """ Create a CSV listing the amount of time spent for each activity_code."""
     # Dynamically create the table using flask-table
-    Tbl = create_table("MachineActivityTable").add_column('machine', Col('Machine'))
+    Tbl = create_table("MachineActivityTable").add_column('machine', Col('Machine Activity Durations (minutes)'))
 
     # The column names will be the short descriptions of each activity code
     act_codes = ActivityCode.query.all()
@@ -217,7 +218,7 @@ def get_machine_activity_table(timestamp_start, timestamp_end):
         Tbl.add_column(activity_description, Col(activity_description))
 
     # Add the names of scheduled/unscheduled hours as columns
-    schedule_dict = get_schedule_dict(1, timestamp_start, timestamp_end)  # Get any dict to parse the keys
+    schedule_dict = get_schedule_dict(1, timestamp_start, timestamp_end)  # Get the dict for any machine, just to parse the keys and create columns
     for key in schedule_dict:
         Tbl.add_column(key, Col(key))
 
@@ -232,12 +233,14 @@ def get_machine_activity_table(timestamp_start, timestamp_end):
         machine_dict = get_activity_duration_dict(requested_start=timestamp_start,
                                                   requested_end=timestamp_end,
                                                   machine_id=machine.id,
-                                                  use_description_as_key=True)
+                                                  use_description_as_key=True,
+                                                  units="minutes")
 
         # Get a dictionary containing the schedule for the machine
         machine_dict.update(get_schedule_dict(timestamp_start=timestamp_start,
                                               timestamp_end=timestamp_end,
-                                              machine_id=machine.id))
+                                              machine_id=machine.id,
+                                              units="minutes"))
         # Format the times in the dictionary (Do this before adding the machine names)
         machine_dict = format_dictionary_durations(machine_dict)
 

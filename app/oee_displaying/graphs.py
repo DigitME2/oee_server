@@ -8,7 +8,7 @@ from plotly.graph_objs.layout import Shape, Annotation
 from datetime import datetime, timedelta, date, time
 
 from app.data_analysis.oee import calculate_activity_percent, get_daily_group_oee, calculate_activity_time, \
-    get_schedule_dict, get_machine_runtime
+    get_schedule_dict, get_machine_runtime, get_activity_duration_dict
 from app.default.models import Activity, Machine, ActivityCode, MachineGroup, Job
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
@@ -356,21 +356,25 @@ def create_oee_line(graph_start_date, graph_end_date):
 
 
 def create_downtime_bar(machine_ids, graph_start_timestamp, graph_end_timestamp):
-    all_activity_codes = ActivityCode.query.all()
-    activity_code_names = [ac.short_description for ac in all_activity_codes]
-    activities_dict = {}
+    total_activities_dict = None
     for machine_id in machine_ids:
-        machine = Machine.query.filter_by(id=machine_id).first()
-        activity_durations = []
-        bars = []
-        for ac in all_activity_codes:
-            activity_durations.append(calculate_activity_time(machine_id,
-                                                              ac.id,
-                                                              timestamp_start=graph_start_timestamp,
-                                                              timestamp_end=graph_end_timestamp))
-        bars.append(go.Bar(name=machine.name, x=activity_code_names, y=activity_durations))
+        activities_dict = get_activity_duration_dict(requested_start=graph_start_timestamp,
+                                                     requested_end=graph_end_timestamp,
+                                                     machine_id=machine_id,
+                                                     use_description_as_key=True,
+                                                     units="minutes")
 
-    fig = go.Figure(data=bars)
+        if not total_activities_dict:
+            # Use the first value to start the dict
+            total_activities_dict = activities_dict
+        else:
+            for n in total_activities_dict:
+                total_activities_dict[n] += activities_dict[n]
+
+    activity_code_names = list(total_activities_dict.keys())
+    activity_code_durations = list(total_activities_dict.values())
+    fig = go.Figure([go.Bar(x=activity_code_names, y=activity_code_durations)])
+    fig.layout.title = "Total Time (Minutes)"
     return plot(fig,
                 output_type="div",
                 include_plotlyjs=True,
@@ -378,7 +382,6 @@ def create_downtime_bar(machine_ids, graph_start_timestamp, graph_end_timestamp)
 
 
 def create_job_table(machine_ids, start_date, end_date):
-    #todo I think probably use a libraries library to create a table here. https://datatables.net/ maybe?
     start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
     end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
     headers = ["Wo Number", "Scheduled Runtime", "Uptime"]
@@ -391,8 +394,8 @@ def create_job_table(machine_ids, start_date, end_date):
             .filter(Job.end_time >= start_timestamp)
 
         for job in jobs:
-            sched_dict = get_schedule_dict(machine_id, timestamp_start=start_timestamp, timestamp_end=end_timestamp)
-            runtime = get_machine_runtime(machine_id, requested_start=start_timestamp, requested_end=end_timestamp)
+            sched_dict = get_schedule_dict(machine_id, timestamp_start=start_timestamp, timestamp_end=end_timestamp, units="minutes")
+            runtime = get_machine_runtime(machine_id, requested_start=start_timestamp, requested_end=end_timestamp, units="minutes")
             wo_number = job.wo_number
             scheduled_runtime = sched_dict["scheduled_run_time"]
 
