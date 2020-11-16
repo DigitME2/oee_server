@@ -3,3 +3,4 @@ app/static/images
 app/static/temp
 /app/templates/testing/
 /app/testing/
+config.py
