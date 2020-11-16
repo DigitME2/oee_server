@@ -8,9 +8,3 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
 celery_app = Celery('tasks', broker='redis://localhost:6379', backend='redis://localhost:6379')
-
-
-@celery_app.task
-def task1():
-    print("running task 1")
-    return

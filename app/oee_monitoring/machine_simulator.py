@@ -1,17 +1,14 @@
-import json
 import random
 from datetime import datetime
 from random import randrange
 
 from flask import current_app
 
-from app.extensions import db
 from app import Config
-from app.default.db_helpers import complete_last_activity
-
-from app.login.models import User, UserSession
-
+from app.default.db_helpers import complete_last_activity, machine_schedule_active
 from app.default.models import Machine, Job, Activity
+from app.extensions import db
+from app.login.models import User, UserSession
 
 
 def create_new_demo_user(username, machine):
@@ -76,7 +73,12 @@ def change_activity(machine, job, user):
 
 
 def simulate_machines():
+    if not Config.DEMO_MODE:
+        current_app.logger.warning("Fake data being created when app is not in DEMO_MODE")
     for machine in Machine.query.all():
+        if not machine_schedule_active(machine):
+            # Skip if the machine is not scheduled to be running
+            continue
         current_app.logger.debug(f"simulating machine action for machine {machine.id}")
         # 66% chance to skip doing anything
         if random.random() < 0:
@@ -84,7 +86,7 @@ def simulate_machines():
             continue
 
         # Each machine has its own fake user. Create it if it does not exist
-        username = machine.name + " user"
+        username = names[machine.id]
         user = User.query.filter_by(username=username).first()
         if user is None:
             user = create_new_demo_user(username, machine)
@@ -104,3 +106,27 @@ def simulate_machines():
             # 30% chance of starting a new job if there is no job
             if random.random() < 0.3:
                 start_new_job(machine, user)
+
+
+names = [
+    "Cameron",
+    "Margot",
+    "Jack",
+    "Natashia",
+    "Melva",
+    "Kassie",
+    "Hallie",
+    "Shannon",
+    "James",
+    "Benito",
+    "Ahmed",
+    "Jaimee",
+    "Nanci",
+    "Markus",
+    "Vina",
+    "Nicolasa",
+    "Shawnna",
+    "Elton",
+    "Gladis",
+    "Donnette",
+]

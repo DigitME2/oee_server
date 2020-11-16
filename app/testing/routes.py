@@ -1,6 +1,7 @@
 from random import randrange
 
 from app.data_analysis.oee import *
+from app.default.db_helpers import machine_schedule_active
 from app.default.models import *
 from app.testing import bp
 from config import Config
@@ -9,8 +10,8 @@ from flask import render_template, current_app
 
 @bp.route('/test')
 def test():
-    current_app.calculate_daily_machine_schedule.delay()
-
+    machine = Machine.query.get(1)
+    print(machine_schedule_active(machine))
     return render_template("testing/test.html")
 
 
@@ -26,7 +27,6 @@ def sort_activities(act):
 @bp.route('/createdata')
 def create_data():
     """ Creates fake data to use for testing purposes"""
-
 
     start = datetime(year=2020, month=6, day=21, hour=0, minute=0).timestamp()
     finish = datetime(year=2020, month=6, day=22, hour=0, minute=0).timestamp()

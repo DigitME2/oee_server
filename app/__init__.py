@@ -24,11 +24,6 @@ stream_handler = logging.StreamHandler()
 stream_handler.setLevel(Config.STREAM_LOGGING_LEVEL)
 file_handler.setLevel(Config.FILE_LOGGING_LEVEL)
 
-# Use seconds in the graphs and measurements. Useful in debugging
-if os.environ.get('USE_SECONDS') == 'True':
-    USE_SECONDS = True
-else:
-    USE_SECONDS = False
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -45,7 +40,6 @@ def create_app(config_class=Config):
         app.logger.addHandler(handler)
 
     print("Logging level:", logging.getLevelName(app.logger.getEffectiveLevel()))
-    logger = logging.getLogger()
     app.config.from_object(config_class)
     db.init_app(app)
     migrate.init_app(app, db)
@@ -92,17 +86,5 @@ def create_app(config_class=Config):
     @app.context_processor
     def is_demo_mode():
         return {"demo_mode": Config.DEMO_MODE}
-
-    @celery_app.task()
-    def calculate_daily_machine_schedule():
-        app.logger.info("Creating machine schedule")
-        print("Creating machine schedule (P)")
-        return True
-
-    @celery_app.on_after_configure.connect
-    def setup_periodic_tasks(sender, **kwargs):
-        app.logger.info("Setting up periodic tests")
-        print("Setting up periodic tests")
-        sender.add_periodic_task(1, calculate_daily_machine_schedule(), name="run machine schedules")
 
     return app

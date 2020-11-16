@@ -1,5 +1,5 @@
 import math as maths
-from datetime import datetime
+from datetime import datetime, timedelta
 from operator import attrgetter
 from random import randrange
 from time import time
@@ -7,7 +7,7 @@ from time import time
 from flask import current_app
 
 from app.extensions import db
-from app.default.models import Activity, Machine
+from app.default.models import Activity, Machine, ScheduledActivity
 from config import Config
 
 
@@ -262,4 +262,68 @@ def get_machines_last_job(machine_id):
     return most_recent_job
 
 
+def machine_schedule_active(machine, dt=None):
+    """ Return true if the machine is scheduled to be running at a specific time (or now, if not specified)"""
+    if not dt:
+        dt = datetime.now()
+    # Get the shift for this day of the week
+    shift = machine.schedule.get_shifts().get(dt.weekday())
+    shift_start = datetime.combine(dt, datetime.strptime(shift[0], "%H%M").timetz())
+    shift_end = datetime.combine(dt, datetime.strptime(shift[1], "%H%M").timetz())
+    if shift_start < dt < shift_end:
+        return True
+    else:
+        return False
 
+
+def create_scheduled_activities(date=None):
+    if not date:
+        date = datetime.now()
+
+    current_app.logger.info(f"Creating Scheduled Activities for {date.strftime('%d-%m-%y')}")
+    last_midnight = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    next_midnight = last_midnight + timedelta(days=1)
+
+    for machine in Machine.query.all():
+
+        # Check to see if any scheduled activities already exist for today and skip if any exist
+        existing_activities = ScheduledActivity.query \
+            .filter(ScheduledActivity.machine_id == machine.id) \
+            .filter(ScheduledActivity.timestamp_start >= last_midnight.timestamp()) \
+            .filter(ScheduledActivity.timestamp_end <= next_midnight.timestamp()).all()
+        if len(existing_activities) > 0:
+            current_app.logger.info(f"Scheduled activities already exist today for {machine} Skipping...")
+            continue
+
+        # Get the shift for this day of the week
+        weekday = date.weekday()
+        shift = machine.schedule.get_shifts().get(weekday)
+
+        # Create datetime objects with today's date and the times from the schedule table
+        shift_start = datetime.combine(date, datetime.strptime(shift[0], "%H%M").timetz())
+        shift_end = datetime.combine(date, datetime.strptime(shift[1], "%H%M").timetz())
+
+        current_app.logger.info(f"{machine} \nShift start: {shift_start} \nShift end: {shift_end}")
+
+        if shift_start != last_midnight:  # Skip making this activity if it will be 0 length
+            before_shift = ScheduledActivity(machine_id=machine.id,
+                                             scheduled_machine_state=Config.MACHINE_STATE_OFF,
+                                             timestamp_start=last_midnight.timestamp(),
+                                             timestamp_end=shift_start.timestamp())
+            db.session.add(before_shift)
+
+        if shift_start != shift_end:  # Skip making this activity if it will be 0 length
+            during_shift = ScheduledActivity(machine_id=machine.id,
+                                             scheduled_machine_state=Config.MACHINE_STATE_RUNNING,
+                                             timestamp_start=shift_start.timestamp(),
+                                             timestamp_end=shift_end.timestamp())
+            db.session.add(during_shift)
+
+        if shift_end != next_midnight:  # Skip making this activity if it will be 0 length
+            after_shift = ScheduledActivity(machine_id=machine.id,
+                                            scheduled_machine_state=Config.MACHINE_STATE_OFF,
+                                            timestamp_start=shift_end.timestamp(),
+                                            timestamp_end=next_midnight.timestamp())
+            db.session.add(after_shift)
+
+        db.session.commit()
