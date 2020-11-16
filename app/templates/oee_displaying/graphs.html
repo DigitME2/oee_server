@@ -50,13 +50,6 @@
     <script type="application/javascript">
         {#    Add the datepicker to all forms with class "form-datepicker" #}
         $(document).ready(function () {
-            {# Create values for today and tomorrow to set as default#}
-            var today = new Date();
-            var yesterday = new Date();
-            yesterday.setDate(today.getDate() - 1);
-            var tomorrow = new Date();
-
-            tomorrow.setDate(today.getDate() + 1);
             var date_inputs = $(".form-datepicker");
             var options = {
                 format: 'dd-mm-yyyy',
