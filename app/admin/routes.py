@@ -20,7 +20,6 @@ from config import Config
 @login_required
 @admin_required
 def admin_home():
-    # todo add page to create machine groups and also add this to edit_machine page
     """ The default page for a logged-in user"""
     # Create default database entries
     return render_template('admin/adminhome.html',
@@ -114,8 +113,6 @@ def machine_schedule():
         schedule = Schedule.query.get_or_404(schedule_id)
 
     if form.validate_on_submit():
-        #TODO Validate that start time isnt after end, for each entry
-
         # Save the data from the form to the database
         schedule.name = form.name.data
         schedule.mon_start = form.mon_start.data.strftime(SHIFT_STRFTIME_FORMAT)
@@ -132,6 +129,16 @@ def machine_schedule():
         schedule.sat_end = form.sat_end.data.strftime(SHIFT_STRFTIME_FORMAT)
         schedule.sun_start = form.sun_start.data.strftime(SHIFT_STRFTIME_FORMAT)
         schedule.sun_end = form.sun_end.data.strftime(SHIFT_STRFTIME_FORMAT)
+        # Check that end is always after the start
+        if schedule.mon_end < schedule.mon_start or \
+           schedule.tue_end < schedule.tue_start or \
+           schedule.wed_end < schedule.wed_start or \
+           schedule.thu_end < schedule.thu_start or \
+           schedule.fri_end < schedule.fri_start or \
+           schedule.sat_end < schedule.sat_start or \
+           schedule.sun_end < schedule.sun_start:
+            db.session.rollback()
+            return abort(400)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
