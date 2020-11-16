@@ -5,10 +5,9 @@ from time import strftime
 
 from flask import Flask, request
 from flask.logging import default_handler
-from flask_login import LoginManager
-from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.middleware.proxy_fix import ProxyFix
+
+from app.extensions import db, migrate, login_manager, celery_app
 
 from config import Config
 
@@ -31,13 +30,6 @@ if os.environ.get('USE_SECONDS') == 'True':
 else:
     USE_SECONDS = False
 
-
-db = SQLAlchemy()
-migrate = Migrate()
-login_manager = LoginManager()
-login_manager.login_view = 'login.login'
-
-
 def create_app(config_class=Config):
     app = Flask(__name__)
 
@@ -53,13 +45,13 @@ def create_app(config_class=Config):
         app.logger.addHandler(handler)
 
     print("Logging level:", logging.getLevelName(app.logger.getEffectiveLevel()))
-
+    logger = logging.getLogger()
     app.config.from_object(config_class)
     db.init_app(app)
     migrate.init_app(app, db)
-
     login_manager.init_app(app)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
+    celery_app.conf.update(app.config)
 
     from app.admin import bp as admin_bp
     from app.default import bp as default_bp
@@ -100,5 +92,17 @@ def create_app(config_class=Config):
     @app.context_processor
     def is_demo_mode():
         return {"demo_mode": Config.DEMO_MODE}
+
+    @celery_app.task()
+    def calculate_daily_machine_schedule():
+        app.logger.info("Creating machine schedule")
+        print("Creating machine schedule (P)")
+        return True
+
+    @celery_app.on_after_configure.connect
+    def setup_periodic_tasks(sender, **kwargs):
+        app.logger.info("Setting up periodic tests")
+        print("Setting up periodic tests")
+        sender.add_periodic_task(1, calculate_daily_machine_schedule(), name="run machine schedules")
 
     return app

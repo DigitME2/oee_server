@@ -2,7 +2,7 @@ from datetime import datetime
 
 from flask import current_app
 
-from app import db
+from app.extensions import db
 from app.default.db_helpers import get_legible_duration, get_current_machine_activity_id
 from app.default.models import Machine, Activity
 from app.login.models import User, UserSession

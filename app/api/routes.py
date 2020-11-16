@@ -1,4 +1,4 @@
-from app import db
+from app.extensions import db
 from app.api import bp
 from app.default.models import Machine, Activity
 from config import Config

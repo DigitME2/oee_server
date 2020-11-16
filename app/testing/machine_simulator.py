@@ -5,7 +5,7 @@ from random import randrange
 
 from flask import current_app
 
-from app import db
+from app.extensions import db
 from app import Config
 from app.default.db_helpers import complete_last_activity
 
@@ -29,10 +29,11 @@ def create_new_demo_user(username, machine):
     return user
 
 
-def end_job(job):
+def end_job(job, machine):
     current_app.logger.debug(f"ending job")
     job.end_time = datetime.now().timestamp()
     job.active = None
+    complete_last_activity(machine_id=machine.id)
     db.session.commit()
 
 
@@ -93,7 +94,7 @@ def simulate_machines():
             current_job = Job.query.filter_by(user_id=user.id, active=True).first()
             # 3% chance of ending job
             if random.random() < 0.03:
-                end_job(current_job)
+                end_job(current_job, machine)
             # 20% chance to change activity
             if random.random() < 0.20:
                 change_activity(machine, current_job, user)

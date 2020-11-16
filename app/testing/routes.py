@@ -1,27 +1,16 @@
-import time
-import os
-from datetime import datetime, date, time
 from random import randrange
 
-import pandas as pd
-from app import db
 from app.data_analysis.oee import *
-from app.login.models import User
 from app.default.models import *
-from app.default.db_helpers import get_machines_last_job
-from app.oee_displaying.graphs import create_downtime_pie
-from app.login.models import User
 from app.testing import bp
 from config import Config
-from flask import render_template, request, jsonify, abort, current_app, send_file, session
-from flask_login import current_user
+from flask import render_template, current_app
 
 
 @bp.route('/test')
 def test():
-    # delete
-    from app.testing import machine_simulator
-    machine_simulator.simulate_machines()
+    current_app.calculate_daily_machine_schedule.delay()
+
     return render_template("testing/test.html")
 
 

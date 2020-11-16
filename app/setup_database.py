@@ -2,7 +2,7 @@ from datetime import datetime, time
 
 from flask import current_app
 
-from app import db
+from app.extensions import db
 from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, SHIFT_STRFTIME_FORMAT, \
     MachineGroup
 from app.login.models import create_default_users

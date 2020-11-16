@@ -23,7 +23,7 @@ MarkupSafe==1.1.1
 numpy==1.19.2
 pandas==1.1.3
 plotly==4.12.0
-psycopg2==2.8.6
+#psycopg2==2.8.6
 python-dateutil==2.8.1
 python-editor==1.0.4
 pytz==2020.1

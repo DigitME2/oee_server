@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask import request, current_app
 
-from app import db
+from app.extensions import db
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
 from app.default.models import Job, Activity, ActivityCode
 from app.login import bp

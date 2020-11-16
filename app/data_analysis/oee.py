@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, time
-from app import db
+from app.extensions import db
 from app.data_analysis.models import DailyOEE
 from app.default.models import Activity, ActivityCode, ScheduledActivity, MachineGroup
 from app.default.db_helpers import get_machine_activities, get_user_activities

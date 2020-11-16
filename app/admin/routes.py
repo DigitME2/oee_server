@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
 
-from app import db
+from app.extensions import db
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm, \
     MachineGroupForm

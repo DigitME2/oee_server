@@ -5,7 +5,7 @@ import os
 class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
-    DEMO_MODE = False
+    DEMO_MODE = True
 
     # PostgreSQL database
     DATABASE_USER = os.environ.get('DATABASE_USER') or "postgres"
@@ -36,10 +36,9 @@ class Config(object):
 
     if not os.path.exists('logs'):
         os.mkdir('logs')
-
+    FLASK_LOG_FILE = os.path.join('logs', 'oee_app.log')
     STREAM_LOGGING_LEVEL = logging.DEBUG
     FILE_LOGGING_LEVEL = logging.DEBUG
-    FLASK_LOG_FILE = 'logs/oee_app.log'
     ROTATING_LOG_FILE_MAX_BYTES = 1024000
     ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')

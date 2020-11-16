@@ -4,7 +4,7 @@ from flask import render_template, request, flash, redirect, url_for, current_ap
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 
-from app import db
+from app.extensions import db
 from app.login import bp
 from app.login.forms import LoginForm
 from app.login.helpers import start_user_session, end_user_sessions

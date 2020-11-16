@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import abort, render_template, request, redirect, url_for, current_app, flash
 from flask_login import login_required, current_user
 
-from app import db
+from app.extensions import db
 from app.default.db_helpers import complete_last_activity
 from app.default.models import Activity, ActivityCode, Machine, Job, Settings
 from app.oee_displaying.graphs import create_job_end_gantt

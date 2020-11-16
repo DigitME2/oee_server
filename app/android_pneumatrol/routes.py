@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask import request, current_app
 
-from app import db
+from app.extensions import db
 from app.android_pneumatrol.helpers import has_been_set
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_machines_last_job
 from app.default.models import Job, Activity, ActivityCode

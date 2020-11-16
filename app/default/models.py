@@ -1,6 +1,6 @@
 import logging
 
-from app import db
+from app.extensions import db
 
 logger = logging.getLogger('flask.app')
 

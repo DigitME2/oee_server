@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from flask import current_app, render_template, redirect, url_for, request, jsonify
 from flask_login import current_user, login_required
 
-from app import db
+from app.extensions import db
 from app.default import bp
 from app.default.models import Machine, ScheduledActivity
 from config import Config
@@ -90,7 +90,7 @@ def create_fake_data():
     """Create fake data if in demo mode"""
     if not Config.DEMO_MODE:
         print("Cannot fake data: App is not in demo mode.")
-        return
+        return jsonify({'success': False, 'message': 'App not in demo mode'}), 501, {'ContentType': 'application/json'}
     from app.testing.machine_simulator import simulate_machines
     simulate_machines()
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}

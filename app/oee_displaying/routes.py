@@ -4,7 +4,7 @@ from flask import abort, request, render_template, current_app
 from flask_login import login_required
 from sqlalchemy import inspect
 
-from app import db
+from app.extensions import db
 from app.default.models import Machine, MachineGroup, Settings
 from app.oee_displaying import bp
 from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, state_gantt_chart, GanttForm, OeeLineForm, DowntimeBarForm, JobTableForm, \

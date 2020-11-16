@@ -2,7 +2,7 @@ from flask import abort
 from flask_login import current_user
 from functools import wraps
 
-from app import db
+from app.extensions import db
 from app.default.models import ActivityCode
 from config import Config
 
