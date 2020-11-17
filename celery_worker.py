@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-import os
-from app import celery_app, create_app
+from app import celery_app, create_app  # This module needs access to celery_app
 
 app = create_app()
 app.app_context().push()
