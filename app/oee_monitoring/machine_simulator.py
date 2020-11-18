@@ -76,35 +76,37 @@ def simulate_machines():
     if not Config.DEMO_MODE:
         current_app.logger.warning("Fake data being created when app is not in DEMO_MODE")
     for machine in Machine.query.all():
-        if not machine_schedule_active(machine):
-            # Skip if the machine is not scheduled to be running
+        chance_to_skip_simulation = 0.90
+        if random.random() < chance_to_skip_simulation:
+            current_app.logger.debug(f"skipping machine {machine.id} simulation")
             continue
         current_app.logger.debug(f"simulating machine action for machine {machine.id}")
-        # 66% chance to skip doing anything
-        if random.random() < 0:
-            current_app.logger.debug(f"not doing anything for machine {machine.id}")
-            continue
-
-        # Each machine has its own fake user. Create it if it does not exist
+        # Get the machine's user by using the machine id as the index on a fake names list. Create it if it does not exist
         username = names[machine.id]
         user = User.query.filter_by(username=username).first()
         if user is None:
             user = create_new_demo_user(username, machine)
             start_new_job(machine, user)
-
+        if not machine_schedule_active(machine):
+            # Don't run jobs if the machine is not scheduled to be running
+            if user.has_job():
+                current_job = Job.query.filter_by(user_id=user.id, active=True).first()
+                end_job(current_job, machine)
+            else:
+                continue
         if user.has_job():
             current_job = Job.query.filter_by(user_id=user.id, active=True).first()
-            # 3% chance of ending job
-            if random.random() < 0.03:
+            chance_to_end_job = 0.03
+            if random.random() < chance_to_end_job:
                 end_job(current_job, machine)
-            # 20% chance to change activity
-            if random.random() < 0.20:
+            chance_to_change_activity = 0.2
+            if random.random() < chance_to_change_activity:
                 change_activity(machine, current_job, user)
 
 
         else:
-            # 30% chance of starting a new job if there is no job
-            if random.random() < 0.3:
+            chance_to_start_job = 0.3
+            if random.random() < chance_to_start_job:
                 start_new_job(machine, user)
 
 
