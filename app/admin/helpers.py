@@ -2,10 +2,6 @@ from flask import abort
 from flask_login import current_user
 from functools import wraps
 
-from app.extensions import db
-from app.default.models import ActivityCode
-from config import Config
-
 
 def admin_required(function):
     """ Decorator function to make sure the user is an admin. Functions should also be paired with @login_required"""
