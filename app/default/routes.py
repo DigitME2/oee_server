@@ -34,14 +34,3 @@ def create_scheduled_activities():
 
     create_scheduled_activities(date=dt)
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-@bp.route('/create_fake_data', methods=['POST'])
-def create_fake_data():
-    """Create fake data if in demo mode"""
-    if not Config.DEMO_MODE:
-        print("Cannot fake data: App is not in demo mode.")
-        return jsonify({'success': False, 'message': 'App not in demo mode'}), 501, {'ContentType': 'application/json'}
-    from app.oee_monitoring.machine_simulator import simulate_machines
-    simulate_machines()
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
