@@ -173,6 +173,9 @@ def android_start_job():
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     machine = user_session.machine
 
+    if user_session.user.has_job():
+        return 400
+
     # Create the job
     job = Job(start_time=timestamp,
               user_id=user_session.user_id,
@@ -185,7 +188,6 @@ def android_start_job():
 
     db.session.add(job)
     db.session.commit()
-    #todo control what happens if theres already a job at this point
 
     # End the current activity
     complete_last_activity(machine_id=machine.id, timestamp_end=timestamp)
