@@ -6,9 +6,11 @@ from flask import current_app
 
 from app import Config
 from app.default.db_helpers import complete_last_activity, machine_schedule_active
-from app.default.models import Machine, Job, Activity
+from app.default.models import Machine, Job, Activity, ActivityCode
 from app.extensions import db
 from app.login.models import User, UserSession
+
+number_of_activity_codes = len(ActivityCode.query.all())
 
 
 def create_new_demo_user(username, machine):
@@ -52,8 +54,8 @@ def start_new_job(machine, user):
 def change_activity(machine, job, user):
     current_app.logger.debug(f"changing activity")
     complete_last_activity(machine_id=machine.id)
-    # 80% chance the activity is uptime
-    if random.random() < 0.8:
+    chance_the_activity_is_uptime = 0.8
+    if random.random() < chance_the_activity_is_uptime:
         new_activity = Activity(machine_id=machine.id,
                                 timestamp_start=datetime.now().timestamp(),
                                 machine_state=1,
@@ -65,7 +67,7 @@ def change_activity(machine, job, user):
         new_activity = Activity(machine_id=machine.id,
                                 timestamp_start=datetime.now().timestamp(),
                                 machine_state=0,
-                                activity_code_id=randrange(2, 5),
+                                activity_code_id=randrange(2, number_of_activity_codes),
                                 job_id=job.id,
                                 user_id=user.id)
     db.session.add(new_activity)
@@ -111,24 +113,22 @@ def simulate_machines():
 
 
 names = [
-    "Cameron",
-    "Margot",
-    "Jack",
-    "Natashia",
-    "Melva",
-    "Kassie",
-    "Hallie",
-    "Shannon",
-    "James",
-    "Benito",
-    "Ahmed",
-    "Jaimee",
-    "Nanci",
-    "Markus",
-    "Vina",
-    "Nicolasa",
-    "Shawnna",
-    "Elton",
-    "Gladis",
-    "Donnette",
+    "Barry",
+    "Pam",
+    "Sterling",
+    "Cheryl",
+    "Ray",
+    "Lana",
+    "Brett",
+    "Cyril",
+    "Mallory",
+    "Leonard",
+    "Ron",
+    "Arthur",
+    "Mitsuko",
+    "Alan",
+    "Conway",
+    "Algernop",
+    "Katya",
+    "Slater"
 ]
