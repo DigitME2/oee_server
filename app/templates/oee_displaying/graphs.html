@@ -3,8 +3,6 @@
 
 {% block content %}
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/datepicker.css') }}">
-
     <div class="container mt-2">
         <label for="graphType">Graph type</label>
 
@@ -14,7 +12,7 @@
                 <option value="{{ form.__class__.__name__ }}"
                         {% if form.__class__.__name__ == last_form.__class__.__name__ %}
                             {#                 If this option was selected last time, set it as selected now #}
-                            selected="selected"
+                        selected="selected"
                         {% endif %}
                 >
                     {{ form.graph_name }}
@@ -32,20 +30,17 @@
         </div>
     </div>
 
-    <div class="container-fluid mt-5">
+    <div class="mt-5">
         <div class="main_graph" id="main_graph">
             {{ graph|safe }}
         </div>
     </div>
-    </div>
 
 
-    <script src="{{ url_for('static', filename='libraries/jquery-3.3.1.min.js') }}" type="text/javascript"></script>
+    {# Datepicker libraries #}
     <script src="{{ url_for('static', filename='libraries/bootstrap-datepicker-master/js/bootstrap-datepicker.js') }}" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/datepicker.css') }}">
 
-
-
-{#todo set the dates to the current date by default#}
 
     <script type="application/javascript">
         {#    Add the datepicker to all forms with class "form-datepicker" #}
@@ -86,19 +81,26 @@
 
     </script>
 
-    {#    To apply datatables library to the table#}
-    <link href="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/css/dataTables.jqueryui.css') }}" type="text/css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='libraries/DataTables/datatables.min.css') }}" type="text/css" rel="stylesheet">
 
-    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/jquery.dataTables.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/datatables.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.jqueryui.min.js') }}" type="text/javascript"></script>
+    {# Datatables core libraries #}
+    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/jquery.dataTables.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/dataTables.bootstrap4.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/css/dataTables.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
+
+    {# To make the table size responsive for mobile #}
+    <script src="{{ url_for('static', filename='libraries/DataTables/Responsive-2.2.5/js/dataTables.responsive.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Responsive-2.2.5/js/responsive.bootstrap4.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='libraries/DataTables/Responsive-2.2.5/css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
+
+    {#  Buttons to download the table #}
     <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/dataTables.buttons.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.flash.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.bootstrap4.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/css/buttons.bootstrap4.css') }}" type="text/css" rel="stylesheet">
+
+    {# Table download format options #}
     <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/pdfmake.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/vfs_fonts.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.print.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='libraries/DataTables/JSZip-2.5.0/jszip.min.js') }}"></script>
 
     <script>
@@ -106,6 +108,7 @@
         $(document).ready(function () {
                 $('.dataTable').DataTable({
                     dom: 'Bfrtip',
+                    responsive: true,
                     buttons: [
                         'copy', 'excel', 'csv', 'pdf'
                     ]
@@ -115,23 +118,5 @@
 
 
     </script>
-
-
-    {#    <script type="application/javascript">#}
-    {#        /** Disable the dates when requesting a dashboard graph, so the graph is full screen*/#}
-    {#        function handleCheck() {#}
-    {#            document.getElementById("start_date").disabled = document.getElementById("dashboard").checked;#}
-    {#            document.getElementById("end_date").disabled = document.getElementById("dashboard").checked;#}
-    {#        }#}
-    {##}
-    {#        $(document).ready(function () {#}
-    {#            handleCheck();#}
-    {#            // Add onclick to the dashboard#}
-    {#            document.getElementById("dashboard").onclick = handleCheck#}
-    {#        });#}
-    {#    </script>#}
-
-
-
 
 {% endblock %}

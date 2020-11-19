@@ -1,19 +1,18 @@
 import operator
-import plotly.graph_objects as go
-import pandas as pd
+from datetime import datetime, timedelta, date
 from logging import getLogger
-from plotly.offline import plot
+
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
 from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
-from datetime import datetime, timedelta, date, time
+from plotly.offline import plot
 
-from app.data_analysis.oee import calculate_activity_percent, get_daily_group_oee, calculate_activity_time, \
-    get_schedule_dict, get_machine_runtime, get_activity_duration_dict
-from app.default.models import Activity, Machine, ActivityCode, MachineGroup, Job
+from app.data_analysis.oee import calculate_activity_percent, get_daily_group_oee, get_activity_duration_dict
+from app.default.db_helpers import get_machine_activities
+from app.default.models import Activity, Machine, ActivityCode, MachineGroup
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
-from app.default.db_helpers import get_machine_activities
-import plotly.figure_factory as ff
 
 logger = getLogger()
 
@@ -38,7 +37,7 @@ def apply_default_layout(layout):
         'size': 16
     }
     layout.xaxis.rangeselector.visible = False
-    layout.autosize = False
+    layout.autosize = True
     layout.margin = dict(l=100, r=50, b=50, t=50, pad=10)
     return layout
 
@@ -80,15 +79,14 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
     layout = apply_default_layout(layout)
+    layout.showlegend = True
 
     # Highlight jobs
     layout = highlight_jobs(activities, layout)
 
     # Pass the changed layout back to fig
     fig['layout'] = layout
-
     config = {'responsive': True}
-
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
@@ -127,14 +125,15 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
                           group_tasks=True,
                           colors=colours,
                           index_col='Code',
-                          bar_width=0.4,
-                          width=1800)
+                          bar_width=0.4)
 
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
     layout = apply_default_layout(layout)
+    layout.showlegend = True
     fig['layout'] = layout
-    return plot(fig, output_type="div", include_plotlyjs=True)
+    config = {'responsive': True}
+    return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
 def create_job_end_gantt(job):
@@ -319,7 +318,7 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                      'textinfo': 'label+percent',
                      'marker': {'colors': colours}}],
 
-           'layout': {'title': f"OEE for {machine.name}"}}
+           'layout':layout}
     return plot(fig,
                 output_type="div",
                 include_plotlyjs=True)
@@ -330,13 +329,11 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
 def create_oee_line(graph_start_date, graph_end_date):
     """ Takes two timestamps and creates a line graph of the OEE for each machine group between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
-    # todo dont show times if only on dates
     groups = MachineGroup.query.all()
     d = date(2020, 1, 1)
     dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
     if len(dates) == 0:
         return 0
-    df = []
     fig = go.Figure()
     for group in groups:
         group_oee_list = []
@@ -344,10 +341,13 @@ def create_oee_line(graph_start_date, graph_end_date):
             daily_group_oee = get_daily_group_oee(group_id=group.id, date=d)
             group_oee_list.append(daily_group_oee)
 
-        fig.add_trace(go.Scatter(x=dates, y=group_oee_list, name=group.name, mode='lines'))
-        # todo faff about making the graph look nice later
-    fig['layout']['xaxis'].update(range=[graph_start_date, graph_end_date])
-    # fig['layout'].update(autosize=True)
+        fig.add_trace(go.Scatter(x=dates, y=group_oee_list, name=group.name, mode='lines+markers'))
+    layout = Layout()
+    layout.xaxis.update(range=[graph_start_date, graph_end_date])
+    layout.xaxis.tickformat = '%a %d-%m-%Y'
+    layout.xaxis.showgrid = False
+    layout.xaxis.dtick = 86400000  # Space between ticks = 1 day
+    fig.layout = layout
 
     return plot(fig,
                 output_type="div",
@@ -375,44 +375,6 @@ def create_downtime_bar(machine_ids, graph_start_timestamp, graph_end_timestamp)
     activity_code_durations = list(total_activities_dict.values())
     fig = go.Figure([go.Bar(x=activity_code_names, y=activity_code_durations)])
     fig.layout.title = "Total Time (Minutes)"
-    return plot(fig,
-                output_type="div",
-                include_plotlyjs=True,
-                config={"showLink": False})
-
-
-def create_job_table(machine_ids, start_date, end_date):
-    start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
-    end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
-    headers = ["Wo Number", "Scheduled Runtime", "Uptime"]
-    wo_numbers = []
-    runtimes = []
-    scheduled_runtimes = []
-    for machine_id in machine_ids:
-        jobs = Job.query.filter(Job.machine_id == machine_id) \
-            .filter(Job.start_time <= end_timestamp) \
-            .filter(Job.end_time >= start_timestamp)
-
-        for job in jobs:
-            sched_dict = get_schedule_dict(machine_id, timestamp_start=start_timestamp, timestamp_end=end_timestamp, units="minutes")
-            runtime = get_machine_runtime(machine_id, requested_start=start_timestamp, requested_end=end_timestamp, units="minutes")
-            wo_number = job.wo_number
-            scheduled_runtime = sched_dict["scheduled_run_time"]
-
-            runtimes.append(runtime)
-            wo_numbers.append(wo_number)
-            scheduled_runtimes.append(scheduled_runtime)
-    d = {"WO Number": wo_numbers, "Scheduled Runtime": scheduled_runtimes, "Runtime": runtimes}
-    df = pd.DataFrame(d)
-
-    fig = go.Figure(data=[go.Table(
-        header=dict(values=list(df.columns),
-                    fill_color='paleturquoise',
-                    align='left'),
-        cells=dict(values=[wo_numbers, runtimes, scheduled_runtimes],
-                   fill_color='lavender',
-                   align='left'))])
-
     return plot(fig,
                 output_type="div",
                 include_plotlyjs=True,

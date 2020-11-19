@@ -13,7 +13,7 @@ from config import Config
 
 class WOTable(Table):
     table_id = "jobTable"
-    classes = ["dataTable"]
+    classes = ["dataTable table table-striped table-bordered"]
     wo_number = Col('WO Number')
     part_number = Col('Part Number')
     start = Col('Start')
@@ -141,7 +141,7 @@ def get_job_table(start_date, end_date):
 
 class JobTable(Table):
     table_id = "jobTable"
-    classes = ["dataTable"]
+    classes = ["dataTable table table-striped table-bordered"]
     job_id = Col("Job ID")
     wo_number = Col('WO Number')
     part_number = Col('Part Number')

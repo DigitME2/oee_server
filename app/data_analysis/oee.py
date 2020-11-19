@@ -88,6 +88,7 @@ def get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds
     scheduled_down_time
     unscheduled_time"""
     # Get all the scheduled activities
+    #todo I changed the keys of the dict because they were being used directly in a graph. this broke things. fix it.
     activities = ScheduledActivity.query \
         .filter(ScheduledActivity.machine_id == machine_id) \
         .filter(ScheduledActivity.timestamp_end >= timestamp_start) \
@@ -169,8 +170,8 @@ def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
     #todo sanity check - warn user if over 100 or if there are no scheduled times
 
     #todo test this make sure answers are correct
-    runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end)
-    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="minutes")["scheduled_run_time"]
+    runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end, units="seconds")
+    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds")["Scheduled Run Time"]
     if scheduled_uptime == 0:
         return 0
     availability = runtime / scheduled_uptime
@@ -201,7 +202,7 @@ def get_daily_group_oee(group_id, date):
     for machine in group.machines:
         # For each machine add the oee figure to the list
         machine_oees.append(get_daily_machine_oee(machine.id, date))
-    if machine_oees is None:
+    if machine_oees is None or len(machine_oees) == 0:
         return 0
     mean_oee = sum(machine_oees) / len(machine_oees)
     return mean_oee
