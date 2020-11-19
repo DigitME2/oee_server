@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta, time
+
+from flask import current_app
+
 from app.extensions import db
 from app.data_analysis.models import DailyOEE
 from app.default.models import Activity, ActivityCode, ScheduledActivity, MachineGroup
@@ -20,7 +23,7 @@ def get_machine_runtime(machine_id, requested_start, requested_end, units="secon
     for act in activities:
         run_time += (act.timestamp_end - act.timestamp_start)
     if units == "minutes":
-        return run_time/60
+        return run_time / 60
     elif units == "seconds":
         return run_time
 
@@ -78,7 +81,7 @@ def get_activity_duration_dict(requested_start, requested_end, machine_id=None, 
     # Convert to minutes if requested
     if units == "minutes":
         for n in activities_dict:
-            activities_dict[n] = activities_dict[n]/60
+            activities_dict[n] = activities_dict[n] / 60
     return activities_dict
 
 
@@ -88,7 +91,6 @@ def get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds
     scheduled_down_time
     unscheduled_time"""
     # Get all the scheduled activities
-    #todo I changed the keys of the dict because they were being used directly in a graph. this broke things. fix it.
     activities = ScheduledActivity.query \
         .filter(ScheduledActivity.machine_id == machine_id) \
         .filter(ScheduledActivity.timestamp_end >= timestamp_start) \
@@ -119,9 +121,9 @@ def get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds
     # Add any time unaccounted for
     unscheduled_time += (total_time - (scheduled_down_time + scheduled_run_time))
     if units == "minutes":
-        scheduled_run_time = scheduled_run_time/60
-        scheduled_down_time = scheduled_down_time/60
-        unscheduled_time = unscheduled_time/60
+        scheduled_run_time = scheduled_run_time / 60
+        scheduled_down_time = scheduled_down_time / 60
+        unscheduled_time = unscheduled_time / 60
 
     return {"Scheduled Run Time": scheduled_run_time,
             "Scheduled Down Time": scheduled_down_time,
@@ -161,19 +163,21 @@ def calculate_activity_time(machine_id, activity_code_id, timestamp_start, times
     return activity_code_time
 
 
+class OEECalculationException(Exception):
+    pass
+
+
 def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
     """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
     Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
-    #todo need to have a think about what happens here if there are no activities or scheduled activities
-    # Do we save a 0 or None?
 
-    #todo sanity check - warn user if over 100 or if there are no scheduled times
-
-    #todo test this make sure answers are correct
+    if timestamp_end > datetime.now().timestamp():
+        current_app.logger.warn(f"Machine oee requested for future date {datetime.fromtimestamp(timestamp_end).strftime(('%Y-%m-%d'))}")
+        raise OEECalculationException("Machine OEE requested for future date")
     runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end, units="seconds")
     scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds")["Scheduled Run Time"]
     if scheduled_uptime == 0:
-        return 0
+        raise OEECalculationException("No scheduled activity for requested OEE")
     availability = runtime / scheduled_uptime
     oee = availability * 100
     return oee
@@ -181,13 +185,15 @@ def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
 
 def get_daily_machine_oee(machine_id, date):
     """ Takes a machine id and a dates, then gets the oee for the day and saves the figure to database """
-    #todo dont run for current day or future. Maybe add future validation to web form
     daily_machine_oee = DailyOEE.query.filter_by(machine_id=machine_id, date=date).first()
     # If the OEE figure is missing, call the function to calculate the missing values and save in database
     if daily_machine_oee is None:
         start = datetime.combine(date=date, time=time(hour=0, minute=0, second=0, microsecond=0))
         end = start + timedelta(days=1)
-        oee = calculate_machine_oee(machine_id, timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
+        try:
+            oee = calculate_machine_oee(machine_id, timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
+        except OEECalculationException:
+            return 0
         daily_machine_oee = DailyOEE(machine_id=machine_id, date=date, oee=oee)
         db.session.add(daily_machine_oee)
         db.session.commit()
