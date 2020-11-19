@@ -73,8 +73,7 @@ def setup_database():
 
 
     if len(WorkflowType.query.all()) == 0:
-        default = WorkflowType(id=1,
-                               name="Default",
+        default = WorkflowType(name="Default",
                                description="start job > "
                                            "screen to select machine status with live updates > "
                                            "enter parts >"
@@ -105,7 +104,6 @@ def setup_database():
         db.session.commit()
         current_app.logger.info("Created pneumatrol_no_setting workflow type on first startup")
 
-
     if len(MachineGroup.query.all()) == 0:
         group1 = MachineGroup(name="Group 1")
         current_app.logger.info("Created default machine group on first startup")
@@ -129,9 +127,6 @@ def setup_database():
         db.session.commit()
         current_app.logger.info("Created activity on first startup")
         db.session.commit()
-
-
-
 
     if len(Settings.query.all()) == 0:
         settings = Settings(threshold=500, dashboard_update_interval_s=10)

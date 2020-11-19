@@ -10,8 +10,6 @@ from app.default.models import Machine, Job, Activity, ActivityCode
 from app.extensions import db
 from app.login.models import User, UserSession
 
-number_of_activity_codes = len(ActivityCode.query.all())
-
 
 def create_new_demo_user(username, machine):
     user = User(username=username)
@@ -67,7 +65,7 @@ def change_activity(machine, job, user):
         new_activity = Activity(machine_id=machine.id,
                                 timestamp_start=datetime.now().timestamp(),
                                 machine_state=0,
-                                activity_code_id=randrange(2, number_of_activity_codes),
+                                activity_code_id=randrange(2, len(ActivityCode.query.all())),
                                 job_id=job.id,
                                 user_id=user.id)
     db.session.add(new_activity)
