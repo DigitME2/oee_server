@@ -98,8 +98,6 @@ def get_work_order_table(start_date, end_date):
 
 
 def get_job_table(start_date, end_date):
-    # todo slim down to only get requested stuffs
-    # todo conditional formatting for duration vs planned duration
     start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
     end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
     jobs = Job.query.filter(Job.start_time <= end_timestamp).filter(Job.end_time >= start_timestamp)
@@ -154,11 +152,10 @@ class JobTable(Table):
     planned_quantity = Col("Planned Quantity")
 
 
-
 def get_raw_database_table(table_name):
     statement = f"SELECT * FROM {table_name};"
     df = pd.read_sql(statement, db.engine)
-    table_html = df.to_html(classes="dataTable")
+    table_html = df.to_html(classes="dataTable table table-striped table-bordered")
 
     return table_html
 
@@ -181,7 +178,7 @@ def get_user_activity_table(timestamp_start, timestamp_end):
         Tbl.add_column(activity_description, Col(activity_description))
 
     # Add the html class to the table so it's picked up by datatables
-    Tbl.classes = ["dataTable"]
+    Tbl.classes = ["dataTable table table-striped table-bordered"]
 
     users = User.query.all()
 
@@ -205,7 +202,6 @@ def get_user_activity_table(timestamp_start, timestamp_end):
     return table.__html__()
 
 
-
 def get_machine_activity_table(timestamp_start, timestamp_end):
     """ Create a CSV listing the amount of time spent for each activity_code."""
     # Dynamically create the table using flask-table
@@ -223,7 +219,7 @@ def get_machine_activity_table(timestamp_start, timestamp_end):
         Tbl.add_column(key, Col(key))
 
     # Add the class to the table so it's picked up by datatables
-    Tbl.classes = ["dataTable"]
+    Tbl.classes = ["dataTable table table-striped table-bordered"]
 
     machines = Machine.query.all()
 
@@ -247,14 +243,10 @@ def get_machine_activity_table(timestamp_start, timestamp_end):
         # The first column will be the name of the machine
         machine_dict["machine"] = machine.name
 
-
         items.append(machine_dict)
 
     table = Tbl(items=items)
     return table.__html__()
-
-
-
 
 
 def format_dictionary_durations(dictionary):

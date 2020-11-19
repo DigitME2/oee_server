@@ -73,8 +73,7 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
                           colors=colours,
                           index_col='Code',
                           bar_width=0.4,
-                          show_colorbar=True,
-                          width=1800)
+                          show_colorbar=True)
 
     # Create a layout object using the layout automatically created
     layout = Layout(fig['layout'])
@@ -133,83 +132,6 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     layout.showlegend = True
     fig['layout'] = layout
     config = {'responsive': True}
-    return plot(fig, output_type="div", include_plotlyjs=True, config=config)
-
-
-def create_job_end_gantt(job):
-    """ Create a gantt chart of the activities for a job, flagging those that need an explanation from an operator"""
-
-    activities = job.activities
-    if len(activities) == 0:
-        return "No machine activity between these times"
-
-    # Add each activity to a dictionary, to add to the graph
-    # Do this in two separate loops so that the first entry in the dictionary is always one requiring an explanation,
-    # putting them all on the upper level in the graph (in a roundabout way) There's probably be a better way to do this
-    df = []
-    annotations = []
-    for act in activities:
-        if act.explanation_required:
-            # If the activity extends past the  start or end, crop it short
-            if act.timestamp_start < job.start_time:
-                start = job.start_time
-            else:
-                start = act.timestamp_start
-            if act.timestamp_end > job.end_time:
-                end = job.end_time
-            else:
-                end = act.timestamp_end
-            df.append(dict(Task=act.explanation_required,
-                           Start=datetime.fromtimestamp(start),
-                           Finish=datetime.fromtimestamp(end),
-                           Code=act.explanation_required,
-                           Activity_id=act.id))
-            text = "{start}<br>Explanation<br>Required".format(
-                start=datetime.fromtimestamp(act.timestamp_start).strftime('%H:%M'))
-            position = datetime.fromtimestamp((start + end) / 2)
-            annotations.append(dict(x=position, y=1.7, text=text, showarrow=False, font=dict(color='black')))
-
-    # The second loop, for activities not requiring an explanation
-    for act in activities:
-        if not act.explanation_required:
-            # If the activity extends past the  start or end, crop it short
-            if act.timestamp_start < job.start_time:
-                start = job.start_time
-            else:
-                start = act.timestamp_start
-            if act.timestamp_end > job.end_time:
-                end = job.end_time
-            else:
-                end = act.timestamp_end
-            df.append(dict(Task=act.explanation_required,
-                           Start=datetime.fromtimestamp(start),
-                           Finish=datetime.fromtimestamp(end),
-                           Code=act.explanation_required,
-                           Activity_id=act.id))
-
-    # Use the colours assigned to uptime and unexplained downtime
-    uptime_colour = ActivityCode.query.get(Config.UPTIME_CODE_ID).graph_colour
-    unexplained_colour = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID).graph_colour
-    colours = {True: unexplained_colour,
-               False: uptime_colour}
-    fig = ff.create_gantt(df,
-                          title="",
-                          group_tasks=True,
-                          colors=colours,
-                          index_col='Code',
-                          bar_width=0.4,
-                          show_colorbar=False,
-                          width=1800)
-
-    layout = Layout(fig['layout'])
-    layout = apply_default_layout(layout)
-
-    layout.annotations = annotations
-    layout.yaxis.showticklabels = False
-    # Pass the changed layout back to fig
-    fig['layout'] = layout
-    config = {'responsive': True}
-
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
@@ -281,8 +203,6 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     # The order of the tick texts in the layout is in the reverse order
     new_tick_texts.reverse()
     layout.yaxis.ticktext = tuple(new_tick_texts)
-    # TODO I dont like this method of changing the tick texts. It seems like it's possible to mix up machines
-    # as there is nothing currently controlling this
 
     # Change the text sizes
     layout.yaxis.tickfont.size = 18
@@ -318,13 +238,11 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                      'textinfo': 'label+percent',
                      'marker': {'colors': colours}}],
 
-           'layout':layout}
+           'layout': layout}
     return plot(fig,
                 output_type="div",
                 include_plotlyjs=True)
 
-
-# todo I havent really finished off the ooe line, downtime bar or job table
 
 def create_oee_line(graph_start_date, graph_end_date):
     """ Takes two timestamps and creates a line graph of the OEE for each machine group between these times
@@ -420,7 +338,6 @@ def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflo
             start = act.timestamp_start
             end = act.timestamp_end
         code = act.activity_code.short_description
-
 
         task = operator.attrgetter("machine.name")(act)
 

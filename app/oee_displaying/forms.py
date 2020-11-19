@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta, time
 from flask_wtf import FlaskForm
 from wtforms import DateField, PasswordField, StringField, SubmitField, BooleanField, SelectField
 from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional, NoneOf, ValidationError
@@ -7,9 +7,9 @@ from wtforms_components import TimeField
 
 DATE_FORMAT = "%d-%m-%Y"
 TIME_FORMAT = "%H:%M"
-midnight = datetime.time(hour=0, minute=0, second=0,  microsecond=0)
-today = datetime.datetime.now()
-tomorrow = today + datetime.timedelta(days=1)
+midnight = time(hour=0, minute=0, second=0,  microsecond=0)
+today = datetime.now()
+tomorrow = today + timedelta(days=1)
 MACHINES_CHOICES_HEADERS = ["--Groups--", "--Machines--"]
 
 # Types of graphs that will be shown as options
@@ -18,7 +18,6 @@ oee_line_graph = "OEE line graph"
 downtime_bar_chart = "Downtime reasons bar chart"
 job_table = "Job table"
 GRAPH_TYPES = [oee_line_graph, state_gantt_chart, downtime_bar_chart, job_table]
-
 
 
 class GanttForm(FlaskForm):
@@ -35,13 +34,14 @@ class GanttForm(FlaskForm):
     submit = SubmitField('Submit', id="gantt_submit")
 
 
-
 class OeeLineForm(FlaskForm):
     form_template = "date"
     graph_name = "Machine group OEE Line Graph"
     description = "A line graph showing the daily OEE figure of every machine group between two dates"
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="oee_line_start_date", label="Start Date (DD-MM-YYYY)", default=today)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="oee_line_end_date", label="End Date (DD-MM-YYYY)", default=tomorrow)
+    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="oee_line_start_date", label="Start Date (DD-MM-YYYY)",
+                           default=today-timedelta(days=31))
+    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="oee_line_end_date", label="End Date (DD-MM-YYYY)",
+                         default=today-timedelta(days=1))
 
     submit = SubmitField('Submit', id="oee_line_submit")
 

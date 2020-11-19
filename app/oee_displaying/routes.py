@@ -18,7 +18,7 @@ from app.oee_displaying.tables import get_work_order_table, get_job_table, get_r
 @bp.route('/data', methods=['GET', 'POST'])
 @login_required
 def data():
-    """ The page showing options for graphs"""
+    """ The page showing options for data output"""
     # Get each machine
     machines = Machine.query.all()
 
@@ -47,15 +47,6 @@ def data():
     raw_db_table_form.key.choices = table_name_choices
 
     forms = [gantt_form, oee_line_form, downtime_bar_form, job_table_form, wo_table_form, activity_table_form, raw_db_table_form]
-
-    # form.graph_type.choices = [(k, v) for k, v in GRAPH_TYPES.items()]
-
-    # If a dashboard is requested, ignore the values/validation and set to today
-    # if form1.dashboard.data:
-    #     form1.start_date.validators = []
-    #     form1.end_date.validators = []
-    #     form1.start_date.data = datetime.now().date
-    #     form1.end_date.data = datetime.now().date
 
     # Check which form has been sent by the user
     form_sent = next((form for form in forms if form.__class__.__name__ == request.form.get('formType')), None)
@@ -109,13 +100,12 @@ def data():
     else:
         graph = ""
 
-    return render_template('oee_displaying/graphs.html',
+    return render_template('oee_displaying/data.html',
                            machines=machines,
                            nav_bar_title="Graphs",
                            forms=forms,
                            graph=graph,
                            last_form=form_sent)
-
 
 
 @bp.route('/dashboard')
@@ -175,111 +165,3 @@ def dashboard():
                                graph=graph,
                                start=request.args['start'],
                                end=request.args['end'])
-
-
-@bp.route('/statusgantt')
-@login_required
-def status_gantt():
-    """ The page showing the past statuses of a machine and reasons for downtime"""
-    start_time = datetime.combine(datetime.today(), time.min)
-    end_time = (start_time + timedelta(days=1))
-    graph = create_multiple_machines_gantt(graph_start=start_time.timestamp(),
-                                           graph_end=end_time.timestamp(),
-                                           machine_ids=list(machine.id for machine in Machine.query.all()))
-    current_app.logger.debug(f"Creating graph for all machines between {start_time} and {end_time}")
-    return render_template('oee_displaying/machine.html',
-                           machines=Machine.query.all(),
-                           nav_bar_title="Machine status",
-                           graph=graph)
-
-
-@bp.route('/allmachinesstatus')
-def all_machines_status():
-    # Create a list of dictionaries containing the status for every machine
-    machine_status_dicts = []
-    for machine in Machine.query.all():
-        machine_status_dicts.append(get_machine_status(machine.id))
-    return render_template("oee_displaying/all_machines_status.html",
-                           machine_status_dicts=machine_status_dicts)
-
-
-@bp.route('/machinestatus/<machine_id>')
-@login_required
-def machine_status(machine_id):
-    """ The page showing the OEE of a machine and reasons for downtime"""
-    machine = Machine.query.get_or_404(machine_id)
-    start_time = datetime.combine(datetime.today(), time.min)
-    end_time = (start_time + timedelta(days=1))
-    graph = create_machine_gantt(graph_start=start_time.timestamp(),
-                                 graph_end=end_time.timestamp(),
-                                 machine_id=machine.id)
-    nav_bar_title = "Machine Activity"
-    status_dict = get_machine_status(machine.id)
-    return render_template('oee_displaying/machine_status.html',
-                           machine_status_dict=status_dict,
-                           nav_bar_title=nav_bar_title,
-                           graph=graph)
-
-
-@bp.route('/updategraph', methods=['GET'])
-def update_graph():
-    """ Called when new dates are requested for the graph"""
-
-    # Get the date and machine from the url arguments
-    if 'date' not in request.args:
-        current_app.logger.warn(f"Request arguments {request.args} do not contain a date")
-        return abort(400, "No date provided in url")
-    if 'machine_id' not in request.args:
-        current_app.logger.warn(f"Request arguments {request.args} do not contain a machine id")
-        return abort(400, "No target machine provided in url")
-
-    # Get the date from the request and calculate the start and end time for the graph
-    date_string = request.args['date']
-    try:
-        date = datetime.strptime(date_string, "%d-%m-%Y")
-    except ValueError:
-        current_app.logger.warn("Error reading date for graph update", exc_info=True)
-        return "Error reading date. Date must be in format DD-MM-YYYY"
-    # Get the values for the start and end time of the graph from the url
-    start_time = date.timestamp()
-    end_time = (date + timedelta(days=1)).timestamp()
-
-    machine_id = request.args['machine_id']
-    # If id=-1 is passed, create a graph of all machines
-    if int(machine_id) == -1:
-        current_app.logger.debug(f"Creating graph for all machines between {start_time} and {end_time}")
-        return create_multiple_machines_gantt(graph_start=start_time,
-                                              graph_end=end_time,
-                                              machine_ids=(machine.id for machine in Machine.query.all()))
-    else:
-        machine = Machine.query.get_or_404(machine_id)
-        current_app.logger.debug(f"Creating graph for {machine} between {start_time} and {end_time}")
-        return create_machine_gantt(graph_start=start_time, graph_end=end_time, machine_id=machine.id)
-
-
-@bp.route('/updatelayout', methods=['GET'])
-def get_updated_layout():
-    if 'machine_group' not in request.args:
-        current_app.logger.warn(f"Request arguments {request.args} do not contain a machine_group")
-        return abort(400, "No machine_group provided in url")
-    machine_group = request.args['machine_group']
-    machine_ids = list(machine.id for machine in Machine.query.filter_by(group=machine_group).all())
-
-    graph_title = f"Machine group {machine_group}"
-
-    start = datetime.combine(datetime.today(), time.min)
-    end = (start + timedelta(days=1))
-
-    if 'start' in request.args:
-        start_time = datetime.strptime(request.args['start'], "%H:%M")
-        start = start.replace(hour=start_time.hour, minute=start_time.minute)
-
-    if 'end' in request.args:
-        end_time = datetime.strptime(request.args['end'], "%H:%M")
-        end = end.replace(hour=end_time.hour, minute=end_time.minute)
-
-    return create_dashboard_gantt(graph_start=start.timestamp(),
-                                  graph_end=end.timestamp(),
-                                  machine_ids=machine_ids,
-                                  title=graph_title,
-                                  include_plotlyjs=False)
