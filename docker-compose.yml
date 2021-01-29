@@ -1,0 +1,14 @@
+services:
+  oee_webapp:
+    image: samba89/oee_webapp:1.5
+    ports:
+      - "8000:8000"
+    volumes:
+      - oee_webapp_appdata:/appdata
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+volumes:
+  oee_webapp_appdata: {}
+

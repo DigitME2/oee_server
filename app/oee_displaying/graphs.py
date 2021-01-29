@@ -16,6 +16,9 @@ from config import Config
 
 logger = getLogger()
 
+#todo add titles to graphs
+
+
 def apply_default_layout(layout):
     layout.xaxis.rangeselector.buttons = [
         dict(count=1,
@@ -114,13 +117,11 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
 
     if len(df) == 0:
         return "No machine activity"
-    graph_title = "All machines OEE"
     # Create the colours dictionary using codes' colours from the database
     colours = {}
     for act_code in ActivityCode.query.all():
         colours[act_code.short_description] = act_code.graph_colour
     fig = ff.create_gantt(df,
-                          title=graph_title,
                           group_tasks=True,
                           colors=colours,
                           index_col='Code',

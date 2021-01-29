@@ -8,29 +8,28 @@ class Config(object):
     DEMO_MODE = True
 
     # PostgreSQL database
-    DATABASE_USER = os.environ.get('DATABASE_USER')
-    DATABASE_ADDRESS = os.environ.get('DATABASE_ADDRESS')
-    DATABASE_PORT = os.environ.get('DATABASE_PORT')
-    DATABASE_PASSWORD = os.environ.get('DATABASE_PASSWORD')
-    if DEMO_MODE:
-        DATABASE_NAME = "oee_webapp_demo"
-    else:
-        DATABASE_NAME = os.environ.get('DATABASE_NAME') or "oee_webapp"
-    SQLALCHEMY_DATABASE_URI = "postgres://{user}:{password}@{address}:{port}/{database}".format(
-        user=DATABASE_USER,
-        password=DATABASE_PASSWORD,
-        address=DATABASE_ADDRESS,
-        port=DATABASE_PORT,
-        database=DATABASE_NAME)
+    # DATABASE_USER = os.environ.get('DATABASE_USER')
+    # DATABASE_ADDRESS = os.environ.get('DATABASE_ADDRESS')
+    # DATABASE_PORT = os.environ.get('DATABASE_PORT')
+    # DATABASE_PASSWORD = os.environ.get('DATABASE_PASSWORD')
+    # if DEMO_MODE:
+    #     DATABASE_NAME = "oee_webapp_demo"
+    # else:
+    #     DATABASE_NAME = os.environ.get('DATABASE_NAME') or "oee_webapp"
+    # SQLALCHEMY_DATABASE_URI = "postgres://{user}:{password}@{address}:{port}/{database}".format(
+    #     user=DATABASE_USER,
+    #     password=DATABASE_PASSWORD,
+    #     address=DATABASE_ADDRESS,
+    #     port=DATABASE_PORT,
+    #     database=DATABASE_NAME)
 
     # SQLite database
-    # package_dir = os.path.abspath(os.path.dirname(__file__))
-    # db_path = os.path.join(package_dir, 'app', 'prod.db')
-    # SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
+    db_path = '/home/appdata/prod.db'
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
 
     SQLALCHEMY_ECHO = False
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or "yS7o773kuQ"
+    SECRET_KEY = os.environ.get('SECRET_KEY') or "ysd7o323kuD"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
 
