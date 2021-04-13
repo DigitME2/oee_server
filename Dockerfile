@@ -16,6 +16,9 @@ COPY docker-supervisord.conf supervisord.conf
 COPY config.py.docker /home/appdata/config.py
 RUN mv /home/oee_webapp/app/static /home/appdata/static
 
+# Copy the nginx config file to the appdata folder so any nginx images can share the same volume
+COPY nginx-default.conf /home/appdata/default.conf
+
 # Create symlinks in the expected locations to point to the volume mapping
 RUN ln -s /home/appdata/config.py config.py
 RUN ln -s /home/appdata/static /home/oee_webapp/app/static

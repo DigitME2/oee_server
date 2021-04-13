@@ -80,7 +80,7 @@ def create_app(config_class=Config):
         timestamp = strftime('[%Y-%b-%d %H:%M]')
         app.logger.debug(f'{timestamp}, {request.remote_addr}, {request.method}, {request.scheme}, {request.full_path}')
 
-    # Allows templates to access whether the app is running in demo mode
+    # Allows templates to know whether the app is running in demo mode
     @app.context_processor
     def is_demo_mode():
         return {"demo_mode": Config.DEMO_MODE}

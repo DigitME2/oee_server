@@ -1,14 +1,30 @@
+version: "3.8"
 services:
-  oee_webapp:
-    image: samba89/oee_webapp:1.5
+  flask_server:
+    image: samba89/oee_webapp
     ports:
       - "8000:8000"
     volumes:
-      - oee_webapp_appdata:/appdata
+      - type: volume
+        source: oee_appdata_vol
+        target: /home/appdata
   redis:
     image: redis
     ports:
       - "6379:6379"
+  nginx:
+    image: nginx:1.19
+    depends_on:
+      - "flask_server"
+    volumes:
+      - type: volume
+        source: oee_appdata_vol
+        target: /etc/nginx/conf.d
+        volume:
+          nocopy: true
+    ports:
+      - "80:80"
+
 volumes:
-  oee_webapp_appdata: {}
+  oee_appdata_vol:
 
