@@ -13,7 +13,7 @@ COPY celery_worker.py celery_worker.py
 COPY docker-supervisord.conf supervisord.conf
 
 # Link some folders to the appdata folder, which will be mapped to a volume
-COPY config.py.docker /home/appdata/config.py
+COPY config-docker.py /home/appdata/config.py
 RUN mv /home/oee_webapp/app/static /home/appdata/static
 
 # Copy the nginx config file to the appdata folder so any nginx images can share the same volume

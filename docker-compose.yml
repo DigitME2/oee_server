@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   flask_server:
-    image: samba89/oee_webapp
+    image: digitme2/oee_webapp
     ports:
       - "8000:8000"
     volumes:
