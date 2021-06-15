@@ -4,3 +4,4 @@ app/static/temp
 /app/templates/testing/
 /app/testing/
 config.py
+*prod.db

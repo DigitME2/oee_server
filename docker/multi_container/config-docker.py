@@ -29,15 +29,15 @@ class Config(object):
 
     SQLALCHEMY_ECHO = False
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or "ysd7o323kuD"
+    SECRET_KEY = os.environ.get('SECRET_KEY') or "ysd2G-CHANGETHIS-353kuD"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
+    UPLOAD_FOLDER = os.path.realpath(os.path.join('../../app', 'static', 'uploads'))
 
     REDIS_ADDRESS = "redis://redis:6379"
 
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
-    FLASK_LOG_FILE = os.path.join('logs', 'oee_app.log')
+    if not os.path.exists('../../logs'):
+        os.mkdir('../../logs')
+    FLASK_LOG_FILE = os.path.join('../../logs', 'oee_app.log')
     STREAM_LOGGING_LEVEL = logging.DEBUG
     FILE_LOGGING_LEVEL = logging.DEBUG
     ROTATING_LOG_FILE_MAX_BYTES = 1024000

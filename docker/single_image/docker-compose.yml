@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  oee_webapp:
+    image: digitme2/oee_webapp:single-image
+    volumes:
+      - oee_appdata_vol:/data
+    ports:
+      - mode: host
+        protocol: tcp
+        published: 80
+        target: 80
+
+volumes:
+  oee_appdata_vol:

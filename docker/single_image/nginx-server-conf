@@ -10,7 +10,8 @@ server {
 	}	
 
 	location @flask {
-		proxy_pass http://flask_server:8000;
+	    include proxy_params;
+		proxy_pass http://localhost:8000;
 
 	}
 
