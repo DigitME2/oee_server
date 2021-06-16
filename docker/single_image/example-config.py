@@ -17,7 +17,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath(os.path.join('../../app', 'static', 'uploads'))
 
-    REDIS_ADDRESS = "redis://oee_webapp:6379"
+    REDIS_ADDRESS = "redis://redis:6379"
 
     if not os.path.exists('../../logs'):
         os.mkdir('../../logs')

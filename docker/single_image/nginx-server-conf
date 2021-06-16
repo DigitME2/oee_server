@@ -11,8 +11,7 @@ server {
 
 	location @flask {
 	    include proxy_params;
-		proxy_pass http://localhost:8000;
-
+		proxy_pass http://oee_webapp:8000;
 	}
 
 }

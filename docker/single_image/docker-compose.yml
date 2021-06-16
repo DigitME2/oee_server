@@ -7,8 +7,12 @@ services:
     ports:
       - mode: host
         protocol: tcp
-        published: 80
+        published: 8080
         target: 80
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
 
 volumes:
   oee_appdata_vol:
