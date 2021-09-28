@@ -5,9 +5,11 @@ import os
 class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
-    DEMO_MODE = True
-    DATA_SIMULATION_FREQUENCY_SECONDS = 60
-    DAYS_BACKFILL = 3  # The number of days of data simulation to run in the past on cold startup
+    DEMO_MODE = os.environ.get('DEMO_MODE') or True
+    # Frequency to run machine simulations (switching activities, starting jobs etc)
+    DATA_SIMULATION_FREQUENCY_SECONDS = os.environ.get('DATA_SIMULATION_FREQUENCY_SECONDS') or 60
+    # The number of days of data simulation to run in the past on cold startup
+    DAYS_BACKFILL = os.environ.get("DAYS_BACKFILL") or 3
 
     # SQLite database
     db_path = '/data/prod.db'
@@ -24,8 +26,8 @@ class Config(object):
     if not os.path.exists('../../logs'):
         os.mkdir('../../logs')
     FLASK_LOG_FILE = os.path.join('../../logs', 'oee_app.log')
-    STREAM_LOGGING_LEVEL = logging.DEBUG
-    FILE_LOGGING_LEVEL = logging.DEBUG
+    STREAM_LOGGING_LEVEL = logging.INFO
+    FILE_LOGGING_LEVEL = logging.INFO
     ROTATING_LOG_FILE_MAX_BYTES = 1024000
     ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')

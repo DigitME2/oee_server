@@ -9,6 +9,10 @@ services:
         protocol: tcp
         published: 80
         target: 8000
+    environment:
+      DEMO_MODE: true
+      DATA_SIMULATION_FREQUENCY_SECONDS: 60
+      DAYS_BACKFILL: 3
   redis:
     image: redis
     ports:
