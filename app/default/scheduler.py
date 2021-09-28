@@ -13,7 +13,7 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(crontab(hour=3, minute=0),
                              daily_machine_schedule_task.s())
     if Config.DEMO_MODE:
-        sender.add_periodic_task(Config.DATA_SIMULATION_FREQUENCY, simulate_machine_action_task.s())
+        sender.add_periodic_task(Config.DATA_SIMULATION_FREQUENCY_SECONDS, simulate_machine_action_task.s())
 
 
 @celery_app.task()
