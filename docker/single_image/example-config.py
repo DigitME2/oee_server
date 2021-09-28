@@ -6,6 +6,8 @@ class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
     DEMO_MODE = True
+    DATA_SIMULATION_FREQUENCY_SECONDS = 60
+    DAYS_BACKFILL = 3  # The number of days of data simulation to run in the past on cold startup
 
     # SQLite database
     db_path = '/data/prod.db'

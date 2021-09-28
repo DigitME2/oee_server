@@ -1,10 +1,11 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
+from random import randrange
 
 from flask import current_app
 
+from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, \
+    MachineGroup, DemoSettings, SHIFT_STRFTIME_FORMAT
 from app.extensions import db
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, SHIFT_STRFTIME_FORMAT, \
-    MachineGroup
 from app.login.models import create_default_users
 from config import Config
 
@@ -14,42 +15,17 @@ WORKFLOW_IDS = {"Default": 1,
                 "Pneumatrol_setting": 2,
                 "Pneumatrol_no_setting": 3}
 
-def setup_database():
 
+def setup_database():
     """ Enter default values into the database on its first run"""
     db.create_all()
 
     create_default_users()
 
     if len(ActivityCode.query.all()) == 0:
-
-        no_user_code = ActivityCode(id=Config.NO_USER_CODE_ID,
-                                    code="NU",
-                                    short_description="No User",
-                                    long_description="No user is logged onto the machine",
-                                    graph_colour="#ffffff")
-        db.session.add(no_user_code)
-
-        unexplained_code = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                                        code="DO",
-                                        short_description='Down',
-                                        long_description="Downtime that doesn't have an explanation from the user",
-                                        graph_colour='#b22222')
-        db.session.add(unexplained_code)
-        uptime_code = ActivityCode(id=Config.UPTIME_CODE_ID,
-                                   code="UP",
-                                   short_description='Up',
-                                   long_description='The machine is in use',
-                                   graph_colour='#00ff80')
-        db.session.add(uptime_code)
-        setting_code = ActivityCode(id=Config.SETTING_CODE_ID,
-                                    code="ST",
-                                    short_description="Setting",
-                                    long_description="The machine is being set up",
-                                    graph_colour="#ff8000")
-        db.session.add(setting_code)
-        db.session.commit()
-        current_app.logger.info("Created default activity codes on first startup")
+        create_default_activity_codes()
+        if Config.DEMO_MODE:
+            create_demo_activity_codes()
 
     if len(Schedule.query.all()) == 0:
         schedule1 = Schedule(name="Default",
@@ -70,7 +46,6 @@ def setup_database():
         db.session.add(schedule1)
         db.session.commit()
         current_app.logger.info("Created default schedule on first startup")
-
 
     if len(WorkflowType.query.all()) == 0:
         default = WorkflowType(name="Default",
@@ -105,28 +80,24 @@ def setup_database():
         current_app.logger.info("Created pneumatrol_no_setting workflow type on first startup")
 
     if len(MachineGroup.query.all()) == 0:
-        group1 = MachineGroup(name="Group 1")
-        current_app.logger.info("Created default machine group on first startup")
-        db.session.add(group1)
-        db.session.commit()
+        if Config.DEMO_MODE:
+            group1 = MachineGroup(name="Cutting")
+            group2 = MachineGroup(name="Milling")
+            current_app.logger.info("Created default machine groups on first startup")
+            db.session.add(group1)
+            db.session.add(group2)
+            db.session.commit()
+        else:
+            group1 = MachineGroup(name="Group 1")
+            current_app.logger.info("Created default machine group on first startup")
+            db.session.add(group1)
+            db.session.commit()
 
     if len(Machine.query.all()) == 0:
-        machine1 = Machine(name="Machine 1",
-                           device_ip="127.0.0.1",
-                           group_id=1,
-                           schedule_id=1)
-        db.session.add(machine1)
-        db.session.commit()
-        current_app.logger.info("Created default machine on first startup")
-
-        act = Activity(machine_id=machine1.id,
-                       timestamp_start=datetime.now().timestamp(),
-                       machine_state=Config.MACHINE_STATE_OFF,
-                       activity_code_id=Config.NO_USER_CODE_ID)
-        db.session.add(act)
-        db.session.commit()
-        current_app.logger.info("Created activity on first startup")
-        db.session.commit()
+        if Config.DEMO_MODE:
+            create_demo_machines()
+        else:
+            create_default_machine()
 
     if len(Settings.query.all()) == 0:
         settings = Settings(threshold=500, dashboard_update_interval_s=10)
@@ -134,3 +105,103 @@ def setup_database():
         db.session.commit()
         current_app.logger.info("Created default settings on first startup")
 
+    if Config.DEMO_MODE:
+        if len(DemoSettings.query.all()) == 0:
+            settings = DemoSettings(last_machine_simulation=(datetime.now() - timedelta(days=7)))
+            db.session.add(settings)
+            db.session.commit()
+            current_app.logger.info("Created default settings on first startup")
+
+
+def create_default_activity_codes():
+    no_user_code = ActivityCode(id=Config.NO_USER_CODE_ID,
+                                code="NU",
+                                short_description="No User",
+                                long_description="No user is logged onto the machine",
+                                graph_colour="#ffffff")
+    db.session.add(no_user_code)
+
+    unexplained_code = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                                    code="DO",
+                                    short_description='Down',
+                                    long_description="Downtime that doesn't have an explanation from the user",
+                                    graph_colour='#b22222')
+    db.session.add(unexplained_code)
+    uptime_code = ActivityCode(id=Config.UPTIME_CODE_ID,
+                               code="UP",
+                               short_description='Up',
+                               long_description='The machine is in use',
+                               graph_colour='#00ff80')
+    db.session.add(uptime_code)
+    setting_code = ActivityCode(id=Config.SETTING_CODE_ID,
+                                code="ST",
+                                short_description="Setting",
+                                long_description="The machine is being set up",
+                                graph_colour="#ff8000")
+    db.session.add(setting_code)
+    db.session.commit()
+    current_app.logger.info("Created default activity codes on first startup")
+
+
+def create_demo_activity_codes():
+    ac1 = ActivityCode(id=5,
+                       code="OB",
+                       short_description="Operator Break",
+                       long_description="Operator has taken a break",
+                       graph_colour="#dd9313")
+    db.session.add(ac1)
+
+    ac2 = ActivityCode(id=6,
+                       code="NM",
+                       short_description="No material",
+                       long_description="The machine is short of material",
+                       graph_colour="#d60092")
+    db.session.add(ac2)
+
+    ac3 = ActivityCode(id=7,
+                       code="SM",
+                       short_description="Scheduled Maintenance",
+                       long_description="",
+                       graph_colour="#00d6cf")
+    db.session.add(ac3)
+    db.session.commit()
+    current_app.logger.info("Created demo activity codes on first startup")
+
+
+def create_default_machine():
+    machine1 = Machine(name="Machine 1",
+                       device_ip="127.0.0.1",
+                       group_id=1,
+                       schedule_id=1)
+    db.session.add(machine1)
+    db.session.commit()
+    current_app.logger.info("Created default machine on first startup")
+
+    act = Activity(machine_id=machine1.id,
+                   timestamp_start=datetime.now().timestamp(),
+                   machine_state=Config.MACHINE_STATE_OFF,
+                   activity_code_id=Config.NO_USER_CODE_ID)
+    db.session.add(act)
+    db.session.commit()
+    current_app.logger.info("Created activity on first startup")
+    db.session.commit()
+
+
+def create_demo_machines():
+    ip_end = 0
+    for machine_name in ["Brother 1",
+                         "Brother 2",
+                         "Bridgeport 1",
+                         "Bridgeport 2",
+                         "Makino",
+                         "FANUC 1",
+                         "FANUC 2",
+                         "FANUC 3"]:
+        ip_end += 1
+        machine = Machine(name=machine_name,
+                          device_ip="127.0.0." + str(ip_end),
+                          group_id=randrange(1, 3),
+                          schedule_id=1)
+        db.session.add(machine)
+    db.session.commit()
+    current_app.logger.info("Created default machine on first startup")

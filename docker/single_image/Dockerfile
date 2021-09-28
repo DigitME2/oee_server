@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y supervisor nginx
 COPY app app
 COPY migrations migrations
 COPY celery_worker.py celery_worker.py
+COPY /docker/single_image/Dockerfile Dockerfile
 COPY /docker/single_image/supervisord.conf supervisord.conf
 COPY /docker/single_image/example-config.py config.py
 

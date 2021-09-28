@@ -143,8 +143,13 @@ class Settings(db.Model):
     dashboard_update_interval_s = db.Column(db.Integer)
     threshold = db.Column(db.Integer)
 
-
     def __repr__(self):
         return f"<Settings threshold:'{self.threshold}'>"
+
+
+class DemoSettings(db.Model):
+    # Only allow one row in this table
+    id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
+    last_machine_simulation = db.Column(db.DateTime)
 
 

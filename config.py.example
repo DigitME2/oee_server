@@ -6,7 +6,8 @@ class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
     DEMO_MODE = True
-    DATA_SIMULATION_FREQUENCY = 1
+    DATA_SIMULATION_FREQUENCY_SECONDS = 60
+    DAYS_BACKFILL = 3  # The number of days of data simulation to run in the past on cold startup
 
     # PostgreSQL database
     DATABASE_USER = os.environ.get('DATABASE_USER')
@@ -40,8 +41,8 @@ class Config(object):
     if not os.path.exists('logs'):
         os.mkdir('logs')
     FLASK_LOG_FILE = os.path.join('logs', 'oee_app.log')
-    STREAM_LOGGING_LEVEL = logging.DEBUG
-    FILE_LOGGING_LEVEL = logging.DEBUG
+    STREAM_LOGGING_LEVEL = logging.INFO
+    FILE_LOGGING_LEVEL = logging.INFO
     ROTATING_LOG_FILE_MAX_BYTES = 1024000
     ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')

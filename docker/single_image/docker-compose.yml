@@ -8,7 +8,7 @@ services:
       - mode: host
         protocol: tcp
         published: 80
-        target: 8080
+        target: 8000
   redis:
     image: redis
     ports:

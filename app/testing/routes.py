@@ -2,6 +2,7 @@ from random import randrange
 
 from app.data_analysis.oee import *
 from app.default.db_helpers import machine_schedule_active
+from app.default.machine_simulator import backfill_missed_simulations
 from app.default.models import *
 from app.testing import bp
 from config import Config
@@ -10,9 +11,8 @@ from flask import render_template, current_app
 
 @bp.route('/test')
 def test():
-    machine = Machine.query.get(1)
-    print(machine_schedule_active(machine))
-    return render_template("testing/test.html")
+    backfill_missed_simulations()
+    return "test"
 
 
 @bp.route('/test2')
