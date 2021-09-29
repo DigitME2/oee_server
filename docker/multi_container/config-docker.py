@@ -5,7 +5,11 @@ import os
 class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
-    DEMO_MODE = True
+    DEMO_MODE = bool(os.environ.get('DEMO_MODE') or True)
+    # Frequency to run machine simulations (switching activities, starting jobs etc)
+    DATA_SIMULATION_FREQUENCY_SECONDS = int(os.environ.get('DATA_SIMULATION_FREQUENCY_SECONDS') or 60)
+    # The number of days of data simulation to run in the past on cold startup
+    DAYS_BACKFILL = int(os.environ.get("DAYS_BACKFILL") or 3)
 
     # PostgreSQL database
     # DATABASE_USER = os.environ.get('DATABASE_USER')

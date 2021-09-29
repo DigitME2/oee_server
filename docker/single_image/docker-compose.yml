@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.3"
 services:
   oee_webapp:
     image: digitme2/oee_webapp:single-image
@@ -12,14 +12,14 @@ services:
     environment:
       # Demo mode will make fake data
       DEMO_MODE: 1
+      # When using a SQLite database, use the date as the db name. This effectively resets the database every day
+      USE_FRESH_DAILY_SQLITE_DB: 0
       # How often to fake the data (too often, and it will take a long time when back-filling)
       DATA_SIMULATION_FREQUENCY_SECONDS: 60
       # How many days worth of fake data to fill in when the server cold starts
       DAYS_BACKFILL: 3
   redis:
     image: redis
-    ports:
-      - "6379:6379"
 
 volumes:
   oee_appdata_vol:
