@@ -1,39 +1,31 @@
 import logging
 import os
+from datetime import datetime
+from distutils.util import strtobool
 
 
 class Config(object):
 
     # Run the server in a demo mode, with fake data and an intro screen
-    DEMO_MODE = bool(os.environ.get('DEMO_MODE') or True)
+    DEMO_MODE = strtobool(os.environ.get("DEMO_MODE", "false"))
+    # When using a SQLite database, use the date as the db name. This effectively resets the database every day
+    USE_FRESH_DAILY_SQLITE_DB = strtobool(os.environ.get("USE_FRESH_DAILY_SQLITE_DB", "false"))
     # Frequency to run machine simulations (switching activities, starting jobs etc)
-    DATA_SIMULATION_FREQUENCY_SECONDS = int(os.environ.get('DATA_SIMULATION_FREQUENCY_SECONDS') or 60)
+    DATA_SIMULATION_FREQUENCY_SECONDS = int(os.environ.get('DATA_SIMULATION_FREQUENCY_SECONDS', 60))
     # The number of days of data simulation to run in the past on cold startup
-    DAYS_BACKFILL = int(os.environ.get("DAYS_BACKFILL") or 3)
-
-    # PostgreSQL database
-    # DATABASE_USER = os.environ.get('DATABASE_USER')
-    # DATABASE_ADDRESS = os.environ.get('DATABASE_ADDRESS')
-    # DATABASE_PORT = os.environ.get('DATABASE_PORT')
-    # DATABASE_PASSWORD = os.environ.get('DATABASE_PASSWORD')
-    # if DEMO_MODE:
-    #     DATABASE_NAME = "oee_webapp_demo"
-    # else:
-    #     DATABASE_NAME = os.environ.get('DATABASE_NAME') or "oee_webapp"
-    # SQLALCHEMY_DATABASE_URI = "postgres://{user}:{password}@{address}:{port}/{database}".format(
-    #     user=DATABASE_USER,
-    #     password=DATABASE_PASSWORD,
-    #     address=DATABASE_ADDRESS,
-    #     port=DATABASE_PORT,
-    #     database=DATABASE_NAME)
+    DAYS_BACKFILL = int(os.environ.get("DAYS_BACKFILL", 3))
 
     # SQLite database
-    db_path = '/home/appdata/prod.db'
+    if USE_FRESH_DAILY_SQLITE_DB:
+        db_name = datetime.now().strftime("%Y-%M-%d") + ".db"
+    else:
+        db_name = "prod.db"
+    db_path = '/data/' + db_name
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
 
     SQLALCHEMY_ECHO = False
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or "ysd2G-CHANGETHIS-353kuD"
+    SECRET_KEY = os.environ.get('SECRET_KEY') or "ysd7o323kuD"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath(os.path.join('../../app', 'static', 'uploads'))
 
@@ -42,8 +34,8 @@ class Config(object):
     if not os.path.exists('../../logs'):
         os.mkdir('../../logs')
     FLASK_LOG_FILE = os.path.join('../../logs', 'oee_app.log')
-    STREAM_LOGGING_LEVEL = logging.DEBUG
-    FILE_LOGGING_LEVEL = logging.DEBUG
+    STREAM_LOGGING_LEVEL = logging.INFO
+    FILE_LOGGING_LEVEL = logging.INFO
     ROTATING_LOG_FILE_MAX_BYTES = 1024000
     ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')

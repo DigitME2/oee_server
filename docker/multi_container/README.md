@@ -1,1 +1,0 @@
-This was intended to run a multi container image, but was abandoned when it was discovered that the IP address of devices is lost when passed through Docker. The server requires the IP address of the devices to operate. Found a few workarounds online but none of them seemed to work for Docker on Windows. Leaving these files here in case we try to fix in the future.
