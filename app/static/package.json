@@ -1,0 +1,29 @@
+{
+  "name": "oee_webapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sam Bannister",
+  "license": "ISC",
+  "dependencies": {
+    "@eastdesire/jscolor": "^2.4.6",
+    "@popperjs/core": "^2.10.2",
+    "bootstrap": "^4.6.0",
+    "bootstrap-datepicker": "^1.9.0",
+    "datatables.net": "^1.11.3",
+    "datatables.net-bs4": "^1.11.3",
+    "datatables.net-buttons": "^2.0.1",
+    "datatables.net-buttons-bs4": "^2.0.1",
+    "datatables.net-responsive": "^2.2.9",
+    "datatables.net-responsive-bs4": "^2.2.9",
+    "datatables.net-scroller": "^2.0.5",
+    "datatables.net-scroller-bs4": "^2.0.5",
+    "jquery": "^3.6.0",
+    "jquery-ui-dist": "^1.12.1",
+    "jszip": "^3.7.1",
+    "pdfmake": "^0.2.2"
+  }
+}
