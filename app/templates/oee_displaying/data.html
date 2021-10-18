@@ -38,8 +38,8 @@
 
 
     {# Datepicker libraries #}
-    <script src="{{ url_for('static', filename='libraries/bootstrap-datepicker-master/js/bootstrap-datepicker.js') }}" type="text/javascript"></script>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/datepicker.css') }}">
+    <script src="{{ url_for('static', filename='node_modules/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css')}}" type="text/css" rel="stylesheet">
 
 
     <script type="application/javascript">
@@ -83,25 +83,26 @@
 
 
     {# Datatables core libraries #}
-    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/jquery.dataTables.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/js/dataTables.bootstrap4.min.js') }}" type="text/javascript"></script>
-    <link href="{{ url_for('static', filename='libraries/DataTables/DataTables-1.10.21/css/dataTables.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
+    <script src="{{ url_for('static', filename='node_modules/datatables.net/js/jquery.dataTables.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
 
     {# To make the table size responsive for mobile #}
-    <script src="{{ url_for('static', filename='libraries/DataTables/Responsive-2.2.5/js/dataTables.responsive.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Responsive-2.2.5/js/responsive.bootstrap4.min.js') }}" type="text/javascript"></script>
-    <link href="{{ url_for('static', filename='libraries/DataTables/Responsive-2.2.5/css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-responsive/js/dataTables.responsive.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
 
     {#  Buttons to download the table #}
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/dataTables.buttons.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.bootstrap4.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js') }}" type="text/javascript"></script>
-    <link href="{{ url_for('static', filename='libraries/DataTables/Buttons-1.6.2/css/buttons.bootstrap4.css') }}" type="text/css" rel="stylesheet">
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons/js/dataTables.buttons.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons/js/buttons.html5.min.js') }}" type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css') }}" type="text/css" rel="stylesheet">
 
     {# Table download format options #}
-    <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/pdfmake.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/pdfmake-0.1.36/vfs_fonts.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='libraries/DataTables/JSZip-2.5.0/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='node_modules/pdfmake/build/pdfmake.min.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/pdfmake/build/vfs_fonts.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/jszip/dist/jszip.min.js') }}"></script>
+
 
     <script>
         {#Script to add the datatable library to the table#}
