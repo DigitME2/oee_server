@@ -153,7 +153,7 @@ def dashboard():
                                       graph_end=end.timestamp(),
                                       machine_ids=machine_ids,
                                       title=graph_title,
-                                      include_plotlyjs=False)
+                                      include_plotlyjs=True)
     else:
 
         graph = create_dashboard_gantt(graph_start=start.timestamp(),

@@ -89,7 +89,7 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
     # Pass the changed layout back to fig
     fig['layout'] = layout
     config = {'responsive': True}
-    return plot(fig, output_type="div", include_plotlyjs=False, config=config)
+    return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
 def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
@@ -133,10 +133,10 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     layout.showlegend = True
     fig['layout'] = layout
     config = {'responsive': True}
-    return plot(fig, output_type="div", include_plotlyjs=False, config=config)
+    return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_plotlyjs=False):
+def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_plotlyjs=True):
     """ Creates a gantt plot of OEE for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
@@ -242,7 +242,7 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
            'layout': layout}
     return plot(fig,
                 output_type="div",
-                include_plotlyjs=False)
+                include_plotlyjs=True)
 
 
 def create_oee_line(graph_start_date, graph_end_date):
@@ -270,7 +270,7 @@ def create_oee_line(graph_start_date, graph_end_date):
 
     return plot(fig,
                 output_type="div",
-                include_plotlyjs=False,
+                include_plotlyjs=True,
                 config={"showLink": False})
 
 
@@ -296,7 +296,7 @@ def create_downtime_bar(machine_ids, graph_start_timestamp, graph_end_timestamp)
     fig.layout.title = "Total Time (Minutes)"
     return plot(fig,
                 output_type="div",
-                include_plotlyjs=False,
+                include_plotlyjs=True,
                 config={"showLink": False})
 
 
