@@ -192,7 +192,9 @@ def get_daily_machine_oee(machine_id, date):
         end = start + timedelta(days=1)
         try:
             oee = calculate_machine_oee(machine_id, timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
-        except OEECalculationException:
+        except OEECalculationException as e:
+            current_app.logger.warn(f"Failed to calculate OEE for machine id {machine_id} on {date}")
+            current_app.logger.warn(e)
             return 0
         daily_machine_oee = DailyOEE(machine_id=machine_id, date=date, oee=oee)
         db.session.add(daily_machine_oee)
