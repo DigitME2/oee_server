@@ -15,11 +15,6 @@ def test():
     return "test"
 
 
-@bp.route('/test2')
-def test2():
-    return render_template("testing/test2.html")
-
-
 def sort_activities(act):
     return act.activity_code.id
 
@@ -81,7 +76,7 @@ def change_job(current_job, time, user_id, machine_id):
                   user_id=user_id,
                   user_session_id=1,
                   wo_number="WO-" + str(randrange(1, 1000)),
-                  part_number="P" + str(randrange(1,1000)),
+                  part_number="P" + str(randrange(1, 1000)),
                   planned_set_time=str(randrange(1, 100)),
                   planned_run_time=str(randrange(1, 100)),
                   planned_quantity=str(randrange(1, 100)),
