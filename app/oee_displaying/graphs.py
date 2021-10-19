@@ -93,7 +93,7 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
 
 
 def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
-    """ Creates a gantt plot of OEE for all machines in the database between given times
+    """ Creates a gantt plot of activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
@@ -137,7 +137,7 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
 
 
 def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_plotlyjs=True):
-    """ Creates a gantt plot of OEE for all machines in the database between given times
+    """ Creates a gantt plot of activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
