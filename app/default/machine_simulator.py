@@ -5,7 +5,7 @@ from random import randrange
 from flask import current_app
 
 from app import Config
-from app.default.db_helpers import complete_last_activity, machine_schedule_active
+from app.default.db_helpers import complete_last_activity, machine_schedule_active, create_scheduled_activities
 from app.default.models import Machine, Job, Activity, ActivityCode, DemoSettings
 from app.extensions import db
 from app.login.models import User, UserSession
@@ -125,9 +125,15 @@ def simulate_machines(simulation_datetime=None):
 
 
 def backfill_missed_simulations():
-    simulation_start = DemoSettings.query.get(1).last_machine_simulation
-    if (datetime.now() - simulation_start) > timedelta(Config.DAYS_BACKFILL):
+    last_simulation = DemoSettings.query.get(1).last_machine_simulation
+    # If the last simulation was too long ago, start from the requested days backfill
+    if (datetime.now() - last_simulation) > timedelta(Config.DAYS_BACKFILL):
         simulation_start = datetime.now() - timedelta(Config.DAYS_BACKFILL)
+    else:
+        simulation_start = last_simulation
+    # Create scheduled activities
+    for i in dt_range(simulation_start, datetime.now(), 86400):  # 86400 = seconds in a day
+        create_scheduled_activities(i)
     for i in dt_range(simulation_start, datetime.now(), Config.DATA_SIMULATION_FREQUENCY_SECONDS):
         simulate_machines(i)
 
