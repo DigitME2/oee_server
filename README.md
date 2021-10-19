@@ -5,6 +5,12 @@ This project was made to monitor OEE for machines
 This constitutes the central server, which can receive live OEE data from client and is accessed through a flask webapp.
 
 
+## Setup
+
+Run `npm install` in the `/app/static` directory.
+
+Rename `config.py.example` to `config.py` and edit config options.
+
 
 ## Documentation
 
