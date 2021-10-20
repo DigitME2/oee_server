@@ -2,12 +2,18 @@
 
 FROM python:3.8
 
+RUN apt-get update && apt-get install -y supervisor nginx npm
+
+# Set up JS libraries
+RUN mkdir -p /home/oee_webapp/app/static
+WORKDIR /home/oee_webapp/app/static
+COPY /app/static/package.json .
+RUN npm install
+
 WORKDIR /home/oee_webapp
 
 COPY /docker/requirements.txt requirements.txt
 RUN pip install -r requirements.txt && pip install gunicorn
-
-RUN apt-get update && apt-get install -y supervisor nginx
 
 COPY app app
 COPY migrations migrations
@@ -20,10 +26,6 @@ COPY /docker/example-config.py config.py
 RUN rm /etc/nginx/sites-enabled/default
 COPY /docker/nginx-server-conf /etc/nginx/sites-enabled/flask_oee
 
-# Move the flask app's static folder to the /data directory so it will lie in the docker volume
-RUN mkdir /data
-RUN mv /home/oee_webapp/app/static /data/static
-RUN ln -s /data/static /home/oee_webapp/app/static
 
 ENV FLASK_APP "app:create_app()"
 ENV C_FORCE_ROOT=1
