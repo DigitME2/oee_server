@@ -116,8 +116,15 @@
                 });
             }
         );
+    </script>
 
-
+{#    Set the page title to match the title of any tables. This will also set the title of any downloaded file #}
+    <script>
+    $(document).ready(function () {
+        if (document.getElementById("table-title")) {
+            document.title = document.getElementById("table-title").innerText
+        }
+    })
     </script>
 
 {% endblock %}

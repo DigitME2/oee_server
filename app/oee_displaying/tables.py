@@ -95,7 +95,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
     table = WOTable(items=items)
 
     # Add a title manually to the table html
-    table_html = f"<h1 class=\"table-title\">" \
+    table_html = f"<h1 id=\"table-title\">" \
                  f"Work Orders {start_date.strftime('%d-%b-%y')} to {end_date.strftime('%d-%b-%y')}" \
                  f"</h1>"\
                  + table.__html__()
@@ -140,7 +140,7 @@ def get_job_table(start_date: date, end_date: date) -> str:
 
     table = JobTable(items=items)
     # Add a title manually to the table html
-    table_html = f"<h1 class=\"table-title\">" \
+    table_html = f"<h1 id=\"table-title\">" \
                  f"Jobs {start_date.strftime('%d-%b-%y')} to {end_date.strftime('%d-%b-%y')}<" \
                  f"/h1>"\
                  + table.__html__()
@@ -166,7 +166,7 @@ class JobTable(Table):
 def get_raw_database_table(table_name):
     statement = f"SELECT * FROM {table_name};"
     df = pd.read_sql(statement, db.engine)
-    table_html = f"<h1 class=\"table-title\"> Database Table {table_name}</h1>" + \
+    table_html = f"<h1 id=\"table-title\"> Database Table {table_name}</h1>" + \
                  df.to_html(classes="dataTable table table-striped table-bordered")
 
     return table_html
@@ -213,7 +213,7 @@ def get_user_activity_table(timestamp_start, timestamp_end):
     table = Tbl(items=items)
     start = datetime.fromtimestamp(timestamp_start)
     end = datetime.fromtimestamp(timestamp_end)
-    table_html = f"<h1 class=\"table-title\">" \
+    table_html = f"<h1 id=\"table-title\">" \
                  f"Activity Durations {start.strftime('%H.%M %d-%b-%y')} to {end.strftime('%H.%M %d-%b-%y')}<" \
                  f"/h1>"\
                  + table.__html__()
