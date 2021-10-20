@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, date
 
 import pandas as pd
 from flask import current_app
@@ -26,7 +26,7 @@ class WOTable(Table):
     planned_quantity = Col("Planned Quantity")
 
 
-def get_work_order_table(start_date, end_date):
+def get_work_order_table(start_date: date, end_date: date) -> str:
     start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
     end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
     jobs = Job.query.filter(Job.start_time <= end_timestamp).filter(Job.end_time >= start_timestamp)
@@ -94,10 +94,16 @@ def get_work_order_table(start_date, end_date):
         items.append(work_order)
     table = WOTable(items=items)
 
-    return table.__html__()
+    # Add a title manually to the table html
+    table_html = f"<h1 class=\"table-title\">" \
+                 f"Work Orders {start_date.strftime('%d-%b-%y')} to {end_date.strftime('%d-%b-%y')}" \
+                 f"</h1>"\
+                 + table.__html__()
+
+    return table_html
 
 
-def get_job_table(start_date, end_date):
+def get_job_table(start_date: date, end_date: date) -> str:
     start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
     end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
     jobs = Job.query.filter(Job.start_time <= end_timestamp).filter(Job.end_time >= start_timestamp)
@@ -133,8 +139,13 @@ def get_job_table(start_date, end_date):
         items.append(item)
 
     table = JobTable(items=items)
+    # Add a title manually to the table html
+    table_html = f"<h1 class=\"table-title\">" \
+                 f"Jobs {start_date.strftime('%d-%b-%y')} to {end_date.strftime('%d-%b-%y')}<" \
+                 f"/h1>"\
+                 + table.__html__()
 
-    return table.__html__()
+    return table_html
 
 
 class JobTable(Table):
@@ -155,7 +166,8 @@ class JobTable(Table):
 def get_raw_database_table(table_name):
     statement = f"SELECT * FROM {table_name};"
     df = pd.read_sql(statement, db.engine)
-    table_html = df.to_html(classes="dataTable table table-striped table-bordered")
+    table_html = f"<h1 class=\"table-title\"> Database Table {table_name}</h1>" + \
+                 df.to_html(classes="dataTable table table-striped table-bordered")
 
     return table_html
 
@@ -199,7 +211,13 @@ def get_user_activity_table(timestamp_start, timestamp_end):
         items.append(user_dict)
 
     table = Tbl(items=items)
-    return table.__html__()
+    start = datetime.fromtimestamp(timestamp_start)
+    end = datetime.fromtimestamp(timestamp_end)
+    table_html = f"<h1 class=\"table-title\">" \
+                 f"Activity Durations {start.strftime('%H.%M %d-%b-%y')} to {end.strftime('%H.%M %d-%b-%y')}<" \
+                 f"/h1>"\
+                 + table.__html__()
+    return table_html
 
 
 def get_machine_activity_table(timestamp_start, timestamp_end):
