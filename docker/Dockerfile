@@ -2,7 +2,7 @@
 
 FROM python:3.8
 
-RUN apt-get update && apt-get install -y supervisor nginx npm
+RUN apt-get update && apt-get install -y supervisor npm
 
 # Set up JS libraries
 RUN mkdir -p /home/oee_webapp/app/static
