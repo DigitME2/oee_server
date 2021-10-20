@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   oee_webapp:
-    image: digitme2/oee_webapp:single-image
+    image: digitme2/oee_webapp
     volumes:
       - oee_appdata_vol:/data
     ports:
