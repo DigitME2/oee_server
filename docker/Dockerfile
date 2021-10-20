@@ -22,11 +22,6 @@ COPY /docker/Dockerfile Dockerfile
 COPY /docker/supervisord.conf supervisord.conf
 COPY /docker/example-config.py config.py
 
-# Set up nginx
-RUN rm /etc/nginx/sites-enabled/default
-COPY /docker/nginx-server-conf /etc/nginx/sites-enabled/flask_oee
-
-
 ENV FLASK_APP "app:create_app()"
 ENV C_FORCE_ROOT=1
 
