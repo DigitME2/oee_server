@@ -17,10 +17,14 @@ class Config(object):
 
     # SQLite database
     if USE_FRESH_DAILY_SQLITE_DB:
-        db_name = datetime.now().strftime("%Y-%M-%d") + ".db"
+        db_name = datetime.now().strftime("%Y-%M-%d")
     else:
-        db_name = "prod.db"
-    db_path = '/data/' + db_name
+        db_name = "prod"
+    if DEMO_MODE:
+        db_name += "_demo"
+    db_name += ".db"
+    package_dir = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(package_dir, db_name)
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
 
     SQLALCHEMY_ECHO = False

@@ -7,4 +7,4 @@ app/static/temp
 /app/testing/
 /logs
 config.py
-*prod.db
+*.db
