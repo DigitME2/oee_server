@@ -101,3 +101,17 @@ class RawDatabaseTableForm(FlaskForm):
     key = SelectField(label="Table name", validators=[DataRequired()], choices=[("users", "Users"), ("machines", "Machines")])
 
     submit = SubmitField('Submit', id="raw_database_table_submit")
+
+
+class SchedulesGanttForm(FlaskForm):
+    form_template = "key_date_time"
+    graph_name = "Machine Schedule Gantt Chart"
+    description = "A Gantt chart showing the scheduled activity of a single machine or multiple machines. Time is plotted on the x-axis."
+
+    key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")], id="gantt_machines")
+    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, label="Start Date (DD-MM-YYYY)", default=datetime.now())
+    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, label="End Date (DD-MM-YYYY)", default=datetime.now() + timedelta(days=1))
+    start_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_start_time")
+    end_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_end_time")
+
+    submit = SubmitField('Submit', id="gantt_submit")

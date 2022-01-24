@@ -91,7 +91,6 @@ def simulate_machines(simulation_datetime=None):
     for machine in Machine.query.all():
         chance_to_skip_simulation = 0.90
         if random.random() < chance_to_skip_simulation:
-            current_app.logger.debug(f"skipping machine {machine.id} simulation")
             continue
         current_app.logger.debug(f"simulating machine action for machine {machine.id}")
         # Get the machine's user by using the machine id as the index on a fake names list. Create it if it does not exist

@@ -9,14 +9,18 @@ from plotly.graph_objs.layout import Shape, Annotation
 from plotly.offline import plot
 
 from app.data_analysis.oee import calculate_activity_percent, get_daily_group_oee, get_activity_duration_dict
-from app.default.db_helpers import get_machine_activities
-from app.default.models import Activity, Machine, ActivityCode, MachineGroup
+from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
+from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
 
 logger = getLogger()
 
-#todo add titles to graphs
+
+SCHEDULED_UPTIME_KEY_STRING = "Scheduled uptime"
+SCHEDULED_DOWNTIME_KEY_STRING = "Scheduled downtime"
+
+# todo add titles to graphs
 
 
 def apply_default_layout(layout):
@@ -218,6 +222,52 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
                 config={"displayModeBar": False, "showLink": False})
 
 
+def create_schedules_gantt(graph_start, graph_end, machine_ids: list):
+    """ Creates a gantt plot of scheduled activities for all machines in the database between given times
+    graph_start = the start time of the graph
+    graph_end = the end time of the graph
+    machine_ids = a list of ids to include in the graph"""
+
+    scheduled_activities: list[ScheduledActivity] = []
+    if len(machine_ids) > 1:
+        machine_ids.sort()
+    for machine_id in machine_ids:
+        scheduled_activities.extend(get_machine_scheduled_activities(machine_id=machine_id, timestamp_start=graph_start,
+                                                                     timestamp_end=graph_end))
+        # If a machine has no activities, add a fake one so it still shows on the graph
+        if len(scheduled_activities) == 0:
+            scheduled_activities.append(ScheduledActivity(timestamp_start=graph_start, timestamp_end=graph_start))
+        else:
+            scheduled_activities.extend(scheduled_activities)
+
+    df = get_scheduled_activities_df(activities=scheduled_activities,
+                                     group_by="machine_name",
+                                     graph_start=graph_start,
+                                     graph_end=graph_end,
+                                     crop_overflow=True)
+
+    if len(df) == 0:
+        return "No machine activity"
+    # Create the colours dictionary using codes' colours from the database
+    red = "#ff6347"
+    green = "#8fbc8f"
+    colours = {SCHEDULED_UPTIME_KEY_STRING: green,
+               SCHEDULED_DOWNTIME_KEY_STRING: red}
+    fig = ff.create_gantt(df,
+                          group_tasks=True,
+                          colors=colours,
+                          index_col='Code',
+                          bar_width=0.4)
+
+    # Create a layout object using the layout automatically created
+    layout = Layout(fig['layout'])
+    layout = apply_default_layout(layout)
+    layout.showlegend = True
+    fig['layout'] = layout
+    config = {'responsive': True}
+    return plot(fig, output_type="div", include_plotlyjs=True, config=config)
+
+
 def create_downtime_pie(machine_id, graph_start, graph_end):
     machine = Machine.query.get_or_404(machine_id)
     labels = []
@@ -249,7 +299,7 @@ def create_oee_line(graph_start_date, graph_end_date):
     """ Takes two timestamps and creates a line graph of the OEE for each machine group between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
     groups = MachineGroup.query.all()
-    d = date(2020, 1, 1)
+    d = date(2022, 1, 18)
     dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
     if len(dates) == 0:
         return 0
@@ -342,6 +392,51 @@ def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflo
 
         task = operator.attrgetter("machine.name")(act)
 
+        df.append(dict(Task=task,
+                       Start=datetime.fromtimestamp(start),
+                       Finish=datetime.fromtimestamp(end),
+                       Code=code))
+
+    return df
+
+
+def get_scheduled_activities_df(activities: list[ScheduledActivity], group_by, graph_start, graph_end,
+                                crop_overflow=True):
+    """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
+        crop_overflow will crop activities that extend past the requested graph start and end times"""
+
+    df = []
+    for act in activities:
+        if act.scheduled_machine_state is None:
+            logger.warning("Found scheduled activity without scheduled_machine_state ID=" + str(act.id))
+            continue
+        # Don't show values outside of graph time range
+        if crop_overflow:
+            if act.timestamp_start < graph_start:
+                start = graph_start
+            else:
+                start = act.timestamp_start
+            if act.timestamp_end is None:
+                # Extend the current activity to either graph end or current time
+                if graph_end >= datetime.now().timestamp():
+                    end = datetime.now().timestamp()
+                else:
+                    end = graph_end
+            elif act.timestamp_end > graph_end:
+                end = graph_end
+            else:
+                end = act.timestamp_end
+        # Use actual times if they're not being cropped
+        else:
+            start = act.timestamp_start
+            end = act.timestamp_end
+
+        if act.scheduled_machine_state == Config.MACHINE_STATE_RUNNING:
+            code = SCHEDULED_UPTIME_KEY_STRING
+        else:
+            code = SCHEDULED_DOWNTIME_KEY_STRING
+
+        task = operator.attrgetter("machine.name")(act)
         df.append(dict(Task=task,
                        Start=datetime.fromtimestamp(start),
                        Finish=datetime.fromtimestamp(end),

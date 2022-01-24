@@ -66,7 +66,7 @@ def get_machine_current_user(machine_id):
         return -1
 
 
-def parse_requested_machine_list(requested_machines):
+def parse_requested_machine_list(requested_machines) -> list:
     """Parse the machines selected in a dropdown list and return a list of the machine ids"""
     if requested_machines == "all":
         return list(machine.id for machine in Machine.query.all())
@@ -81,7 +81,7 @@ def parse_requested_machine_list(requested_machines):
         return list(requested_machines[2:])
 
     else:
-        return None
+        return []
 
 
 

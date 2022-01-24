@@ -7,12 +7,14 @@ from sqlalchemy import inspect
 from app.extensions import db
 from app.default.models import Machine, MachineGroup, Settings
 from app.oee_displaying import bp
-from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, state_gantt_chart, GanttForm, OeeLineForm, DowntimeBarForm, JobTableForm, \
-    WOTableForm, RawDatabaseTableForm, ActivityDurationsTableForm
+from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, state_gantt_chart, GanttForm, OeeLineForm, \
+    DowntimeBarForm, JobTableForm, \
+    WOTableForm, RawDatabaseTableForm, ActivityDurationsTableForm, SchedulesGanttForm
 from app.oee_displaying.graphs import create_machine_gantt, create_multiple_machines_gantt, \
-    create_dashboard_gantt, create_oee_line, create_downtime_bar
+    create_dashboard_gantt, create_oee_line, create_downtime_bar, create_schedules_gantt
 from app.oee_displaying.helpers import get_machine_status, parse_requested_machine_list
-from app.oee_displaying.tables import get_work_order_table, get_job_table, get_raw_database_table, get_user_activity_table, get_machine_activity_table
+from app.oee_displaying.tables import get_work_order_table, get_job_table, get_raw_database_table, \
+    get_user_activity_table, get_machine_activity_table
 
 
 @bp.route('/data', methods=['GET', 'POST'])
@@ -40,13 +42,17 @@ def data():
     downtime_bar_form = DowntimeBarForm()
     downtime_bar_form.key.choices = machines_choices
 
+    schedule_gantt_form = SchedulesGanttForm()
+    schedule_gantt_form.key.choices = machines_choices
+
     job_table_form = JobTableForm()
     wo_table_form = WOTableForm()
     activity_table_form = ActivityDurationsTableForm()
     raw_db_table_form = RawDatabaseTableForm()
     raw_db_table_form.key.choices = table_name_choices
 
-    forms = [gantt_form, oee_line_form, downtime_bar_form, job_table_form, wo_table_form, activity_table_form, raw_db_table_form]
+    forms = [gantt_form, oee_line_form, downtime_bar_form, job_table_form, wo_table_form, activity_table_form,
+             raw_db_table_form, schedule_gantt_form]
 
     # Check which form has been sent by the user
     form_sent = next((form for form in forms if form.__class__.__name__ == request.form.get('formType')), None)
@@ -96,6 +102,13 @@ def data():
     elif isinstance(form_sent, RawDatabaseTableForm) and raw_db_table_form.validate_on_submit():
         graph = get_raw_database_table(table_name=raw_db_table_form.key.data)
 
+    elif isinstance(form_sent, SchedulesGanttForm) and schedule_gantt_form.validate_on_submit():
+        start = datetime.combine(date=schedule_gantt_form.start_date.data, time=schedule_gantt_form.start_time.data)
+        end = datetime.combine(date=schedule_gantt_form.end_date.data, time=schedule_gantt_form.end_time.data)
+        machine_ids = parse_requested_machine_list(schedule_gantt_form.key.data)
+        graph = create_schedules_gantt(machine_ids=machine_ids,
+                                       graph_start=start.timestamp(),
+                                       graph_end=end.timestamp())
 
     else:
         graph = ""

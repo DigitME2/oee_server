@@ -63,6 +63,21 @@ def get_current_machine_activity_id(target_machine_id):
         return current_activity.id
 
 
+def get_current_machine_schedule_activity_id(target_machine_id):
+    """ Get the current scheduled activity of a machine by grabbing the most recent entry without an end timestamp"""
+    # Get all activities without an end time
+    # The line below is causing a sql.programmingerror and im not sure why
+    activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id, ScheduledActivity.timestamp_end == None).all()
+
+    if len(activities) == 0:
+        current_app.logger.debug(f"No current scheduled activity on machine ID {target_machine_id}")
+        return None
+
+    elif len(activities) == 1:
+        current_app.logger.debug(f"Current scheduled activity for machine ID {target_machine_id} -> {activities[0]}")
+        return activities[0].id
+
+
 def get_current_user_activity_id(target_user_id):
     """ Get the current activity of a user by grabbing the most recent entry without an end timestamp"""
     # Get all activities without an end time
@@ -217,6 +232,15 @@ def get_machine_activities(machine_id, timestamp_start, timestamp_end):
         if current_act.timestamp_start <= timestamp_end:
             activities.append(current_act)
 
+    return activities
+
+
+def get_machine_scheduled_activities(machine_id, timestamp_start, timestamp_end):
+    """ Returns scheduled activities for a machine between two times"""
+    activities = ScheduledActivity.query \
+        .filter(ScheduledActivity.machine_id == machine_id) \
+        .filter(ScheduledActivity.timestamp_end >= timestamp_start) \
+        .filter(ScheduledActivity.timestamp_start <= timestamp_end).all()
     return activities
 
 
