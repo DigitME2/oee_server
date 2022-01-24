@@ -9,7 +9,6 @@ from app.default.models import Job, Activity, ActivityCode
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, UserSession
-from app.setup_database import WORKFLOW_IDS
 from config import Config
 
 
@@ -38,16 +37,16 @@ def android_check_state():
     current_app.logger.debug(f"Checking state for session {user_session}")
     current_app.logger.debug(f"Machine using {machine.workflow_type}")
 
-    if machine.workflow_type_id == WORKFLOW_IDS["Default"]:
+    if machine.workflow_type == "default":
         return check_default_machine_state(user_session)
 
-    if "android_pneumatrol" in current_app.blueprints.keys():
-        from app.android_pneumatrol.routes import check_pneumatrol_machine_state
-        if machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol_setting"] or \
-                machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol_no_setting"]:
-            return check_pneumatrol_machine_state(user_session)
+    if "android_pausable" in current_app.blueprints.keys():
+        from app.android_pausable.routes import check_pausable_machine_state
+        if machine.workflow_type == "pausable_setting" or \
+                machine.workflow_type == "pausable":
+            return check_pausable_machine_state(user_session)
     else:
-        current_app.logger.error(f"Incorrect workflow ID ({machine.workflow_type_id}) assigned to {machine}")
+        current_app.logger.error(f"Incorrect workflow ({machine.workflow_type}) assigned to {machine}")
         return 400
 
 

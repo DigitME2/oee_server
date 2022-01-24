@@ -26,7 +26,10 @@ The app uses redis as a Celery broker, which is needed for periodic tasks. Redis
 
 ## Documentation
 
+### Workflow Types
 
+Machines can be assigned different work flows to determine the flow of the display on the android tablet. 
+The default workflow has the user log in and go straight to the "start job" screen. Once this is entered, the user sees a screen that allows the current 
 
 ## Demo mode
 

@@ -4,13 +4,12 @@ from datetime import datetime
 from flask import request, current_app
 
 from app.extensions import db
-from app.android_pneumatrol.helpers import has_been_set
+from app.android_pausable.helpers import has_been_set
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_machines_last_job
 from app.default.models import Job, Activity, ActivityCode
 from app.login import bp
 from app.login.models import UserSession
 from config import Config
-from app.setup_database import WORKFLOW_IDS
 
 
 REQUESTED_DATA_JOB_START = {"wo_number": "Job Number   10W",
@@ -27,32 +26,32 @@ REQUESTED_DATA_JOB_END = {"actual_quantity": "Actual Qty",
 REQUESTED_DATA_SETTING_END = {"scrap_quantity": "Scrap Qty"}
 
 
-def check_pneumatrol_machine_state(user_session):
+def check_pausable_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     machine = user_session.machine
     if not any(job.active for job in user_session.jobs):
-        if machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol_no_setting"]:
-            return json.dumps({"workflow_type": "pneumatrol",
+        if machine.workflow_type == "pausable_no_setting":
+            return json.dumps({"workflow_type": "pausable",
                                "state": "no_job",
                                "setting": False,
                                "requested_data": REQUESTED_DATA_JOB_START})
-        elif machine.workflow_type_id == WORKFLOW_IDS["Pneumatrol_setting"]:
+        elif machine.workflow_type == "pausable_setting":
             if has_been_set(machine.id):
                 # Get the last job to autofill wo_number for the next user
                 last_job = get_machines_last_job(machine.id)
-                return json.dumps({"workflow_type": "pneumatrol",
+                return json.dumps({"workflow_type": "pausable",
                                    "state": "no_job",
                                    "setting": False,
                                    "requested_data": REQUESTED_DATA_JOB_START,
                                    "autofill_data": {"wo_number": last_job.wo_number}})
             else:
-                return json.dumps({"workflow_type": "pneumatrol",
+                return json.dumps({"workflow_type": "pausable",
                                    "state": "no_job",
                                    "setting": True,
                                    "requested_data": REQUESTED_DATA_SETTING_START})
 
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
-        return json.dumps({"workflow_type": "pneumatrol",
+        return json.dumps({"workflow_type": "pausable",
                            "state": "no_job"})
 
     # The current job is whatever job is currently active on the assigned machine
@@ -77,7 +76,7 @@ def check_pneumatrol_machine_state(user_session):
 
     # If the current activity is "setting", send to setting screen
     if current_activity_code.id == Config.SETTING_CODE_ID:
-        return json.dumps({"workflow_type": "pneumatrol",
+        return json.dumps({"workflow_type": "pausable",
                            "state": "setting",
                            "wo_number": current_job.wo_number,
                            "colour": colour,
@@ -85,7 +84,7 @@ def check_pneumatrol_machine_state(user_session):
 
     # If the machine is paused (indicated by the machine_state), send to pause screen
     elif current_machine_state == Config.MACHINE_STATE_OFF:
-        return json.dumps({"workflow_type": "pneumatrol",
+        return json.dumps({"workflow_type": "pausable",
                            "state": "paused",
                            "activity_codes": [code.short_description for code in selectable_codes],
                            "wo_number": current_job.wo_number,
@@ -97,7 +96,7 @@ def check_pneumatrol_machine_state(user_session):
         requested_data_on_end = REQUESTED_DATA_JOB_END
         # Change the actual quantity title to include the planned quantity
         requested_data_on_end["actual_quantity"] = f"Actual Qty (Pl={current_job.planned_quantity})"
-        return json.dumps({"workflow_type": "pneumatrol",
+        return json.dumps({"workflow_type": "pausable",
                            "state": "active_job",
                            "wo_number": current_job.wo_number,
                            "current_activity": current_activity_code.short_description,
@@ -105,17 +104,17 @@ def check_pneumatrol_machine_state(user_session):
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
 
 
-@bp.route('/pneumatrolstartjob', methods=['POST'])
-def pneumatrol_start_job():
-    return pneumatrol_1_start_job_or_setting(False)
+@bp.route('/pausablestartjob', methods=['POST'])
+def pausable_start_job():
+    return pausable_1_start_job_or_setting(False)
 
 
-@bp.route('/pneumatrolstartsetting', methods=['POST'])
-def pneumatrol_start_setting():
-    return pneumatrol_1_start_job_or_setting(True)
+@bp.route('/pausablestartsetting', methods=['POST'])
+def pausable_start_setting():
+    return pausable_1_start_job_or_setting(True)
 
 
-def pneumatrol_1_start_job_or_setting(setting):
+def pausable_1_start_job_or_setting(setting):
     if not request.is_json:
         return 404
     timestamp = datetime.now().timestamp()
@@ -176,8 +175,8 @@ def pneumatrol_1_start_job_or_setting(setting):
     return json.dumps({"success": True})
 
 
-@bp.route('/pneumatrolpausejob', methods=['POST'])
-def pneumatrol_1_pause_job():
+@bp.route('/pausablepausejob', methods=['POST'])
+def pausable_1_pause_job():
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if user_session is None:
@@ -199,8 +198,8 @@ def pneumatrol_1_pause_job():
     return json.dumps({"success": True})
 
 
-@bp.route('/pneumatrolresumejob', methods=['POST'])
-def pneumatrol_1_resume_job():
+@bp.route('/pausableresumejob', methods=['POST'])
+def pausable_1_resume_job():
     timestamp = datetime.now().timestamp()
     # Get the reason for the pause. The app will return the short_description of the activity code
     if "downtime_reason" not in request.json:
@@ -235,17 +234,17 @@ def pneumatrol_1_resume_job():
     return json.dumps({"success": True})
 
 
-@bp.route('/pneumatrolendjob', methods=['POST'])
-def pneumatrol_1_end_job():
-    return pneumatrol_end_job_or_setting(False)
+@bp.route('/pausableendjob', methods=['POST'])
+def pausable_1_end_job():
+    return pausable_end_job_or_setting(False)
 
 
-@bp.route('/pneumatrolendsetting', methods=['POST'])
-def pneumatrol_1_end_setting():
-    return pneumatrol_end_job_or_setting(True)
+@bp.route('/pausableendsetting', methods=['POST'])
+def pausable_1_end_setting():
+    return pausable_end_job_or_setting(True)
 
 
-def pneumatrol_end_job_or_setting(setting):
+def pausable_end_job_or_setting(setting):
     timestamp = datetime.now().timestamp()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if user_session is None:

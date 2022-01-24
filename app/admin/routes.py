@@ -10,7 +10,7 @@ from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm, \
     MachineGroupForm
 from app.admin.helpers import admin_required
-from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, WorkflowType
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.login.models import User
 from config import Config
@@ -188,12 +188,7 @@ def edit_machine():
         groups.append((str(g.id), str(g.name)))
     form.group.choices = groups
 
-    # Get a list of workflow types to create dropdown
-    workflow_types = []
-    for t in WorkflowType.query.all():
-        workflow_types.append((str(t.id), str(t.name)))
-    # Add the list of workflow types to the form
-    form.workflow_type.choices = workflow_types
+    form.workflow_type.choices = Config.WORKFLOW_TYPES
 
     # If new=true then the request is for a new machine to be created
     if 'new' in request.args and request.args['new'] == "True":
@@ -261,7 +256,7 @@ def edit_machine():
         # Save the new values on submit
         machine.name = form.name.data
         machine.active = form.active.data
-        machine.workflow_type_id = form.workflow_type.data
+        machine.workflow_type = form.workflow_type.data
         machine.schedule_id = form.schedule.data
         # If no machine group is selected, null the column instead of 0
         if form.group.data == '0':
@@ -299,7 +294,7 @@ def edit_machine():
     form.active.data = machine.active
     form.schedule.data = str(machine.schedule_id)
     form.group.data = str(machine.group_id)
-    form.workflow_type.data = str(machine.workflow_type_id)
+    form.workflow_type.data = str(machine.workflow_type)
 
     if not creating_new_machine:
         form.name.data = machine.name

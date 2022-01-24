@@ -3,17 +3,11 @@ from random import randrange
 
 from flask import current_app
 
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, WorkflowType, \
-    MachineGroup, DemoSettings, SHIFT_STRFTIME_FORMAT
+from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, MachineGroup, DemoSettings, \
+    SHIFT_STRFTIME_FORMAT
 from app.extensions import db
 from app.login.models import create_default_users
 from config import Config
-
-# A dictionary to define which workflow_ids belong to. Edit when adding additional work flows.
-# I did this to avoid a database call for every android request
-WORKFLOW_IDS = {"Default": 1,
-                "Pneumatrol_setting": 2,
-                "Pneumatrol_no_setting": 3}
 
 
 def setup_database():
@@ -46,38 +40,6 @@ def setup_database():
         db.session.add(schedule1)
         db.session.commit()
         current_app.logger.info("Created default schedule on first startup")
-
-    if len(WorkflowType.query.all()) == 0:
-        default = WorkflowType(name="Default",
-                               description="start job > "
-                                           "screen to select machine status with live updates > "
-                                           "enter parts >"
-                                           "end job")
-        db.session.add(default)
-        db.session.commit()
-        current_app.logger.info("Created default workflow type on first startup")
-
-        pneumatrol1 = WorkflowType(name="Pneumatrol_setting",
-                                   description="start job or setting decided by server > "
-                                               "active screen with option to pause > "
-                                               "pause screen gives option to select reason for pause > "
-                                               "resume back to active screen >"
-                                               "enter parts >"
-                                               "end job")
-        db.session.add(pneumatrol1)
-        db.session.commit()
-        current_app.logger.info("Created pneumatrol_setting workflow type on first startup")
-
-        pneumatrol2 = WorkflowType(name="Pneumatrol_no_setting",
-                                   description="start job screen> "
-                                               "active screen with option to pause > "
-                                               "pause screen gives option to select reason for pause > "
-                                               "resume back to active screen >"
-                                               "enter parts >"
-                                               "end job")
-        db.session.add(pneumatrol2)
-        db.session.commit()
-        current_app.logger.info("Created pneumatrol_no_setting workflow type on first startup")
 
     if len(MachineGroup.query.all()) == 0:
         if Config.DEMO_MODE:
@@ -199,6 +161,7 @@ def create_demo_machines():
                          "FANUC 3"]:
         ip_end += 1
         machine = Machine(name=machine_name,
+                          workflow_type="default",
                           device_ip="127.0.0." + str(ip_end),
                           group_id=randrange(1, 3),
                           schedule_id=1)
