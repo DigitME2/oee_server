@@ -1,0 +1,17 @@
+server {
+	server_name default;
+	listen 80;
+	listen [::]:80;
+
+	root /home/user/oee_webapp/app/static;
+	
+	location / {
+		try_files $uri @flask;
+	}	
+
+	location @flask {
+	    include proxy_params;
+		proxy_pass http://localhost:8000;
+	}
+
+}
