@@ -4,7 +4,7 @@ Babel==2.8.0
 billiard==3.6.4.0
 blinker==1.4
 Bootstrap-Flask==1.5
-celery==5.1.2
+celery==5.2.2
 click==7.1.2
 click-didyoumean==0.3.0
 click-plugins==1.1.1
