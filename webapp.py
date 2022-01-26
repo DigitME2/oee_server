@@ -1,6 +1,5 @@
 import logging
 import os
-import threading
 from app import create_app
 
 # Create the flask app

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import current_app
 
@@ -84,4 +84,17 @@ def parse_requested_machine_list(requested_machines) -> list:
         return []
 
 
+def yesterday():
+    return datetime.now() - timedelta(days=1)
 
+
+def today():
+    return datetime.now()
+
+
+def tomorrow():
+    return datetime.now() + timedelta(days=1)
+
+
+def a_month_ago():
+    return datetime.now() - timedelta(days=28)

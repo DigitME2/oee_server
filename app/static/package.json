@@ -12,7 +12,6 @@
     "@eastdesire/jscolor": "^2.4.6",
     "@popperjs/core": "^2.10.2",
     "bootstrap": "^4.6.0",
-    "bootstrap-datepicker": "^1.9.0",
     "datatables.net": "^1.11.3",
     "datatables.net-bs4": "^1.11.3",
     "datatables.net-buttons": "^2.0.1",
