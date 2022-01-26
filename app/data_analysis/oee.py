@@ -2,11 +2,10 @@ from datetime import datetime, timedelta, time
 
 from flask import current_app
 
-from app.extensions import db
 from app.data_analysis.models import DailyOEE
-from app.default.models import Activity, ActivityCode, ScheduledActivity, MachineGroup
 from app.default.db_helpers import get_machine_activities, get_user_activities
-
+from app.default.models import Activity, ActivityCode, ScheduledActivity, MachineGroup
+from app.extensions import db
 from config import Config
 
 

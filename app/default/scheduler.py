@@ -2,8 +2,8 @@ from celery.schedules import crontab
 from flask import current_app
 
 from app.default.db_helpers import create_scheduled_activities
-from app.extensions import celery_app
 from app.default.machine_simulator import simulate_machines
+from app.extensions import celery_app
 from config import Config
 
 

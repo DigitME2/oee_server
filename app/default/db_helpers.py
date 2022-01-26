@@ -6,8 +6,8 @@ from time import time
 
 from flask import current_app
 
-from app.extensions import db
 from app.default.models import Activity, Machine, ScheduledActivity
+from app.extensions import db
 from config import Config
 
 

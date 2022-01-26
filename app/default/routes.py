@@ -5,7 +5,6 @@ from flask_login import current_user, login_required
 
 from app.default import bp
 from app.default.db_helpers import create_scheduled_activities
-from config import Config
 
 
 @bp.route('/')

@@ -5,13 +5,13 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
 
-from app.extensions import db
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm, \
     MachineGroupForm
 from app.admin.helpers import admin_required
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule
 from app.default.models import SHIFT_STRFTIME_FORMAT
+from app.extensions import db
 from app.login.models import User
 from config import Config
 

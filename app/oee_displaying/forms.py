@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, time
+
 from flask_wtf import FlaskForm
-from wtforms import DateField, PasswordField, StringField, SubmitField, BooleanField, SelectField
-from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional, NoneOf, ValidationError
-from wtforms.widgets import TextArea
+from wtforms import DateField, SubmitField, SelectField
+from wtforms.validators import DataRequired, NoneOf
 from wtforms_components import TimeField
 
 DATE_FORMAT = "%d-%m-%Y"

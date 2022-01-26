@@ -4,9 +4,9 @@ import pandas as pd
 from flask import current_app
 from flask_table import Table, Col, create_table
 
-from app.extensions import db
 from app.data_analysis.oee import get_activity_duration_dict, get_schedule_dict
 from app.default.models import Job, ActivityCode, Machine
+from app.extensions import db
 from app.login.models import User
 from config import Config
 

@@ -3,9 +3,9 @@ from datetime import datetime
 
 from flask import request, current_app
 
-from app.extensions import db
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
 from app.default.models import Job, Activity, ActivityCode
+from app.extensions import db
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, UserSession

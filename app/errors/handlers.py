@@ -1,6 +1,7 @@
-from app.extensions import db
-from app.errors import bp
 from flask import render_template
+
+from app.errors import bp
+from app.extensions import db
 
 
 class InvalidUsage(Exception):

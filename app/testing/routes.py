@@ -1,12 +1,10 @@
 from random import randrange
 
 from app.data_analysis.oee import *
-from app.default.db_helpers import machine_schedule_active
 from app.default.machine_simulator import backfill_missed_simulations
 from app.default.models import *
 from app.testing import bp
 from config import Config
-from flask import render_template, current_app
 
 
 @bp.route('/test')

@@ -1,10 +1,12 @@
-from app.extensions import db
-from app.api import bp
-from app.default.models import Machine, Activity
-from config import Config
-from flask import request, jsonify
 import json
 from time import time
+
+from flask import request, jsonify
+
+from app.api import bp
+from app.default.models import Machine, Activity
+from app.extensions import db
+from config import Config
 
 
 def validate_timestamp(timestamp):

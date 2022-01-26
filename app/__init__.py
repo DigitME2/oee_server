@@ -7,9 +7,7 @@ from flask import Flask, request
 from flask.logging import default_handler
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-
 from app.extensions import db, migrate, login_manager, celery_app
-
 from config import Config
 
 # Set up logging handlers

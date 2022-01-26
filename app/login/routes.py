@@ -7,7 +7,7 @@ from werkzeug.urls import url_parse
 from app.extensions import db
 from app.login import bp
 from app.login.forms import LoginForm
-from app.login.helpers import start_user_session, end_user_sessions
+from app.login.helpers import end_user_sessions
 from app.login.models import User, create_default_users
 
 
