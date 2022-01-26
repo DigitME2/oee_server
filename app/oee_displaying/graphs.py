@@ -1,6 +1,7 @@
 import operator
 from datetime import datetime, timedelta, date
 from logging import getLogger
+from typing import List
 
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -400,7 +401,7 @@ def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflo
     return df
 
 
-def get_scheduled_activities_df(activities: list[ScheduledActivity], group_by, graph_start, graph_end,
+def get_scheduled_activities_df(activities: List[ScheduledActivity], group_by, graph_start, graph_end,
                                 crop_overflow=True):
     """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
         crop_overflow will crop activities that extend past the requested graph start and end times"""
