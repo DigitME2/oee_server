@@ -8,7 +8,7 @@ from wtforms.validators import NoneOf, DataRequired
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, ScheduleForm, \
     MachineGroupForm
-from app.admin.helpers import admin_required
+from app.admin.helpers import admin_required, fix_colour_code
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
@@ -426,7 +426,7 @@ def edit_activity_code():
         activity_code.active = form.active.data
         activity_code.short_description = form.short_description.data
         activity_code.long_description = form.long_description.data
-        activity_code.graph_colour = '#' + form.graph_colour.data
+        activity_code.graph_colour = fix_colour_code(form.graph_colour.data)
         db.session.add(activity_code)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
