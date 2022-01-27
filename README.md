@@ -14,7 +14,7 @@ Run `npm install` in the `/app/static` directory.
 
 The app uses redis as a Celery broker, which is needed for periodic tasks. Redis can be installed with `sudo apt install redis` and modifying the address in `config.py` if necessary
 
-Rename `config.py.example` to `config.py` and edit config options.
+Rename `config.py.example` to `config.py` and edit config options. Modify the secret key to a random string
 
 Run `pip install -r requirements.txt` in a virtual environment if necessary.
 
