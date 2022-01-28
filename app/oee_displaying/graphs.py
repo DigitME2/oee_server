@@ -9,7 +9,8 @@ from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
 from plotly.offline import plot
 
-from app.data_analysis.oee import calculate_activity_percent, get_daily_group_oee, get_activity_duration_dict
+from app.data_analysis.oee.oee import get_daily_group_oee
+from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
 from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
 from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity
 from app.oee_displaying.helpers import get_machine_status
