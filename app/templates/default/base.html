@@ -15,15 +15,10 @@
             type="text/javascript"></script>
 
     {% block title %}
-        {% if title %}
-            <title>{{ title }} - Prodapp</title>
+        {% if demo_mode %}
+            <title>OEE Monitor (Demo mode)</title>
         {% else %}
-            {% if demo_mode %}
-                <title>OEE Monitor (Demo mode)</title>
-            {% else %}
-                <title>OEE Monitor</title>
-            {% endif %}
-
+            <title>OEE Monitor</title>
         {% endif %}
     {% endblock %}
 </head>
