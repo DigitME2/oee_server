@@ -24,7 +24,7 @@ def index():
 
 
 @bp.route('/run_schedule', methods=['POST'])
-def create_scheduled_activities():
+def create_scheduled_activities_route():
 
     if "date" in request.args:
         dt = datetime.strptime(request.args['date'], '%d-%m-%y')

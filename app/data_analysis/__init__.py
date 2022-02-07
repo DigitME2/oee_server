@@ -1,0 +1,2 @@
+class OEECalculationException(Exception):
+    pass

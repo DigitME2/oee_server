@@ -7,7 +7,6 @@ from wtforms_components import TimeField
 
 from app.oee_displaying.helpers import tomorrow, today, yesterday, a_month_ago
 
-DATE_FORMAT = "%d/%m/%Y"
 TIME_FORMAT = "%H:%M"
 midnight = time(hour=0, minute=0, second=0, microsecond=0)
 MACHINES_CHOICES_HEADERS = ["--Groups--", "--Machines--"]
@@ -39,10 +38,10 @@ class OeeLineForm(FlaskForm):
     form_template = "date"
     graph_name = "Machine group OEE Line Graph"
     description = "A line graph showing the daily OEE figure of every machine group between two dates"
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="oee_line_start_date",
+    start_date = DateField(validators=[DataRequired()], id="oee_line_start_date",
                            label="Start Date (DD-MM-YYYY)",
                            default=a_month_ago)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="oee_line_end_date",
+    end_date = DateField(validators=[DataRequired()], id="oee_line_end_date",
                          label="End Date (DD-MM-YYYY)",
                          default=yesterday)
 
@@ -55,10 +54,10 @@ class DowntimeBarForm(FlaskForm):
     description = "A bar chart showing the total amount of each activity for selected machines between two times"
     key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")],
                       id="downtime_bar_machines")
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="downtime_bar_start_date",
+    start_date = DateField(validators=[DataRequired()], id="downtime_bar_start_date",
                            label="Start Date (DD-MM-YYYY)",
                            default=today)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="downtime_bar_end_date",
+    end_date = DateField(validators=[DataRequired()], id="downtime_bar_end_date",
                          label="End Date (DD-MM-YYYY)",
                          default=tomorrow)
     start_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight,
@@ -71,10 +70,10 @@ class DowntimeBarForm(FlaskForm):
 class JobTableForm(FlaskForm):
     form_template = "date"
     graph_name = "Job Table"
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="job_table_start_date",
+    start_date = DateField(validators=[DataRequired()], id="job_table_start_date",
                            label="Start Date (DD-MM-YYYY)",
                            default=today)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="job_table_end_date",
+    end_date = DateField(validators=[DataRequired()], id="job_table_end_date",
                          label="End Date (DD-MM-YYYY)",
                          default=tomorrow)
 
@@ -84,10 +83,10 @@ class JobTableForm(FlaskForm):
 class WOTableForm(FlaskForm):
     form_template = "date"
     graph_name = "Work Order Table"
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="wo_table_start_date",
+    start_date = DateField(validators=[DataRequired()], id="wo_table_start_date",
                            label="Start Date (DD-MM-YYYY)",
                            default=today)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="wo_table_end_date",
+    end_date = DateField(validators=[DataRequired()], id="wo_table_end_date",
                          label="End Date (DD-MM-YYYY)",
                          default=tomorrow)
 
@@ -102,10 +101,10 @@ class ActivityDurationsTableForm(FlaskForm):
                            id="activity_table_start_time")
     end_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight,
                          id="activity_table_end_time")
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="activity_table_start_date",
+    start_date = DateField(validators=[DataRequired()], id="activity_table_start_date",
                            label="Start Date (DD-MM-YYYY)",
                            default=today)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, id="activity_table_end_date",
+    end_date = DateField(validators=[DataRequired()], id="activity_table_end_date",
                          label="End Date (DD-MM-YYYY)",
                          default=tomorrow)
 
@@ -129,9 +128,9 @@ class SchedulesGanttForm(FlaskForm):
 
     key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")],
                       id="gantt_machines")
-    start_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, label="Start Date (DD-MM-YYYY)",
+    start_date = DateField(validators=[DataRequired()], label="Start Date (DD-MM-YYYY)",
                            default=today)
-    end_date = DateField(validators=[DataRequired()], format=DATE_FORMAT, label="End Date (DD-MM-YYYY)",
+    end_date = DateField(validators=[DataRequired()], label="End Date (DD-MM-YYYY)",
                          default=tomorrow)
     start_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_start_time")
     end_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_end_time")

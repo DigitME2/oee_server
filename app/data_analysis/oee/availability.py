@@ -1,12 +1,26 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime
 
 from flask import current_app
 
-from app.data_analysis.models import DailyOEE
-from app.default.db_helpers import get_machine_activities, get_user_activities
-from app.default.models import Activity, ActivityCode, ScheduledActivity, MachineGroup
-from app.extensions import db
+from app.data_analysis import OEECalculationException
+from app.default.db_helpers import get_user_activities, get_machine_activities
+from app.default.models import Activity, ActivityCode, ScheduledActivity
 from config import Config
+
+
+def calculate_machine_availability(machine_id, timestamp_start, timestamp_end):
+    """ Takes a machine id and two times, and returns the machine's availability for calculating OEE"""
+
+    if timestamp_end > datetime.now().timestamp():
+        current_app.logger.warn(f"Machine oee requested for future date {datetime.fromtimestamp(timestamp_end).strftime(('%Y-%m-%d'))}")
+        raise OEECalculationException("Machine OEE requested for future date")
+    runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end, units="seconds")
+    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds")["Scheduled Run Time"]
+    if scheduled_uptime == 0:
+        raise OEECalculationException("No scheduled activity for requested OEE")
+    availability = runtime / scheduled_uptime
+    current_app.logger.debug(f"machine id {machine_id} availability {datetime.fromtimestamp(timestamp_start)} = {availability}")
+    return availability
 
 
 def get_machine_runtime(machine_id, requested_start, requested_end, units="seconds"):
@@ -160,56 +174,3 @@ def calculate_activity_time(machine_id, activity_code_id, timestamp_start, times
     for act in activities:
         activity_code_time += (act.timestamp_end - act.timestamp_start)
     return activity_code_time
-
-
-class OEECalculationException(Exception):
-    pass
-
-
-def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
-    """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
-    Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
-
-    if timestamp_end > datetime.now().timestamp():
-        current_app.logger.warn(f"Machine oee requested for future date {datetime.fromtimestamp(timestamp_end).strftime(('%Y-%m-%d'))}")
-        raise OEECalculationException("Machine OEE requested for future date")
-    runtime = get_machine_runtime(machine_id, timestamp_start, timestamp_end, units="seconds")
-    scheduled_uptime = get_schedule_dict(machine_id, timestamp_start, timestamp_end, units="seconds")["Scheduled Run Time"]
-    if scheduled_uptime == 0:
-        raise OEECalculationException("No scheduled activity for requested OEE")
-    availability = runtime / scheduled_uptime
-    oee = availability * 100
-    return oee
-
-
-def get_daily_machine_oee(machine_id, date):
-    """ Takes a machine id and a dates, then gets the oee for the day and saves the figure to database """
-    daily_machine_oee = DailyOEE.query.filter_by(machine_id=machine_id, date=date).first()
-    # If the OEE figure is missing, call the function to calculate the missing values and save in database
-    if daily_machine_oee is None:
-        start = datetime.combine(date=date, time=time(hour=0, minute=0, second=0, microsecond=0))
-        end = start + timedelta(days=1)
-        try:
-            oee = calculate_machine_oee(machine_id, timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
-        except OEECalculationException as e:
-            current_app.logger.warn(f"Failed to calculate OEE for machine id {machine_id} on {date}")
-            current_app.logger.warn(e)
-            return 0
-        daily_machine_oee = DailyOEE(machine_id=machine_id, date=date, oee=oee)
-        db.session.add(daily_machine_oee)
-        db.session.commit()
-
-    return daily_machine_oee.oee
-
-
-def get_daily_group_oee(group_id, date):
-    """Get the mean OEE figure for a group of machines on a particular day"""
-    group = MachineGroup.query.filter_by(id=group_id).first()
-    machine_oees = []
-    for machine in group.machines:
-        # For each machine add the oee figure to the list
-        machine_oees.append(get_daily_machine_oee(machine.id, date))
-    if machine_oees is None or len(machine_oees) == 0:
-        return 0
-    mean_oee = sum(machine_oees) / len(machine_oees)
-    return mean_oee
