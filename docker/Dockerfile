@@ -19,7 +19,7 @@ COPY app app
 COPY migrations migrations
 COPY celery_worker.py celery_worker.py
 COPY /docker/Dockerfile Dockerfile
-COPY /docker/supervisord.conf supervisord.conf
+COPY /docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY /docker/example-config.py config.py
 
 ENV FLASK_APP "app:create_app()"
