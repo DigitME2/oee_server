@@ -38,3 +38,7 @@ The default workflow has the user log in and go straight to the "start job" scre
 
 When run with `DEMO_MODE=True` in the `config.py` file, the app will fake inputs. On startup it will backfill missed data. The celery worker will fake inputs as long as the app is running.
 
+## Schedule
+
+In order for OEE to be calculated, each machine needs a schedule of planned uptime and planned downtime. A machine is assigned a schedule, and each day the "scheduled activities" are created and stored for that day. If for some reason the scheduler misses a day, they can be done by POSTing to /run_schedule.
+e.g. `curl -X POST http://localhost:5000/run_schedule?date=18-08-19`
