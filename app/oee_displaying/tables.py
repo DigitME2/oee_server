@@ -68,7 +68,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
         end_time = max([woj.end_time for woj in wo_jobs if woj.end_time is not None])
         if end_time is None:
             work_order["end"] = ""
-            work_order["actual_run_time"] = (datetime.now() - start_time).seconds/60
+            work_order["actual_run_time"] = (datetime.now() - start_time).total_seconds()/60
         else:
             work_order["end"] = end_time.strftime("%d-%m-%y %H:%M")
             work_order["actual_run_time"] = end_time - start_time
@@ -114,9 +114,9 @@ def get_job_table(start_date: date, end_date: date) -> str:
             item["end"] = ""
         try:
             if job.end_time is not None:
-                item["actual_run_time"] = (job.end_time - job.start_time).seconds/60
+                item["actual_run_time"] = (job.end_time - job.start_time).total_seconds()/60
             else:
-                item["actual_run_time"] = (datetime.now() - job.start_time).seconds/60
+                item["actual_run_time"] = (datetime.now() - job.start_time).total_seconds()/60
         except:
             item["actual_run_time"] = ""
 

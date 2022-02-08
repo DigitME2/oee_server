@@ -1,12 +1,12 @@
 import math as maths
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 from operator import attrgetter
 from random import randrange
-from time import time
 
+from sqlalchemy import func
 from flask import current_app
 
-from app.default.models import Activity, Machine, ScheduledActivity
+from app.default.models import Activity, Machine, ScheduledActivity, Settings
 from app.extensions import db
 from config import Config
 
@@ -135,7 +135,7 @@ def split_activity(activity_id, split_time=None):
     old_activity = Activity.query.get(activity_id)
 
     if split_time is None:
-        split_time = time()
+        split_time = datetime.now()
 
     # Copy the old activity to a new activity
     new_activity = Activity(machine_id=old_activity.machine_id,
@@ -182,10 +182,10 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
 
 def get_legible_duration(time_start: datetime, time_end: datetime):
     """ Takes two times and returns a string in the format <hh:mm> <x> minutes"""
-    minutes = maths.floor((time_end - time_start).seconds / 60)
-    hours = maths.floor((time_end - time_start).seconds / 3600)
+    minutes = maths.floor((time_end - time_start).total_seconds() / 60)
+    hours = maths.floor((time_end - time_start).total_seconds() / 3600)
     if minutes == 0:
-        return f"{maths.floor((time_end - time_start).seconds)} seconds"
+        return f"{maths.floor((time_end - time_start).total_seconds())} seconds"
     if hours == 0:
         return f"{minutes} minutes"
     else:
@@ -268,7 +268,7 @@ def get_machines_last_job(machine_id):
     return most_recent_job
 
 
-def machine_schedule_active(machine, dt=None):
+def machine_schedule_active(machine, dt: datetime = None):
     """ Return true if the machine is scheduled to be running at a specific time (or now, if not specified)"""
     if not dt:
         dt = datetime.now()
@@ -282,12 +282,23 @@ def machine_schedule_active(machine, dt=None):
         return False
 
 
-def create_scheduled_activities(date=None):
-    if not date:
-        date = datetime.now()
+def backfill_missed_schedules():
+    last_schedule_time = db.session.query(func.max(ScheduledActivity.time_end)).first()[0]
+    if last_schedule_time is not None:
+        start_date = last_schedule_time.date()
+    else:
+        start_date = Settings.query.get(1).first_start.date()
+    dates = [start_date + timedelta(days=x) for x in range((datetime.now().date() - start_date).days + 1)]
+    for d in dates:
+        create_scheduled_activities(create_date=d)
 
-    current_app.logger.info(f"Creating Scheduled Activities for {date.strftime('%d-%m-%y')}")
-    last_midnight = date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+def create_scheduled_activities(create_date: date = None):
+    if not create_date:
+        create_date = datetime.now().date()
+
+    current_app.logger.info(f"Creating Scheduled Activities for {create_date.strftime('%d-%m-%y')}")
+    last_midnight = datetime.combine(date=create_date, time=time(hour=0, minute=0, second=0, microsecond=0))
     next_midnight = last_midnight + timedelta(days=1)
 
     for machine in Machine.query.all():
@@ -302,12 +313,12 @@ def create_scheduled_activities(date=None):
             continue
 
         # Get the shift for this day of the week
-        weekday = date.weekday()
+        weekday = create_date.weekday()
         shift = machine.schedule.get_shifts().get(weekday)
 
         # Create datetime objects with today's date and the times from the schedule table
-        shift_start = datetime.combine(date, datetime.strptime(shift[0], "%H%M").timetz())
-        shift_end = datetime.combine(date, datetime.strptime(shift[1], "%H%M").timetz())
+        shift_start = datetime.combine(create_date, datetime.strptime(shift[0], "%H%M").timetz())
+        shift_end = datetime.combine(create_date, datetime.strptime(shift[1], "%H%M").timetz())
 
         current_app.logger.info(f"{machine} \nShift start: {shift_start} \nShift end: {shift_end}")
 

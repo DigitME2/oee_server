@@ -10,16 +10,18 @@ from config import Config
 
 def calculate_machine_availability(machine_id, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's availability for calculating OEE"""
-
-    if time_end > datetime.now():
-        current_app.logger.warn(f"Machine oee requested for future date {time_end.strftime(('%Y-%m-%d'))}")
-        raise OEECalculationException("Machine OEE requested for future date")
     runtime = get_machine_runtime(machine_id, time_start, time_end, units="seconds")
-    scheduled_uptime = get_schedule_dict(machine_id, time_start, time_end, units="seconds")["Scheduled Run Time"]
-    if scheduled_uptime == 0:
-        raise OEECalculationException("No scheduled activity for requested OEE")
-    availability = runtime / scheduled_uptime
-    current_app.logger.debug(f"machine id {machine_id} availability {time_start} = {availability}")
+    schedule_dict = get_schedule_dict(machine_id, time_start, time_end, units="seconds")
+    scheduled_uptime = schedule_dict["Scheduled Run Time"]
+    scheduled_downtime = schedule_dict["Scheduled Down Time"]
+    if scheduled_uptime and scheduled_downtime == 0:
+        current_app.logger(f"OEE Calculation for machine id {machine_id} performed between {time_start} and {time_end} "
+                           f"has no scheduled activities. Assuming 100% scheduled uptime")
+        scheduled_uptime = (time_end - time_start).total_seconds()
+    try:
+        availability = runtime / scheduled_uptime
+    except ZeroDivisionError:
+        return 1
     return availability
 
 
@@ -34,7 +36,7 @@ def get_machine_runtime(machine_id, requested_start: datetime, requested_end: da
 
     run_time = 0
     for act in activities:
-        run_time += (act.time_end - act.time_start).seconds
+        run_time += (act.time_end - act.time_start).total_seconds()
     if units == "minutes":
         return run_time / 60
     elif units == "seconds":
@@ -66,13 +68,10 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
     activities_dict = {}
 
     # Add all activity codes to the dictionary.
-    # If use_descriptions_as_key, then the key is the description of the activity code. Otherwise it is the code id
     act_codes = ActivityCode.query.all()
     for code in act_codes:
-        if use_description_as_key:
-            activities_dict[code.short_description] = 0
-        else:
-            activities_dict[code.id] = 0
+        key = code.short_description if use_description_as_key else code.id
+        activities_dict[key] = 0
 
     for act in activities:
         # If the activity starts before the requested start, crop it to the requested start time
@@ -88,10 +87,9 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
             end = act.time_end
 
         # Calculate the duration and add to the dict
-        if use_description_as_key:
-            activities_dict[act.activity_code.short_description] += (end - start)
-        else:
-            activities_dict[act.activity_code_id] += (end - start)
+        key = act.activity_code.short_description if use_description_as_key else act.activity_code_id
+        activities_dict[key] += (end - start).total_seconds()
+
     # Convert to minutes if requested
     if units == "minutes":
         for n in activities_dict:
@@ -135,13 +133,13 @@ def get_schedule_dict(machine_id, time_start: datetime, time_end: datetime, unit
     # Add any time unaccounted for
     unscheduled_time += (total_time - (scheduled_down_time + scheduled_run_time))
     if units == "minutes":
-        return {"Scheduled Run Time": scheduled_run_time.seconds/60,
-                "Scheduled Down Time": scheduled_down_time.seconds/60,
-                "Unscheduled Time": unscheduled_time.seconds/60}
+        return {"Scheduled Run Time": scheduled_run_time.total_seconds()/60,
+                "Scheduled Down Time": scheduled_down_time.total_seconds()/60,
+                "Unscheduled Time": unscheduled_time.total_seconds()/60}
     else:
-        return {"Scheduled Run Time": scheduled_run_time.seconds,
-                "Scheduled Down Time": scheduled_down_time.seconds,
-                "Unscheduled Time": unscheduled_time.seconds}
+        return {"Scheduled Run Time": scheduled_run_time.total_seconds(),
+                "Scheduled Down Time": scheduled_down_time.total_seconds(),
+                "Unscheduled Time": unscheduled_time.total_seconds()}
 
 
 def calculate_activity_percent(machine_id, activity_code_id, time_start: datetime, time_end: datetime):
@@ -157,7 +155,7 @@ def calculate_activity_percent(machine_id, activity_code_id, time_start: datetim
     for act in activities:
         activity_code_time += (act.time_end - act.time_start)
 
-    if activity_code_time.seconds == 0:
+    if activity_code_time.total_seconds() == 0:
         return 100
     else:
         return (total_time / activity_code_time) * 100

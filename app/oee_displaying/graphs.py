@@ -12,7 +12,7 @@ from plotly.offline import plot
 from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
 from app.data_analysis.oee.oee import get_daily_group_oee
 from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
-from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity
+from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity, Settings
 from app.oee_displaying.helpers import get_machine_status
 from config import Config
 
@@ -301,7 +301,7 @@ def create_oee_line(graph_start_date: date, graph_end_date: date):
     """ Takes two times and creates a line graph of the OEE for each machine group between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
     groups = MachineGroup.query.all()
-    d = date(2022, 1, 18)
+    d = Settings.query.get(1).first_start.date()
     dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
     if len(dates) == 0:
         return 0

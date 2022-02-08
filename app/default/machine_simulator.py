@@ -81,7 +81,7 @@ def change_activity(machine, job, user, simulation_datetime=None):
     #db.session.commit()
 
 
-def simulate_machines(simulation_datetime=None):
+def simulate_machines(simulation_datetime: datetime = None):
     if not Config.DEMO_MODE:
         current_app.logger.warning("Fake data being created when app is not in DEMO_MODE")
     # Run for the current time if no datetime given
@@ -91,7 +91,6 @@ def simulate_machines(simulation_datetime=None):
         chance_to_skip_simulation = 0.90
         if random.random() < chance_to_skip_simulation:
             continue
-        current_app.logger.debug(f"simulating machine action for machine {machine.id}")
         # Get the machine's user by using the machine id as the index on a fake names list. Create it if it does not exist
         username = names[machine.id]
         user = User.query.filter_by(username=username).first()
@@ -131,7 +130,7 @@ def backfill_missed_simulations():
         simulation_start = last_simulation
     # Create scheduled activities
     for i in dt_range(simulation_start, datetime.now(), 86400):  # 86400 = seconds in a day
-        create_scheduled_activities(i)
+        create_scheduled_activities(i.date())
     for i in dt_range(simulation_start, datetime.now(), Config.DATA_SIMULATION_FREQUENCY_SECONDS):
         simulate_machines(i)
 

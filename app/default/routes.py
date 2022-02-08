@@ -27,9 +27,9 @@ def index():
 def create_scheduled_activities_route():
 
     if "date" in request.args:
-        dt = datetime.strptime(request.args['date'], '%d-%m-%y')
+        dt = datetime.strptime(request.args['date'], '%d-%m-%y').date()
     else:
-        dt = datetime.now()
+        dt = datetime.now().date()
 
-    create_scheduled_activities(date=dt)
+    create_scheduled_activities(create_date=dt)
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}

@@ -15,10 +15,19 @@ def calculate_machine_oee(machine_id, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
     Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
 
+    if time_end > datetime.now():
+        current_app.logger.warn(f"Machine oee requested for future date {time_end.strftime(('%Y-%m-%d'))}")
+        raise OEECalculationException("Machine OEE requested for future date")
+
+    current_app.logger.debug(f"Calculating OEE for machine {machine_id} between {time_start} and {time_end}")
     availability = calculate_machine_availability(machine_id, time_start, time_end)
+    current_app.logger.debug(f"Availability: {availability}")
     performance = get_machine_performance(machine_id, time_start, time_end)
+    current_app.logger.debug(f"Performance: {performance}")
     quality = get_machine_quality(machine_id, time_start, time_end)
+    current_app.logger.debug(f"Quality: {quality}")
     oee = availability * performance * quality * 100
+    current_app.logger.debug(f"OEE Percent: {oee}")
     return oee
 
 

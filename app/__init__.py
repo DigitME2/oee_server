@@ -68,10 +68,14 @@ def create_app(config_class=Config):
 
     @app.before_first_request
     def initial_setup():
-        # Fill the database with default values
         with app.app_context():
+            # Fill the database with default values
             from app.setup_database import setup_database
             setup_database()
+
+            from app.default.db_helpers import backfill_missed_schedules
+            backfill_missed_schedules()
+
             if Config.DEMO_MODE:
                 from app.default.machine_simulator import backfill_missed_simulations
                 backfill_missed_simulations()

@@ -130,6 +130,7 @@ class Settings(db.Model):
     id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
     dashboard_update_interval_s = db.Column(db.Integer)
     threshold = db.Column(db.Integer)
+    first_start = db.Column(db.DateTime)
 
     def __repr__(self):
         return f"<Settings threshold:'{self.threshold}'>"
