@@ -274,7 +274,7 @@ def edit_machine():
             machine.id = form.id.data
             current_app.logger.info(f"{machine} created by {current_user}")
             first_act = Activity(machine_id=machine.id,
-                                 timestamp_start=datetime.now().timestamp(),
+                                 time_start=datetime.now(),
                                  machine_state=Config.MACHINE_STATE_OFF,
                                  activity_code_id=Config.NO_USER_CODE_ID)
             db.session.add(first_act)

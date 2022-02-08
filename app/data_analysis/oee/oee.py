@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, time
 from flask import current_app
 
 from app.data_analysis import OEECalculationException
-from app.data_analysis.oee.availability import get_machine_runtime, get_schedule_dict, calculate_machine_availability
+from app.data_analysis.oee.availability import calculate_machine_availability
 from app.data_analysis.oee.models import DailyOEE
 from app.data_analysis.oee.performance import get_machine_performance
 from app.data_analysis.oee.quality import get_machine_quality
@@ -11,13 +11,13 @@ from app.default.models import MachineGroup
 from app.extensions import db
 
 
-def calculate_machine_oee(machine_id, timestamp_start, timestamp_end):
+def calculate_machine_oee(machine_id, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
     Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
 
-    availability = calculate_machine_availability(machine_id, timestamp_start, timestamp_end)
-    performance = get_machine_performance(machine_id, timestamp_start, timestamp_end)
-    quality = get_machine_quality(machine_id, timestamp_start, timestamp_end)
+    availability = calculate_machine_availability(machine_id, time_start, time_end)
+    performance = get_machine_performance(machine_id, time_start, time_end)
+    quality = get_machine_quality(machine_id, time_start, time_end)
     oee = availability * performance * quality * 100
     return oee
 
@@ -30,7 +30,7 @@ def get_daily_machine_oee(machine_id, date):
         start = datetime.combine(date=date, time=time(hour=0, minute=0, second=0, microsecond=0))
         end = start + timedelta(days=1)
         try:
-            oee = calculate_machine_oee(machine_id, timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
+            oee = calculate_machine_oee(machine_id, time_start=start, time_end=end)
         except OEECalculationException as e:
             current_app.logger.warn(f"Failed to calculate OEE for machine id {machine_id} on {date}")
             current_app.logger.warn(e)

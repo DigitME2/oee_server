@@ -18,18 +18,15 @@ class WOTable(Table):
     part_number = Col('Part Number')
     start = Col('Start')
     end = Col('End')
-    setting_operator = Col('Setting Operator')
     operator = Col('Operator')
     actual_run_time = Col('Duration')
-    planned_run_time = Col("Planned Duration (minutes)")
-    actual_quantity = Col("Actual Quantity")
-    planned_quantity = Col("Planned Quantity")
+    ideal_cycle_time = Col("Ideal Cycle Time")
 
 
 def get_work_order_table(start_date: date, end_date: date) -> str:
-    start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
-    end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
-    jobs = Job.query.filter(Job.start_time <= end_timestamp).filter(Job.end_time >= start_timestamp)
+    start_time = datetime.combine(start_date, time(0, 0, 0, 0))
+    end_time = datetime.combine(end_date, time(0, 0, 0, 0))
+    jobs = Job.query.filter(Job.start_time <= end_time).filter(Job.end_time >= start_time)
     items = []
 
     # Get every wo_number in the list of jobs
@@ -54,43 +51,31 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
 
         # Set the operators to blank in case either doesn't exist
         work_order["operator"] = ""
-        work_order["setting_operator"] = ""
-        operators = list(set(woj.user.username for woj in wo_jobs
-                                          if woj.user is not None and woj.planned_set_time is None))
+        operators = list(set(woj.user.username for woj in wo_jobs if woj.user is not None))
         if len(operators) == 1:
             work_order["operator"] = operators[0]
         elif len(operators) > 1:
             # If there is more than one operator, show them all in a list
             work_order["operator"] = str(operators)
 
-        setting_operators = list(set(woj.user.username for woj in wo_jobs
-                                          if woj.user is not None and woj.planned_set_time is not None))
-        if len(setting_operators) == 1:
-            work_order["setting_operator"] = setting_operators[0]
-        elif len(setting_operators) > 1:
-            # If there is more than one operator, show them all in a list
-            work_order["setting_operator"] = str(setting_operators)
-
         try:
-            start_time = datetime.fromtimestamp(min([woj.start_time for woj in wo_jobs]))
+            start_time = min([woj.start_time for woj in wo_jobs])
             work_order["start"] = start_time.strftime("%d-%m-%y %H:%M")
         except:
             current_app.logger.warning(f"Error getting start time for wo {wo_number}")
             start_time = ""
 
-        end_timestamp = max([woj.end_time for woj in wo_jobs if woj.end_time is not None])
-        if end_timestamp is None:
+        end_time = max([woj.end_time for woj in wo_jobs if woj.end_time is not None])
+        if end_time is None:
             work_order["end"] = ""
-            work_order["actual_run_time"] = datetime.now() - start_time
+            work_order["actual_run_time"] = (datetime.now() - start_time).seconds/60
         else:
-            end_time = datetime.fromtimestamp(end_timestamp)
             work_order["end"] = end_time.strftime("%d-%m-%y %H:%M")
             work_order["actual_run_time"] = end_time - start_time
 
-        work_order["actual_run_time"] = sum(wj.actual_quantity for wj in wo_jobs if wj.actual_quantity is not None)
-        work_order["planned_run_time"] = sum(wj.planned_run_time for wj in wo_jobs if wj.planned_run_time is not None)
-        work_order["actual_quantity"] = sum(wj.actual_quantity for wj in wo_jobs if wj.actual_quantity is not None)
-        work_order["planned_quantity"] = sum(wj.planned_quantity for wj in wo_jobs if wj.planned_quantity is not None)
+        work_order["actual_run_time"] = sum(wj.quantity_produced for wj in wo_jobs if wj.quantity_produced is not None)
+        work_order["ideal_cycle_time"] = sum(wj.ideal_cycle_time for wj in wo_jobs if wj.ideal_cycle_time is not None)
+        work_order["quantity_produced"] = sum(wj.quantity_produced for wj in wo_jobs if wj.quantity_produced is not None)
         items.append(work_order)
     table = WOTable(items=items)
 
@@ -104,35 +89,34 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
 
 
 def get_job_table(start_date: date, end_date: date) -> str:
-    start_timestamp = datetime.combine(start_date, time(0, 0, 0, 0)).timestamp()
-    end_timestamp = datetime.combine(end_date, time(0, 0, 0, 0)).timestamp()
-    jobs = Job.query.filter(Job.start_time <= end_timestamp).filter(Job.end_time >= start_timestamp)
+    start_time = datetime.combine(start_date, time(0, 0, 0, 0))
+    end_time = datetime.combine(end_date, time(0, 0, 0, 0))
+    jobs = Job.query.filter(Job.start_time <= end_time).filter(Job.end_time >= start_time)
 
     items = []
     for job in jobs:
         item = {"job_id": job.id,
                 "wo_number": job.wo_number,
                 "part_number": job.part_number,
-                "planned_run_time": job.planned_run_time,
-                "actual_quantity": job.actual_quantity,
-                "planned_quantity": job.planned_quantity}
+                "ideal_cycle_time": job.ideal_cycle_time,
+                "quantity_produced": job.quantity_produced}
         try:
             item["operator"] = str(job.user.username)
         except:
             item["operator"] = ""
         try:
-            item["start"] = datetime.fromtimestamp(job.start_time).strftime("%d-%m-%y %H:%M")
+            item["start"] = job.start_time.strftime("%d-%m-%y %H:%M")
         except:
             item["start"] = ""
         try:
-            item["end"] = datetime.fromtimestamp(job.end_time).strftime("%d-%m-%y %H:%M")
+            item["end"] = job.end_time.strftime("%d-%m-%y %H:%M")
         except:
             item["end"] = ""
         try:
             if job.end_time is not None:
-                item["actual_run_time"] = datetime.fromtimestamp(job.end_time) - datetime.fromtimestamp(job.start_time)
+                item["actual_run_time"] = (job.end_time - job.start_time).seconds/60
             else:
-                item["actual_run_time"] = datetime.now() - datetime.fromtimestamp(job.start_time)
+                item["actual_run_time"] = (datetime.now() - job.start_time).seconds/60
         except:
             item["actual_run_time"] = ""
 
@@ -158,9 +142,8 @@ class JobTable(Table):
     end = Col('End')
     operator = Col('Operator')
     actual_run_time = Col('Duration')
-    planned_run_time = Col("Planned Duration")
-    actual_quantity = Col("Actual Quantity")
-    planned_quantity = Col("Planned Quantity")
+    ideal_cycle_time = Col("Ideal Cycle Time")
+    quantity_produced = Col("Actual Quantity")
 
 
 def get_raw_database_table(table_name):
@@ -172,7 +155,7 @@ def get_raw_database_table(table_name):
     return table_html
 
 
-def get_user_activity_table(timestamp_start, timestamp_end):
+def get_user_activity_table(time_start: datetime, time_end: datetime):
     """Create a table listing the amount of time spent for each activity_code"""
 
     # Dynamically create the table using flask-table
@@ -198,8 +181,8 @@ def get_user_activity_table(timestamp_start, timestamp_end):
     no_user_description = ActivityCode.query.get(Config.NO_USER_CODE_ID).short_description
     for user in users:
         # Get a dict with the activities in
-        user_dict = get_activity_duration_dict(requested_start=timestamp_start,
-                                               requested_end=timestamp_end,
+        user_dict = get_activity_duration_dict(requested_start=time_start,
+                                               requested_end=time_end,
                                                user_id=user.id,
                                                use_description_as_key=True,
                                                units="minutes")
@@ -211,16 +194,14 @@ def get_user_activity_table(timestamp_start, timestamp_end):
         items.append(user_dict)
 
     table = Tbl(items=items)
-    start = datetime.fromtimestamp(timestamp_start)
-    end = datetime.fromtimestamp(timestamp_end)
     table_html = f"<h1 id=\"table-title\">" \
-                 f"Activity Durations {start.strftime('%H.%M %d-%b-%y')} to {end.strftime('%H.%M %d-%b-%y')}<" \
+                 f"Activity Durations {time_start.strftime('%H.%M %d-%b-%y')} to {time_end.strftime('%H.%M %d-%b-%y')}<" \
                  f"/h1>"\
                  + table.__html__()
     return table_html
 
 
-def get_machine_activity_table(timestamp_start, timestamp_end):
+def get_machine_activity_table(time_start: datetime, time_end: datetime):
     """ Create a CSV listing the amount of time spent for each activity_code."""
     # Dynamically create the table using flask-table
     Tbl = create_table("MachineActivityTable").add_column('machine', Col('Machine Activity Durations (minutes)'))
@@ -232,7 +213,7 @@ def get_machine_activity_table(timestamp_start, timestamp_end):
         Tbl.add_column(activity_description, Col(activity_description))
 
     # Add the names of scheduled/unscheduled hours as columns
-    schedule_dict = get_schedule_dict(1, timestamp_start, timestamp_end)  # Get the dict for any machine, just to parse the keys and create columns
+    schedule_dict = get_schedule_dict(1, time_start, time_end)  # Get the dict for any machine, just to parse the keys and create columns
     for key in schedule_dict:
         Tbl.add_column(key, Col(key))
 
@@ -244,15 +225,15 @@ def get_machine_activity_table(timestamp_start, timestamp_end):
     items = []
     for machine in machines:
         # Get a dictionary containing all the activities for the machine
-        machine_dict = get_activity_duration_dict(requested_start=timestamp_start,
-                                                  requested_end=timestamp_end,
+        machine_dict = get_activity_duration_dict(requested_start=time_start,
+                                                  requested_end=time_end,
                                                   machine_id=machine.id,
                                                   use_description_as_key=True,
                                                   units="minutes")
 
         # Get a dictionary containing the schedule for the machine
-        machine_dict.update(get_schedule_dict(timestamp_start=timestamp_start,
-                                              timestamp_end=timestamp_end,
+        machine_dict.update(get_schedule_dict(time_start=time_start,
+                                              time_end=time_end,
                                               machine_id=machine.id,
                                               units="minutes"))
         # Format the times in the dictionary (Do this before adding the machine names)

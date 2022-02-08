@@ -140,7 +140,7 @@ def create_default_machine():
     current_app.logger.info("Created default machine on first startup")
 
     act = Activity(machine_id=machine1.id,
-                   timestamp_start=datetime.now().timestamp(),
+                   time_start=datetime.now(),
                    machine_state=Config.MACHINE_STATE_OFF,
                    activity_code_id=Config.NO_USER_CODE_ID)
     db.session.add(act)

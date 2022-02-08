@@ -42,8 +42,8 @@ class UserSession(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     machine_id = db.Column(db.Integer, db.ForeignKey("machine.id"), nullable=False)
     device_ip = db.Column(db.String)
-    timestamp_login = db.Column(db.Integer)
-    timestamp_logout = db.Column(db.Integer)
+    time_login = db.Column(db.DateTime)
+    time_logout = db.Column(db.DateTime)
     active = db.Column(db.Boolean)
 
     jobs = db.relationship('Job', backref="user_session")

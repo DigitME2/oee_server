@@ -21,7 +21,7 @@ def create_new_demo_user(username, machine, simulation_datetime=None):
     user_session = UserSession(user_id=user.id,
                                machine_id=machine.id,
                                device_ip="",
-                               timestamp_login=int(simulation_datetime.timestamp()),
+                               time_login=simulation_datetime,
                                active=True)
     db.session.add(user_session)
     db.session.commit()
@@ -32,9 +32,9 @@ def end_job(job, machine, simulation_datetime=None):
     current_app.logger.debug(f"ending job")
     if not simulation_datetime:
         simulation_datetime = datetime.now()
-    job.end_time = simulation_datetime.timestamp()
+    job.end_time = simulation_datetime
     job.active = None
-    complete_last_activity(machine_id=machine.id, timestamp_end=simulation_datetime.timestamp())
+    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime)
     db.session.commit()
 
 
@@ -44,11 +44,10 @@ def start_new_job(machine, user, simulation_datetime=None):
         simulation_datetime = datetime.now()
     current_app.logger.debug(f"Starting new job")
     session = UserSession.query.filter_by(user_id=user.id, active=True).first()
-    job = Job(start_time=simulation_datetime.timestamp(),
+    job = Job(start_time=simulation_datetime,
               user_id=user.id,
-              wo_number=random.randint(1, 100000),
-              planned_run_time=random.randint(1, 1000),
-              planned_quantity=random.randint(1, 100),
+              wo_number=str(random.randint(1, 100000)),
+              ideal_cycle_time=random.randint(1, 100),
               machine_id=machine.id,
               active=True,
               user_session_id=session.id)
@@ -61,11 +60,11 @@ def change_activity(machine, job, user, simulation_datetime=None):
     # Run for the current time if no datetime given
     if not simulation_datetime:
         simulation_datetime = datetime.now()
-    complete_last_activity(machine_id=machine.id, timestamp_end=simulation_datetime.timestamp())
+    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime)
     chance_the_activity_is_uptime = 0.8
     if random.random() < chance_the_activity_is_uptime:
         new_activity = Activity(machine_id=machine.id,
-                                timestamp_start=simulation_datetime.timestamp(),
+                                time_start=simulation_datetime,
                                 machine_state=1,
                                 activity_code_id=Config.UPTIME_CODE_ID,
                                 job_id=job.id,
@@ -73,7 +72,7 @@ def change_activity(machine, job, user, simulation_datetime=None):
     else:
         # otherwise the activity is downtime
         new_activity = Activity(machine_id=machine.id,
-                                timestamp_start=simulation_datetime.timestamp(),
+                                time_start=simulation_datetime,
                                 machine_state=0,
                                 activity_code_id=randrange(2, len(ActivityCode.query.all())),
                                 job_id=job.id,

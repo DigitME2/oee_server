@@ -11,19 +11,19 @@ from app.extensions import db
 from config import Config
 
 
-def complete_last_activity(machine_id, timestamp_end=None, activity_code_id=None,):
+def complete_last_activity(machine_id, time_end: datetime = None, activity_code_id=None,):
     """ Gets the most recent active activity for a machine and then ends it with the current time, or a provided time.
     If an activity_code_id is provided, the activity will be updated with this code"""
 
     # Warning to future Sam, don't put datetime.now() as the default argument, it will break this function
-    if timestamp_end is None:
-        timestamp_end = datetime.now().timestamp()
+    if time_end is None:
+        time_end = datetime.now()
     # Get the last activity
     last_activity_id = get_current_machine_activity_id(machine_id)
     if last_activity_id is None:
         return
     last_activity = db.session.query(Activity).get(last_activity_id)
-    last_activity.timestamp_end = timestamp_end
+    last_activity.time_end = time_end
     # If an activity code is provided, edit the last activity to have that code
     if activity_code_id:
         last_activity.activity_code_id = activity_code_id
@@ -32,10 +32,10 @@ def complete_last_activity(machine_id, timestamp_end=None, activity_code_id=None
 
 
 def get_current_machine_activity_id(target_machine_id):
-    """ Get the current activity of a machine by grabbing the most recent entry without an end timestamp"""
+    """ Get the current activity of a machine by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
     # The line below is causing a sql.programmingerror and im not sure why
-    activities = Activity.query.filter(Activity.machine_id == target_machine_id, Activity.timestamp_end == None).all()
+    activities = Activity.query.filter(Activity.machine_id == target_machine_id, Activity.time_end == None).all()
 
     if len(activities) == 0:
         current_app.logger.debug(f"No current activity on machine ID {target_machine_id}")
@@ -49,14 +49,14 @@ def get_current_machine_activity_id(target_machine_id):
         # If there is more than one activity without an end time, end them and return the most recent
 
         # Get the current activity by grabbing the one with the most recent start time
-        current_activity = max(activities, key=lambda activity: activity.timestamp_start)
+        current_activity = max(activities, key=lambda activity: activity.time_start)
         activities.remove(current_activity)
 
         current_app.logger.warning("More than one open-ended activity when trying to get current activity:")
         for act in activities:
-            if act.timestamp_end is None:
+            if act.time_end is None:
                 current_app.logger.warning(f"Closing lost activity {act}")
-                act.timestamp_end = act.timestamp_start
+                act.time_end = act.time_start
                 db.session.add(act)
                 db.session.commit()
 
@@ -64,10 +64,10 @@ def get_current_machine_activity_id(target_machine_id):
 
 
 def get_current_machine_schedule_activity_id(target_machine_id):
-    """ Get the current scheduled activity of a machine by grabbing the most recent entry without an end timestamp"""
+    """ Get the current scheduled activity of a machine by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
     # The line below is causing a sql.programmingerror and im not sure why
-    activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id, ScheduledActivity.timestamp_end == None).all()
+    activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id, ScheduledActivity.time_end == None).all()
 
     if len(activities) == 0:
         current_app.logger.debug(f"No current scheduled activity on machine ID {target_machine_id}")
@@ -79,10 +79,10 @@ def get_current_machine_schedule_activity_id(target_machine_id):
 
 
 def get_current_user_activity_id(target_user_id):
-    """ Get the current activity of a user by grabbing the most recent entry without an end timestamp"""
+    """ Get the current activity of a user by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
     # The line below is causing a sql.programmingerror and im not sure why
-    activities = Activity.query.filter(Activity.user_id == target_user_id, Activity.timestamp_end == None).all()
+    activities = Activity.query.filter(Activity.user_id == target_user_id, Activity.time_end == None).all()
 
     if len(activities) == 0:
         current_app.logger.debug(f"No current activity on user ID {target_user_id}")
@@ -96,29 +96,29 @@ def get_current_user_activity_id(target_user_id):
         # If there is more than one activity without an end time, end them and return the most recent
 
         # Get the current activity by grabbing the one with the most recent start time
-        current_activity = max(activities, key=lambda activity: activity.timestamp_start)
+        current_activity = max(activities, key=lambda activity: activity.time_start)
         activities.remove(current_activity)
 
         current_app.logger.warning("More than one open-ended activity when trying to get current activity:")
         for act in activities:
-            if act.timestamp_end is None:
+            if act.time_end is None:
                 current_app.logger.warning(f"Closing lost activity {act}")
-                act.timestamp_end = act.timestamp_start
+                act.time_end = act.time_start
                 db.session.add(act)
                 db.session.commit()
 
         return current_activity.id
 
 
-def flag_activities(activities, threshold):
+def flag_activities(activities: list[Activity], threshold):
     """ Filters a list of activities, adding explanation_required=True to those that require an explanation
     for downtime above a defined threshold"""
     ud_index_counter = 0
-    downtime_explanation_threshold_s = threshold
+    downtime_explanation_threshold = timedelta(seconds=threshold)
     for act in activities:
         # Only Flag activities with the downtime code and with a duration longer than the threshold
         if act.activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID and \
-                (act.timestamp_end - act.timestamp_start) > downtime_explanation_threshold_s:
+                (act.time_end - act.time_start) > downtime_explanation_threshold:
             act.explanation_required = True
             # Give the unexplained downtimes their own index
             act.ud_index = ud_index_counter
@@ -141,12 +141,12 @@ def split_activity(activity_id, split_time=None):
     new_activity = Activity(machine_id=old_activity.machine_id,
                             machine_state=old_activity.machine_state,
                             explanation_required=old_activity.explanation_required,
-                            timestamp_start=split_time,
+                            time_start=split_time,
                             activity_code_id=old_activity.activity_code_id,
                             job_id=old_activity.job_id)
 
     # End the old activity
-    old_activity.timestamp_end = split_time
+    old_activity.time_end = split_time
 
     db.session.add(new_activity)
     db.session.commit()
@@ -154,56 +154,38 @@ def split_activity(activity_id, split_time=None):
     current_app.logger.debug(f"Started {new_activity}")
 
 
-def get_dummy_machine_activity(timestamp_start, timestamp_end, job_id, machine_id):
-    """ Creates fake activities for one machine between two timestamps"""
-    virtual_time = timestamp_start
+def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id, machine_id):
+    """ Creates fake activities for one machine between two times"""
+    virtual_time = time_start
     activities = []
-    while virtual_time <= timestamp_end:
+    while virtual_time <= time_end:
         uptime_activity = Activity(machine_id=machine_id,
-                                   timestamp_start=virtual_time,
+                                   time_start=virtual_time,
                                    machine_state=Config.MACHINE_STATE_RUNNING,
                                    activity_code_id=Config.UPTIME_CODE_ID,
                                    job_id=job_id)
         virtual_time += randrange(400, 3000)
-        uptime_activity.timestamp_end = virtual_time
+        uptime_activity.time_end = virtual_time
         activities.append(uptime_activity)
 
         downtime_activity = Activity(machine_id=machine_id,
-                                     timestamp_start=virtual_time,
+                                     time_start=virtual_time,
                                      machine_state=Config.MACHINE_STATE_OFF,
                                      activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                      job_id=job_id)
         virtual_time += randrange(60, 1000)
-        downtime_activity.timestamp_end = virtual_time
+        downtime_activity.time_end = virtual_time
         activities.append(downtime_activity)
 
     return activities
 
 
-def decimal_time_to_current_day(decimal_time):
-    """ Turns decimal time for an hour (ie 9.5=9.30am) into a timestamp for the given time on the current day"""
-    hour = maths.floor(decimal_time)
-    minute = (decimal_time - hour) * 60
-    return datetime.now().replace(hour=hour, minute=minute).timestamp()
-
-
-def get_activity_duration(activity_id):
-    """ Gets the duration of an activity in minutes"""
-    act = Activity.query.get(activity_id)
-    start = act.timestamp_start
-    if act.timestamp_end is not None:
-        end = act.timestamp_end
-    else:
-        end = datetime.now().timestamp()
-    return (end - start)/60
-
-
-def get_legible_duration(timestamp_start, timestamp_end):
-    """ Takes two timestamps and returns a string in the format <hh:mm> <x> minutes"""
-    minutes = maths.floor((timestamp_end - timestamp_start) / 60)
-    hours = maths.floor((timestamp_end - timestamp_start) / 3600)
+def get_legible_duration(time_start: datetime, time_end: datetime):
+    """ Takes two times and returns a string in the format <hh:mm> <x> minutes"""
+    minutes = maths.floor((time_end - time_start).seconds / 60)
+    hours = maths.floor((time_end - time_start).seconds / 3600)
     if minutes == 0:
-        return f"{maths.floor(timestamp_end - timestamp_start)} seconds"
+        return f"{maths.floor((time_end - time_start).seconds)} seconds"
     if hours == 0:
         return f"{minutes} minutes"
     else:
@@ -211,7 +193,7 @@ def get_legible_duration(timestamp_start, timestamp_end):
         return f"{hours} hours {leftover_minutes} minutes"
 
 
-def get_machine_activities(machine_id, timestamp_start, timestamp_end):
+def get_machine_activities(machine_id, time_start: datetime, time_end: datetime):
     """ Returns the activities for a machine, between two times"""
 
     machine = Machine.query.get(machine_id)
@@ -220,8 +202,8 @@ def get_machine_activities(machine_id, timestamp_start, timestamp_end):
         return
     activities = Activity.query \
         .filter(Activity.machine_id == machine.id) \
-        .filter(Activity.timestamp_end >= timestamp_start) \
-        .filter(Activity.timestamp_start <= timestamp_end).all()
+        .filter(Activity.time_end >= time_start) \
+        .filter(Activity.time_start <= time_end).all()
     # If required, add the current_activity (The above loop will not get it)
     # and extend the end time to the end of the requested time
 
@@ -229,35 +211,35 @@ def get_machine_activities(machine_id, timestamp_start, timestamp_end):
     if current_activity_id is not None:
         current_act = Activity.query.get(current_activity_id)
         # Don't add the current activity if it started after the requested end of the graph
-        if current_act.timestamp_start <= timestamp_end:
+        if current_act.time_start <= time_end:
             activities.append(current_act)
 
     return activities
 
 
-def get_machine_scheduled_activities(machine_id, timestamp_start, timestamp_end):
+def get_machine_scheduled_activities(machine_id, time_start: datetime, time_end: datetime):
     """ Returns scheduled activities for a machine between two times"""
     activities = ScheduledActivity.query \
         .filter(ScheduledActivity.machine_id == machine_id) \
-        .filter(ScheduledActivity.timestamp_end >= timestamp_start) \
-        .filter(ScheduledActivity.timestamp_start <= timestamp_end).all()
+        .filter(ScheduledActivity.time_end >= time_start) \
+        .filter(ScheduledActivity.time_start <= time_end).all()
     return activities
 
 
-def get_user_activities(user_id, timestamp_start, timestamp_end):
+def get_user_activities(user_id, time_start: datetime, time_end: datetime):
     """ Returns the activities for a user, between two times"""
 
     activities = Activity.query \
         .filter(Activity.user_id == user_id) \
-        .filter(Activity.timestamp_end >= timestamp_start) \
-        .filter(Activity.timestamp_start <= timestamp_end).all()
+        .filter(Activity.time_end >= time_start) \
+        .filter(Activity.time_start <= time_end).all()
 
     # If required, add the current_activity (The above loop will not get it)
     current_activity_id = get_current_user_activity_id(target_user_id=user_id)
     if current_activity_id is not None:
         current_act = Activity.query.get(current_activity_id)
         # Don't add the current activity if it started after the requested end
-        if current_act.timestamp_start <= timestamp_end:
+        if current_act.time_start <= time_end:
             activities.append(current_act)
 
     return activities
@@ -313,8 +295,8 @@ def create_scheduled_activities(date=None):
         # Check to see if any scheduled activities already exist for today and skip if any exist
         existing_activities = ScheduledActivity.query \
             .filter(ScheduledActivity.machine_id == machine.id) \
-            .filter(ScheduledActivity.timestamp_start >= last_midnight.timestamp()) \
-            .filter(ScheduledActivity.timestamp_end <= next_midnight.timestamp()).all()
+            .filter(ScheduledActivity.time_start >= last_midnight) \
+            .filter(ScheduledActivity.time_end <= next_midnight).all()
         if len(existing_activities) > 0:
             current_app.logger.info(f"Scheduled activities already exist today for {machine} Skipping...")
             continue
@@ -332,22 +314,22 @@ def create_scheduled_activities(date=None):
         if shift_start != last_midnight:  # Skip making this activity if it will be 0 length
             before_shift = ScheduledActivity(machine_id=machine.id,
                                              scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                             timestamp_start=last_midnight.timestamp(),
-                                             timestamp_end=shift_start.timestamp())
+                                             time_start=last_midnight,
+                                             time_end=shift_start)
             db.session.add(before_shift)
 
         if shift_start != shift_end:  # Skip making this activity if it will be 0 length
             during_shift = ScheduledActivity(machine_id=machine.id,
                                              scheduled_machine_state=Config.MACHINE_STATE_RUNNING,
-                                             timestamp_start=shift_start.timestamp(),
-                                             timestamp_end=shift_end.timestamp())
+                                             time_start=shift_start,
+                                             time_end=shift_end)
             db.session.add(during_shift)
 
         if shift_end != next_midnight:  # Skip making this activity if it will be 0 length
             after_shift = ScheduledActivity(machine_id=machine.id,
                                             scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                            timestamp_start=shift_end.timestamp(),
-                                            timestamp_end=next_midnight.timestamp())
+                                            time_start=shift_end,
+                                            time_end=next_midnight)
             db.session.add(after_shift)
 
         db.session.commit()

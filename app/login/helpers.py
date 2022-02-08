@@ -11,7 +11,7 @@ from config import Config
 
 def start_user_session(user_id, device_ip):
     """ Start a new session. Usually called when a user logs in. Fails if no machine is assigned to the device ip"""
-    timestamp = datetime.now().timestamp()
+    now = datetime.now()
     user_session = UserSession.query.filter_by(user_id=user_id, device_ip=device_ip, active=True).first()
     # Close any user sessions that the current user has
     if user_session is not None:
@@ -29,13 +29,13 @@ def start_user_session(user_id, device_ip):
     new_us = UserSession(user_id=user_id,
                          machine_id=machine.id,
                          device_ip=device_ip,
-                         timestamp_login=timestamp,
+                         time_login=now,
                          active=True)
     db.session.add(new_us)
     # Change the machine activity now that the user is logged in
-    complete_last_activity(machine_id=machine.id, timestamp_end=timestamp)
+    complete_last_activity(machine_id=machine.id, time_end=now)
     new_activity = Activity(machine_id=machine.id,
-                            timestamp_start=timestamp,
+                            time_start=now,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             machine_state=Config.MACHINE_STATE_OFF)
     db.session.add(new_activity)
@@ -47,7 +47,6 @@ def start_user_session(user_id, device_ip):
 
 def end_user_sessions(user_id=None, machine_id=None):
     """ End all sessions for a user or a machine (Either can be given)"""
-    timestamp = datetime.now().timestamp()
     sessions = []
     if user_id:
         sessions.extend(UserSession.query.filter_by(user_id=user_id, active=True).all())
@@ -57,17 +56,17 @@ def end_user_sessions(user_id=None, machine_id=None):
         sessions.extend(UserSession.query.filter_by(active=True).all())
     for us in sessions:
         current_app.logger.info(f"Ending user session {us}")
-        us.timestamp_logout = timestamp
+        us.time_logout = datetime.now()
         us.active = False
         # End all jobs assigned to the session
         for job in us.jobs:
-            job.end_time = timestamp
+            job.end_time = datetime.now()
             job.active = None
         db.session.commit()  # Not committing here would sometimes cause sqlite to have too many operations
         # Set the activity to "no user"
-        complete_last_activity(machine_id=us.machine.id, timestamp_end=timestamp)
+        complete_last_activity(machine_id=us.machine.id, time_end=datetime.now())
         new_activity = Activity(machine_id=us.machine.id,
-                                timestamp_start=timestamp,
+                                time_start=datetime.now(),
                                 activity_code_id=Config.NO_USER_CODE_ID,
                                 machine_state=Config.MACHINE_STATE_OFF)
         current_app.logger.debug(f"Starting {new_activity} on logout of {us.user}")

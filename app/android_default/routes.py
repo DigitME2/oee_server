@@ -58,14 +58,12 @@ def check_default_machine_state(user_session):
         return json.dumps({"workflow_type": "default",
                            "state": "no_job",
                            "requested_data": {"wo_number": "Job Number",
-                                              "planned_run_time": "Planned Run Time",
-                                              "planned_quantity": "Planned Quantity"}})
+                                              "ideal_cycle_time": "Ideal Cycle Time"}})
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     # Send the list of downtime reasons to populate a dropdown. Exclude setting and no user
     all_active_codes = ActivityCode.query.filter(ActivityCode.active,
-                                                 ActivityCode.id != Config.SETTING_CODE_ID,
                                                  ActivityCode.id != Config.NO_USER_CODE_ID).all()
     # Get the current activity code to set the colour and dropdown
     try:
@@ -86,8 +84,8 @@ def check_default_machine_state(user_session):
                        "current_activity": current_activity_code.short_description,
                        "activity_codes": [code.short_description for code in all_active_codes],
                        "colour": colour,
-                       "requested_data_on_end": {"actual_quantity": "Actual Quantity",
-                                                 "scrap_quantity": "Scrap Quantity"}})
+                       "requested_data_on_end": {"quantity_produced": "Quantity Produced",
+                                                 "rejects": "Rejects"}})
 
 
 @bp.route('/androidlogin', methods=['POST'])
@@ -142,7 +140,6 @@ def android_login():
 @bp.route('/androidlogout', methods=['POST'])
 def android_logout():
     """ Logs the user out of the system. """
-    timestamp = datetime.now().timestamp()
     # Get the current user session based on the IP of the device accessing this page
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if user_session is None:
@@ -150,13 +147,13 @@ def android_logout():
     # End any jobs  under the current session
     for job in user_session.jobs:
         if job.active:
-            job.end_time = timestamp
+            job.end_time = datetime.now()
             job.active = None
     # End the current activity
     current_activity_id = get_current_machine_activity_id(user_session.machine_id)
     if current_activity_id:
         act = Activity.query.get(current_activity_id)
-        act.timestamp_end = timestamp
+        act.time_end = datetime.now()
         db.session.commit()
 
     current_app.logger.info(f"Logging out {user_session.user}")
@@ -168,7 +165,7 @@ def android_logout():
 def android_start_job():
     if not request.is_json:
         return 404
-    timestamp = datetime.now().timestamp()
+    now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     machine = user_session.machine
 
@@ -176,12 +173,11 @@ def android_start_job():
         return 400
 
     # Create the job
-    job = Job(start_time=timestamp,
+    job = Job(start_time=now,
               user_id=user_session.user_id,
               user_session_id=user_session.id,
               wo_number=request.json["wo_number"],
-              planned_run_time=request.json["planned_run_time"],
-              planned_quantity=request.json["planned_quantity"],
+              ideal_cycle_time=request.json["ideal_cycle_time"],
               machine_id=machine.id,
               active=True)
 
@@ -189,7 +185,7 @@ def android_start_job():
     db.session.commit()
 
     # End the current activity
-    complete_last_activity(machine_id=machine.id, timestamp_end=timestamp)
+    complete_last_activity(machine_id=machine.id, time_end=now)
 
     # Set the first activity
     starting_activity_code = Config.UPTIME_CODE_ID
@@ -200,7 +196,7 @@ def android_start_job():
                             activity_code_id=starting_activity_code,
                             user_id=user_session.user_id,
                             job_id=job.id,
-                            timestamp_start=timestamp)
+                            time_start=now)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.info(f"{user_session.user} started {job}")
@@ -209,7 +205,7 @@ def android_start_job():
 
 @bp.route('/androidupdate', methods=['POST'])
 def android_update_activity():
-    timestamp = datetime.now().timestamp()
+    now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     try:
         selected_activity_description = request.json["selected_activity_code"]
@@ -217,7 +213,7 @@ def android_update_activity():
         return json.dumps({"success": False})
 
     # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
+    complete_last_activity(machine_id=user_session.machine_id, time_end=now)
 
     # Start a new activity
     # The current job is the only active job belonging to the user session
@@ -235,7 +231,7 @@ def android_update_activity():
                             activity_code_id=activity_code.id,
                             user_id=user_session.user_id,
                             job_id=current_job.id,
-                            timestamp_start=timestamp)
+                            time_start=now)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.debug(f"Started {new_activity} for {current_job}")
@@ -245,11 +241,11 @@ def android_update_activity():
 
 @bp.route('/androidendjob', methods=['POST'])
 def android_end_job():
-    timestamp = datetime.now().timestamp()
+    now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
 
     try:
-        actual_quantity = int(request.json["actual_quantity"])
+        quantity_produced = int(request.json["quantity_produced"])
     except KeyError:
         current_app.logger.error(f"Received incorrect data from {user_session} while ending job")
         return json.dumps({"success": False,
@@ -257,25 +253,23 @@ def android_end_job():
 
     # End the current job
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    current_job.end_time = timestamp
+    current_job.end_time = now
     current_job.active = None
 
-    current_job.actual_quantity = actual_quantity
+    current_job.quantity_produced = quantity_produced
 
     db.session.commit()
 
     # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, timestamp_end=timestamp)
+    complete_last_activity(machine_id=user_session.machine_id, time_end=now)
 
     # Start a new activity
     new_activity = Activity(machine_id=user_session.machine_id,
                             machine_state=Config.MACHINE_STATE_OFF,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             user_id=user_session.user_id,
-                            timestamp_start=timestamp)
+                            time_start=now)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.debug(f"User {user_session.user} ended {current_job}")
     return json.dumps({"success": True})
-
-

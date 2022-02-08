@@ -62,12 +62,12 @@ def data():
         machine_ids = parse_requested_machine_list(gantt_form.key.data)
         if len(machine_ids) == 1:
             graph = create_machine_gantt(machine_id=machine_ids[0],
-                                         graph_start=start.timestamp(),
-                                         graph_end=end.timestamp())
+                                         graph_start=start,
+                                         graph_end=end)
         else:
             graph = create_multiple_machines_gantt(machine_ids=machine_ids,
-                                                   graph_start=start.timestamp(),
-                                                   graph_end=end.timestamp())
+                                                   graph_start=start,
+                                                   graph_end=end)
 
     elif isinstance(form_sent, OeeLineForm) and oee_line_form.validate_on_submit():
         graph = create_oee_line(graph_start_date=oee_line_form.start_date.data,
@@ -78,8 +78,8 @@ def data():
         end = datetime.combine(date=downtime_bar_form.end_date.data, time=downtime_bar_form.end_time.data)
         machine_ids = parse_requested_machine_list(downtime_bar_form.key.data)
         graph = create_downtime_bar(machine_ids=machine_ids,
-                                    graph_start_timestamp=start.timestamp(),
-                                    graph_end_timestamp=end.timestamp())
+                                    graph_start=start,
+                                    graph_end=end)
 
     elif isinstance(form_sent, JobTableForm) and job_table_form.validate_on_submit():
         graph = get_job_table(start_date=job_table_form.start_date.data,
@@ -93,9 +93,9 @@ def data():
         start = datetime.combine(date=downtime_bar_form.start_date.data, time=downtime_bar_form.start_time.data)
         end = datetime.combine(date=downtime_bar_form.end_date.data, time=downtime_bar_form.end_time.data)
         if "users" in activity_table_form.key.data:
-            graph = get_user_activity_table(timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
+            graph = get_user_activity_table(time_start=start, time_end=end)
         elif "machines" in activity_table_form.key.data:
-            graph = get_machine_activity_table(timestamp_start=start.timestamp(), timestamp_end=end.timestamp())
+            graph = get_machine_activity_table(time_start=start, time_end=end)
         else:
             graph = "Error"
 
@@ -107,8 +107,8 @@ def data():
         end = datetime.combine(date=schedule_gantt_form.end_date.data, time=schedule_gantt_form.end_time.data)
         machine_ids = parse_requested_machine_list(schedule_gantt_form.key.data)
         graph = create_schedules_gantt(machine_ids=machine_ids,
-                                       graph_start=start.timestamp(),
-                                       graph_end=end.timestamp())
+                                       graph_start=start,
+                                       graph_end=end)
 
     else:
         graph = ""
@@ -162,15 +162,15 @@ def dashboard():
         end = (start + timedelta(hours=8))
 
     if 'update' in request.args and request.args['update']:
-        return create_dashboard_gantt(graph_start=start.timestamp(),
-                                      graph_end=end.timestamp(),
+        return create_dashboard_gantt(graph_start=start,
+                                      graph_end=end,
                                       machine_ids=machine_ids,
                                       title=graph_title,
                                       include_plotlyjs=True)
     else:
 
-        graph = create_dashboard_gantt(graph_start=start.timestamp(),
-                                       graph_end=end.timestamp(),
+        graph = create_dashboard_gantt(graph_start=start,
+                                       graph_end=end,
                                        machine_ids=machine_ids,
                                        title=graph_title)
         return render_template("oee_displaying/dashboard.html",

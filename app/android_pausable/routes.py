@@ -11,15 +11,17 @@ from app.login import bp
 from app.login.models import UserSession
 from config import Config
 
+# TODO This blueprint broke when I changed the default fields stored with a job. To fix it we can either switch the date
+# collected by the tablet, or use the old data collected by the tablet and convert it into ideal_cycle_time etc
+
 REQUESTED_DATA_JOB_START = {"wo_number": "Job Number   10W",
                             "planned_run_time": "Planned Run Time",
                             "planned_quantity": "Planned Qty",
                             "planned_cycle_time": "Planned Cycle Time"}
 
-REQUESTED_DATA_SETTING_START = {"wo_number": "Job Number   10W",
-                                "planned_set_time": "Planned Set Time"}
+REQUESTED_DATA_SETTING_START = {"wo_number": "Job Number   10W"}
 
-REQUESTED_DATA_JOB_END = {"actual_quantity": "Actual Qty",
+REQUESTED_DATA_JOB_END = {"quantity_produced": "Actual Qty",
                           "scrap_quantity": "Scrap Qty"}
 
 REQUESTED_DATA_SETTING_END = {"scrap_quantity": "Scrap Qty"}
@@ -94,7 +96,7 @@ def check_pausable_machine_state(user_session):
         current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
         requested_data_on_end = REQUESTED_DATA_JOB_END
         # Change the actual quantity title to include the planned quantity
-        requested_data_on_end["actual_quantity"] = f"Actual Qty (Pl={current_job.planned_quantity})"
+        requested_data_on_end["quantity_produced"] = f"Actual Qty (Pl={current_job.planned_quantity})"
         return json.dumps({"workflow_type": "pausable",
                            "state": "active_job",
                            "wo_number": current_job.wo_number,
@@ -135,7 +137,6 @@ def pausable_1_start_job_or_setting(setting):
                   user_id=user_session.user_id,
                   user_session_id=user_session.id,
                   wo_number=request.json["wo_number"],
-                  planned_set_time=request.json["planned_set_time"],
                   machine_id=machine.id,
                   active=True)
     else:
@@ -167,7 +168,7 @@ def pausable_1_start_job_or_setting(setting):
                             activity_code_id=starting_activity_code,
                             user_id=user_session.user_id,
                             job_id=job.id,
-                            timestamp_start=timestamp)
+                            time_start=timestamp)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.info(f"{user_session.user} started {job}")
@@ -191,7 +192,7 @@ def pausable_1_pause_job():
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             user_id=user_session.user_id,
                             job_id=current_job.id,
-                            timestamp_start=timestamp)
+                            time_start=timestamp)
     db.session.add(new_activity)
     db.session.commit()
     return json.dumps({"success": True})
@@ -227,7 +228,7 @@ def pausable_1_resume_job():
                             activity_code_id=Config.UPTIME_CODE_ID,
                             user_id=user_session.user_id,
                             job_id=current_job.id,
-                            timestamp_start=timestamp)
+                            time_start=timestamp)
     db.session.add(new_activity)
     db.session.commit()
     return json.dumps({"success": True})
@@ -264,13 +265,13 @@ def pausable_end_job_or_setting(setting):
         current_job.setup_scrap = scrap_quantity
     else:
         try:
-            actual_quantity = int(request.json["actual_quantity"])
+            quantity_produced = int(request.json["quantity_produced"])
             scrap_quantity = int(request.json["scrap_quantity"])
         except KeyError:
             return json.dumps({"success": False,
                                "reason": "Did not receive correct data from server"})
         current_job.production_scrap = scrap_quantity
-        current_job.actual_quantity = actual_quantity
+        current_job.quantity_produced = quantity_produced
 
     db.session.commit()
 
@@ -282,7 +283,7 @@ def pausable_end_job_or_setting(setting):
                             machine_state=Config.MACHINE_STATE_OFF,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             user_id=user_session.user_id,
-                            timestamp_start=timestamp)
+                            time_start=timestamp)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.debug(f"User {user_session.user} ended {current_job}")

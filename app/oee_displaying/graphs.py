@@ -9,8 +9,8 @@ from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
 from plotly.offline import plot
 
-from app.data_analysis.oee.oee import get_daily_group_oee
 from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
+from app.data_analysis.oee.oee import get_daily_group_oee
 from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
 from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity
 from app.oee_displaying.helpers import get_machine_status
@@ -51,13 +51,13 @@ def apply_default_layout(layout):
     return layout
 
 
-def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False):
-    """ Create a gantt chart of the usage of a single machine, between the two timestamps provided"""
+def create_machine_gantt(machine_id, graph_start: datetime, graph_end: datetime, hide_jobless=False):
+    """ Create a gantt chart of the usage of a single machine, between the two times provided"""
 
     if machine_id is None:
         return "This machine does not exist"
 
-    activities = get_machine_activities(machine_id=machine_id, timestamp_start=graph_start, timestamp_end=graph_end)
+    activities = get_machine_activities(machine_id=machine_id, time_start=graph_start, time_end=graph_end)
     # Sort the activities so that uptime is always the first.
     # This is a workaround to make the graph always show uptime on the bottom
     activities.sort(key=sort_activities, reverse=True)
@@ -98,7 +98,7 @@ def create_machine_gantt(machine_id, graph_start, graph_end, hide_jobless=False)
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
+def create_multiple_machines_gantt(graph_start: datetime, graph_end: datetime, machine_ids):
     """ Creates a gantt plot of activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
@@ -107,11 +107,11 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     activities = []
     machine_ids.sort()
     for machine_id in machine_ids:
-        machine_activities = get_machine_activities(machine_id=machine_id, timestamp_start=graph_start,
-                                                    timestamp_end=graph_end)
+        machine_activities = get_machine_activities(machine_id=machine_id, time_start=graph_start,
+                                                    time_end=graph_end)
         # If a machine has no activities, add a fake one so it still shows on the graph
         if len(machine_activities) == 0:
-            activities.append(Activity(timestamp_start=graph_start, timestamp_end=graph_start))
+            activities.append(Activity(time_start=graph_start, time_end=graph_start))
         else:
             activities.extend(machine_activities)
 
@@ -142,7 +142,7 @@ def create_multiple_machines_gantt(graph_start, graph_end, machine_ids):
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_plotlyjs=True):
+def create_dashboard_gantt(graph_start: datetime, graph_end: datetime, machine_ids, title, include_plotlyjs=True):
     """ Creates a gantt plot of activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
@@ -152,8 +152,8 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     machine_ids.sort()
     for machine_id in machine_ids:
         activities.extend(get_machine_activities(machine_id=machine_id,
-                                                 timestamp_start=graph_start,
-                                                 timestamp_end=graph_end))
+                                                 time_start=graph_start,
+                                                 time_end=graph_end))
 
     df = get_activities_df(activities=activities,
                            group_by="machine_name",
@@ -193,7 +193,7 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
     layout.yaxis.range = None
     layout.yaxis.autorange = True
 
-    layout.xaxis.range = [datetime.fromtimestamp(graph_start), datetime.fromtimestamp(graph_end)]
+    layout.xaxis.range = [graph_start, graph_end]
 
     layout.xaxis.rangeselector.visible = False
 
@@ -224,7 +224,7 @@ def create_dashboard_gantt(graph_start, graph_end, machine_ids, title, include_p
                 config={"displayModeBar": False, "showLink": False})
 
 
-def create_schedules_gantt(graph_start, graph_end, machine_ids: list):
+def create_schedules_gantt(graph_start: datetime, graph_end: datetime, machine_ids: list):
     """ Creates a gantt plot of scheduled activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
@@ -234,11 +234,11 @@ def create_schedules_gantt(graph_start, graph_end, machine_ids: list):
     if len(machine_ids) > 1:
         machine_ids.sort()
     for machine_id in machine_ids:
-        scheduled_activities.extend(get_machine_scheduled_activities(machine_id=machine_id, timestamp_start=graph_start,
-                                                                     timestamp_end=graph_end))
+        scheduled_activities.extend(get_machine_scheduled_activities(machine_id=machine_id, time_start=graph_start,
+                                                                     time_end=graph_end))
         # If a machine has no activities, add a fake one so it still shows on the graph
         if len(scheduled_activities) == 0:
-            scheduled_activities.append(ScheduledActivity(timestamp_start=graph_start, timestamp_end=graph_start))
+            scheduled_activities.append(ScheduledActivity(time_start=graph_start, time_end=graph_start))
         else:
             scheduled_activities.extend(scheduled_activities)
 
@@ -297,8 +297,8 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                 include_plotlyjs=True)
 
 
-def create_oee_line(graph_start_date, graph_end_date):
-    """ Takes two timestamps and creates a line graph of the OEE for each machine group between these times
+def create_oee_line(graph_start_date: date, graph_end_date: date):
+    """ Takes two times and creates a line graph of the OEE for each machine group between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
     groups = MachineGroup.query.all()
     d = date(2022, 1, 18)
@@ -326,11 +326,11 @@ def create_oee_line(graph_start_date, graph_end_date):
                 config={"showLink": False})
 
 
-def create_downtime_bar(machine_ids, graph_start_timestamp, graph_end_timestamp):
+def create_downtime_bar(machine_ids, graph_start: datetime, graph_end: datetime):
     total_activities_dict = None
     for machine_id in machine_ids:
-        activities_dict = get_activity_duration_dict(requested_start=graph_start_timestamp,
-                                                     requested_end=graph_end_timestamp,
+        activities_dict = get_activity_duration_dict(requested_start=graph_start,
+                                                     requested_end=graph_end,
                                                      machine_id=machine_id,
                                                      use_description_as_key=True,
                                                      units="minutes")
@@ -361,7 +361,7 @@ def sort_activities(act):
     return act.activity_code_id
 
 
-def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflow=True):
+def get_activities_df(activities: list[Activity], group_by, graph_start: datetime, graph_end: datetime, crop_overflow=True):
     """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
     crop_overflow will crop activities that extend past the requested graph start and end times"""
 
@@ -372,31 +372,31 @@ def get_activities_df(activities, group_by, graph_start, graph_end, crop_overflo
             continue
         # Don't show values outside of graph time range
         if crop_overflow:
-            if act.timestamp_start < graph_start:
+            if act.time_start < graph_start:
                 start = graph_start
             else:
-                start = act.timestamp_start
-            if act.timestamp_end is None:
+                start = act.time_start
+            if act.time_end is None:
                 # Extend the current activity to either graph end or current time
-                if graph_end >= datetime.now().timestamp():
-                    end = datetime.now().timestamp()
+                if graph_end >= datetime.now():
+                    end = datetime.now()
                 else:
                     end = graph_end
-            elif act.timestamp_end > graph_end:
+            elif act.time_end > graph_end:
                 end = graph_end
             else:
-                end = act.timestamp_end
+                end = act.time_end
         # Use actual times if they're not being cropped
         else:
-            start = act.timestamp_start
-            end = act.timestamp_end
+            start = act.time_start
+            end = act.time_end
         code = act.activity_code.short_description
 
         task = operator.attrgetter("machine.name")(act)
 
         df.append(dict(Task=task,
-                       Start=datetime.fromtimestamp(start),
-                       Finish=datetime.fromtimestamp(end),
+                       Start=start,
+                       Finish=end,
                        Code=code))
 
     return df
@@ -414,24 +414,24 @@ def get_scheduled_activities_df(activities: List[ScheduledActivity], group_by, g
             continue
         # Don't show values outside of graph time range
         if crop_overflow:
-            if act.timestamp_start < graph_start:
+            if act.time_start < graph_start:
                 start = graph_start
             else:
-                start = act.timestamp_start
-            if act.timestamp_end is None:
+                start = act.time_start
+            if act.time_start is None:
                 # Extend the current activity to either graph end or current time
-                if graph_end >= datetime.now().timestamp():
-                    end = datetime.now().timestamp()
+                if graph_end >= datetime.now():
+                    end = datetime.now()
                 else:
                     end = graph_end
-            elif act.timestamp_end > graph_end:
+            elif act.time_end > graph_end:
                 end = graph_end
             else:
-                end = act.timestamp_end
+                end = act.time_end
         # Use actual times if they're not being cropped
         else:
-            start = act.timestamp_start
-            end = act.timestamp_end
+            start = act.time_start
+            end = act.time_end
 
         if act.scheduled_machine_state == Config.MACHINE_STATE_RUNNING:
             code = SCHEDULED_UPTIME_KEY_STRING
@@ -440,8 +440,8 @@ def get_scheduled_activities_df(activities: List[ScheduledActivity], group_by, g
 
         task = operator.attrgetter("machine.name")(act)
         df.append(dict(Task=task,
-                       Start=datetime.fromtimestamp(start),
-                       Finish=datetime.fromtimestamp(end),
+                       Start=start,
+                       Finish=end,
                        Code=code))
 
     return df
@@ -462,16 +462,16 @@ def highlight_jobs(activities, layout):
     for j in jobs:
         if j.end_time is None:
             # If the job doesn't have an end time, use the current time as its end time
-            j.end_time = datetime.now().timestamp()
+            j.end_time = datetime.now()
 
         # Create a shape to highlight each job
         h = Shape()
         h.type = 'rect'
         h.xref = 'x'
         h.yref = 'paper'
-        h.x0 = datetime.fromtimestamp(j.start_time)
+        h.x0 = j.start_time
         h.y0 = 0
-        h.x1 = datetime.fromtimestamp(j.end_time)
+        h.x1 = j.end_time
         h.y1 = 0.9
         h.fillcolor = '#C0C0C0'
         h.opacity = 0.3
@@ -487,7 +487,7 @@ def highlight_jobs(activities, layout):
         a.font = {
             "size": 16
         }
-        a.x = datetime.fromtimestamp((j.start_time + j.end_time) / 2)
+        a.x = j.start_time + ((j.start_time - j.end_time) / 2)
         a.yref = 'paper'
         a.y = 0.9
         a.showarrow = False

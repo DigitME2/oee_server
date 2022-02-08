@@ -35,8 +35,8 @@ def get_machine_status(machine_id):
             job_text = current_machine_activity.job.wo_number
         except AttributeError:  # When there's no job
             job_text = "No job"
-        duration = get_legible_duration(timestamp_start=current_machine_activity.timestamp_start,
-                                        timestamp_end=datetime.now().timestamp())
+        duration = get_legible_duration(time_start=current_machine_activity.time_start,
+                                        time_end=datetime.now())
 
     return {"machine_name": machine.name,
             "machine_user": machine_user_text,
@@ -52,12 +52,12 @@ def get_machine_current_user(machine_id):
     if len(user_sessions) > 1:
         current_app.logger.warning(f"Multiple user sessions found for machine id {machine_id}")
         # Get the current activity by grabbing the one with the most recent start time
-        most_recent_session = max(user_sessions, key=lambda user_session: user_session.timestamp_login)
+        most_recent_session = max(user_sessions, key=lambda user_session: user_session.time_login)
         user_sessions.remove(most_recent_session)
 
         for us in user_sessions:
             current_app.logger.warning(f"Ending session {us}")
-            us.timestamp_logout = datetime.now().timestamp()
+            us.time_logout = datetime.now()
             db.session.add(us)
             db.session.commit()
     elif len(user_sessions) == 1:

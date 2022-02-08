@@ -24,13 +24,13 @@ def create_data():
     start = datetime(year=2020, month=6, day=21, hour=0, minute=0).timestamp()
     finish = datetime(year=2020, month=6, day=22, hour=0, minute=0).timestamp()
 
-    create_activities(machine_id=4, user_id=8, timestamp_start=start, timestamp_end=finish)
+    create_activities(machine_id=4, user_id=8, time_start=start, timestamp_end=finish)
     return "created"
 
 
-def create_activities(machine_id, user_id, timestamp_start, timestamp_end):
+def create_activities(machine_id, user_id, time_start, timestamp_end):
     all_activity_codes = ActivityCode.query.all()
-    time = timestamp_start
+    time = time_start
     current_job = None
     while time <= timestamp_end:
         # chance of changing active job
@@ -41,7 +41,7 @@ def create_activities(machine_id, user_id, timestamp_start, timestamp_end):
         else:
             job_id = current_job.id
         uptime_activity = Activity(machine_id=machine_id,
-                                   timestamp_start=time,
+                                   time_start=time,
                                    machine_state=1,
                                    activity_code_id=Config.UPTIME_CODE_ID,
                                    job_id=job_id,
@@ -53,7 +53,7 @@ def create_activities(machine_id, user_id, timestamp_start, timestamp_end):
         if machine_state == 1:
             machine_state = 0
         downtime_activity = Activity(machine_id=machine_id,
-                                     timestamp_start=time,
+                                     time_start=time,
                                      machine_state=machine_state,
                                      activity_code_id=randrange(2, 5),
                                      job_id=job_id,
@@ -79,7 +79,7 @@ def change_job(current_job, time, user_id, machine_id):
                   planned_run_time=str(randrange(1, 100)),
                   planned_quantity=str(randrange(1, 100)),
                   planned_cycle_time=str(randrange(1, 100)),
-                  actual_quantity=str(randrange(1, 100)),
+                  quantity_produced=str(randrange(1, 100)),
                   machine_id=machine_id,
                   production_scrap=str(randrange(1,100)),
                   active=True)
