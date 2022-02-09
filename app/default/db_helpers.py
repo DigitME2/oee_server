@@ -283,12 +283,15 @@ def machine_schedule_active(machine, dt: datetime = None):
 
 
 def backfill_missed_schedules():
-    last_schedule_time = db.session.query(func.max(ScheduledActivity.time_end)).first()[0]
+    last_schedule_time = db.session.query(func.max(ScheduledActivity.time_start)).first()[0]
     if last_schedule_time is not None:
         start_date = last_schedule_time.date()
     else:
         start_date = Settings.query.get(1).first_start.date()
-    dates = [start_date + timedelta(days=x) for x in range((datetime.now().date() - start_date).days + 1)]
+    no_of_days_to_backfill = (datetime.now().date() - start_date).days
+    if no_of_days_to_backfill <= 0:
+        return
+    dates = [datetime.now().date() - timedelta(days=x) for x in range(0, no_of_days_to_backfill + 1)]
     for d in dates:
         create_scheduled_activities(create_date=d)
 
@@ -319,8 +322,6 @@ def create_scheduled_activities(create_date: date = None):
         # Create datetime objects with today's date and the times from the schedule table
         shift_start = datetime.combine(create_date, datetime.strptime(shift[0], "%H%M").timetz())
         shift_end = datetime.combine(create_date, datetime.strptime(shift[1], "%H%M").timetz())
-
-        current_app.logger.info(f"{machine} \nShift start: {shift_start} \nShift end: {shift_end}")
 
         if shift_start != last_midnight:  # Skip making this activity if it will be 0 length
             before_shift = ScheduledActivity(machine_id=machine.id,

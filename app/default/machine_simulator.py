@@ -129,8 +129,6 @@ def backfill_missed_simulations():
     else:
         simulation_start = last_simulation
     # Create scheduled activities
-    for i in dt_range(simulation_start, datetime.now(), 86400):  # 86400 = seconds in a day
-        create_scheduled_activities(i.date())
     for i in dt_range(simulation_start, datetime.now(), Config.DATA_SIMULATION_FREQUENCY_SECONDS):
         simulate_machines(i)
 
