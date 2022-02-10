@@ -10,7 +10,7 @@ from plotly.graph_objs.layout import Shape, Annotation
 from plotly.offline import plot
 
 from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
-from app.data_analysis.oee.oee import get_daily_group_oee
+from app.data_analysis.oee.oee import get_daily_group_oee, get_daily_machine_oee
 from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
 from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity, Settings
 from app.oee_displaying.helpers import get_machine_status
@@ -69,7 +69,7 @@ def create_machine_gantt(machine_id, graph_start: datetime, graph_end: datetime,
         return "No machine activity"
 
     machine = Machine.query.get(machine_id)
-    graph_title = f"{machine.name} OEE"
+    graph_title = f"{machine.name}"
 
     # Create the colours dictionary using codes' colours from the database
     colours = {}
@@ -297,7 +297,7 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                 include_plotlyjs=True)
 
 
-def create_oee_line(graph_start_date: date, graph_end_date: date):
+def create_group_oee_line(graph_start_date: date, graph_end_date: date):
     """ Takes two times and creates a line graph of the OEE for each machine group between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
     groups = MachineGroup.query.all()
@@ -313,6 +313,35 @@ def create_oee_line(graph_start_date: date, graph_end_date: date):
             group_oee_list.append(daily_group_oee)
 
         fig.add_trace(go.Scatter(x=dates, y=group_oee_list, name=group.name, mode='lines+markers'))
+    layout = Layout()
+    layout.xaxis.update(range=[graph_start_date, graph_end_date])
+    layout.xaxis.tickformat = '%a %d-%m-%Y'
+    layout.xaxis.showgrid = False
+    layout.xaxis.dtick = 86400000  # Space between ticks = 1 day
+    fig.layout = layout
+
+    return plot(fig,
+                output_type="div",
+                include_plotlyjs=True,
+                config={"showLink": False})
+
+
+def create_oee_line(graph_start_date: date, graph_end_date: date, machine_ids):
+    """ Takes two times and creates a line graph of the OEE for each machine between these times
+    The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
+    d = Settings.query.get(1).first_start.date()
+    dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
+    if len(dates) == 0:
+        return 0
+    fig = go.Figure()
+    machine_ids.sort()
+    for machine_id in machine_ids:
+        machine = Machine.query.get(machine_id)
+        machine_oee_figures = []
+        for d in dates:
+            machine_oee_figures.append(get_daily_machine_oee(machine_id=machine_id, date=d))
+        fig.add_trace(go.Scatter(x=dates, y=machine_oee_figures, name=machine.name, mode='lines+markers'))
+
     layout = Layout()
     layout.xaxis.update(range=[graph_start_date, graph_end_date])
     layout.xaxis.tickformat = '%a %d-%m-%Y'

@@ -88,10 +88,17 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
     return table_html
 
 
-def get_job_table(start_date: date, end_date: date) -> str:
+def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
     start_time = datetime.combine(start_date, time(0, 0, 0, 0))
     end_time = datetime.combine(end_date, time(0, 0, 0, 0))
-    jobs = Job.query.filter(Job.start_time <= end_time).filter(Job.end_time >= start_time)
+    jobs = []
+    for machine_id in machine_ids:
+        machine_jobs = Job.query\
+            .filter(Job.start_time <= end_time)\
+            .filter(Job.end_time >= start_time)\
+            .filter(Job.machine_id == machine_id).all()
+        jobs.extend(machine_jobs)
+
 
     items = []
     for job in jobs:
@@ -99,7 +106,8 @@ def get_job_table(start_date: date, end_date: date) -> str:
                 "wo_number": job.wo_number,
                 "part_number": job.part_number,
                 "ideal_cycle_time": job.ideal_cycle_time,
-                "quantity_produced": job.quantity_produced}
+                "quantity_produced": job.quantity_produced,
+                "rejects": job.quantity_rejects}
         try:
             item["operator"] = str(job.user.username)
         except:
@@ -141,9 +149,10 @@ class JobTable(Table):
     start = Col('Start')
     end = Col('End')
     operator = Col('Operator')
-    actual_run_time = Col('Duration')
-    ideal_cycle_time = Col("Ideal Cycle Time")
-    quantity_produced = Col("Actual Quantity")
+    actual_run_time = Col('Duration (Min)')
+    ideal_cycle_time = Col("Ideal Cycle Time (Sec)")
+    quantity_produced = Col("Total Qty")
+    rejects = Col("Rejects Qty")
 
 
 def get_raw_database_table(table_name):

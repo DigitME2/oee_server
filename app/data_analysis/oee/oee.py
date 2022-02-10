@@ -19,7 +19,7 @@ def calculate_machine_oee(machine_id, time_start: datetime, time_end: datetime):
         current_app.logger.warn(f"Machine oee requested for future date {time_end.strftime(('%Y-%m-%d'))}")
         raise OEECalculationException("Machine OEE requested for future date")
 
-    current_app.logger.debug(f"Calculating OEE for machine {machine_id} between {time_start} and {time_end}")
+    current_app.logger.info(f"Calculating OEE for machine {machine_id} between {time_start} and {time_end}")
     availability = calculate_machine_availability(machine_id, time_start, time_end)
     current_app.logger.debug(f"Availability: {availability}")
     performance = get_machine_performance(machine_id, time_start, time_end)

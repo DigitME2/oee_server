@@ -52,6 +52,36 @@
             </div>
         {% endif %}
 
+        {#    STANDARD KEY + DATE   #}
+
+    {% if (form.form_template == "key_date") %}
+            <div class="form-row">
+                {{ form.description }}
+            </div>
+            <div class="form-row mt-2">
+                <div class="form-group pr-2">
+                    {{ form.key.label }}
+                    {{ form.key(class_="form-control") }}
+                </div>
+
+                <div class="form-group pr-2">
+                    {{ form.start_date.label }}
+                    {{ form.start_date(class_="form-control") }}
+                    {% for error in form.start_date.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group pr-2">
+                    {{ form.end_date.label }}
+                    {{ form.end_date(class_="form-control") }}
+                    {% for error in form.end_date.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
         {#    DATE ONLY  #}
 
         {% if (form.form_template == "date") %}

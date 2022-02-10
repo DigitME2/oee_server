@@ -35,6 +35,22 @@ class GanttForm(FlaskForm):
 
 
 class OeeLineForm(FlaskForm):
+    form_template = "key_date"
+    graph_name = "OEE Line Graph"
+    description = "A line graph showing the daily OEE figure of machines between two dates"
+    key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")],
+                      id="oee_machines")
+    start_date = DateField(validators=[DataRequired()], id="oee_line_start_date",
+                           label="Start Date (DD-MM-YYYY)",
+                           default=a_month_ago)
+    end_date = DateField(validators=[DataRequired()], id="oee_line_end_date",
+                         label="End Date (DD-MM-YYYY)",
+                         default=yesterday)
+
+    submit = SubmitField('Submit', id="oee_line_submit")
+
+
+class OeeGroupLineForm(FlaskForm):
     form_template = "date"
     graph_name = "Machine group OEE Line Graph"
     description = "A line graph showing the daily OEE figure of every machine group between two dates"
@@ -68,8 +84,10 @@ class DowntimeBarForm(FlaskForm):
 
 
 class JobTableForm(FlaskForm):
-    form_template = "date"
+    form_template = "key_date"
     graph_name = "Job Table"
+    key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")],
+                      id="job_machines")
     start_date = DateField(validators=[DataRequired()], id="job_table_start_date",
                            label="Start Date (DD-MM-YYYY)",
                            default=today)
