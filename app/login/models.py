@@ -68,14 +68,6 @@ def create_default_users():
     # noinspection PyArgumentList
     default_admin = User(username="admin", admin=True)
     default_admin.set_password("digitme2")
-
-    if User.query.filter_by(username="user").first() is not None:
-        return
-    # noinspection PyArgumentList
-    default_user = User(username="user", admin=False)
-    default_user.set_password("1")
-
     db.session.add(default_admin)
-    db.session.add(default_user)
     db.session.commit()
-    logger.info(f"Created default users:\n{default_admin}\n{default_user}\n on first startup")
+    logger.info(f"Created default users:\n{default_admin}\n on first startup")

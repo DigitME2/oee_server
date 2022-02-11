@@ -16,7 +16,7 @@ def login():
     """The screen to log the user into the system."""
     # call create_all to create database tables if this is the first run
     db.create_all()
-    # If there are no users, create a default admin and non-admin
+    # If there are no users, create a default admin
     if len(User.query.all()) == 0:
         create_default_users()
     # Redirect the user if already logged in
