@@ -136,7 +136,6 @@ def create_demo_activity_codes():
 
 def create_default_machine():
     machine1 = Machine(name="Machine 1",
-                       device_ip="127.0.0.1",
                        group_id=1,
                        schedule_id=1)
     db.session.add(machine1)
