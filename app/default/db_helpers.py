@@ -2,9 +2,10 @@ import math as maths
 from datetime import datetime, timedelta, date, time
 from operator import attrgetter
 from random import randrange
+from typing import List
 
-from sqlalchemy import func
 from flask import current_app
+from sqlalchemy import func
 
 from app.default.models import Activity, Machine, ScheduledActivity, Settings
 from app.extensions import db
@@ -110,7 +111,7 @@ def get_current_user_activity_id(target_user_id):
         return current_activity.id
 
 
-def flag_activities(activities: list[Activity], threshold):
+def flag_activities(activities: List[Activity], threshold):
     """ Filters a list of activities, adding explanation_required=True to those that require an explanation
     for downtime above a defined threshold"""
     ud_index_counter = 0

@@ -230,7 +230,7 @@ def create_schedules_gantt(graph_start: datetime, graph_end: datetime, machine_i
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
-    scheduled_activities: list[ScheduledActivity] = []
+    scheduled_activities: List[ScheduledActivity] = []
     if len(machine_ids) > 1:
         machine_ids.sort()
     for machine_id in machine_ids:
@@ -390,7 +390,7 @@ def sort_activities(act):
     return act.activity_code_id
 
 
-def get_activities_df(activities: list[Activity], group_by, graph_start: datetime, graph_end: datetime, crop_overflow=True):
+def get_activities_df(activities: List[Activity], group_by, graph_start: datetime, graph_end: datetime, crop_overflow=True):
     """ Takes a list of machine IDs and returns a dataframe with the activities associated with the machines
     crop_overflow will crop activities that extend past the requested graph start and end times"""
 
