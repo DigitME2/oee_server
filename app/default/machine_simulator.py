@@ -38,6 +38,12 @@ def end_job(job, machine, simulation_datetime=None):
     job.quantity_rejects = int(job.quantity_produced * (random.random()/4))
     job.active = None
     complete_last_activity(machine_id=machine.id, time_end=simulation_datetime)
+    new_activity = Activity(machine_id=machine.id,
+                            time_start=simulation_datetime,
+                            machine_state=1,
+                            activity_code_id=Config.NO_USER_CODE_ID,
+                            job_id=job.id)
+    db.session.add(new_activity)
     db.session.commit()
 
 
