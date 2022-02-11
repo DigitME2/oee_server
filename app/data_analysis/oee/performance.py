@@ -23,5 +23,10 @@ def get_machine_performance(machine_id, time_start: datetime, time_end: datetime
             current_app.logger.warning(f"No ideal cycle time or quantity for job {job.id}. "
                                        f"Assuming 100% Performance for this job in OEE calculation")
             ideal_machine_runtime_s += (job.end_time - job.start_time).total_seconds()
-    return ideal_machine_runtime_s / machine_up_time_s
+    try:
+        return ideal_machine_runtime_s / machine_up_time_s
+    except ZeroDivisionError:
+        current_app.logger.warning(f"No uptime for machine {machine_id}. between {time_start} - {time_end}. "
+                                   f"Cannot Calculate OEE")
+        return 0
 
