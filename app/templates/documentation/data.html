@@ -1,0 +1,42 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="container mt-2">
+        <div>
+
+            <main role="main">
+                <div class="jumbotron">
+                    <div class="container">
+                        <h1 class="display-3">Visualisation</h1>
+                        <p><a class="btn btn-secondary" href="{{ url_for('documentation.help_home') }}" role="button">«
+                            Back to help</a></p>
+                    </div>
+                </div>
+
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <p><a href="{{ url_for('oee_displaying.data') }}" role="button">
+                                The data tab</a>
+                                is where collected data can be visualised in graphs and tables</p>
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/graph-form.png') }}"/>
+                            Select which type of graph you would like created, and submit the form and the software will
+                            output a graph or table. Data can be exported using the options in the corner. New types of
+                            graphs and tables can be created on request.
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/gantt-example.png') }}"/>
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+{% endblock %}
+

@@ -1,0 +1,115 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="container mt-2">
+        <div>
+
+            <main role="main">
+                <div class="jumbotron">
+                    <div class="container">
+                        <h1 class="display-3">Android</h1>
+                        <p>Monitoring of the equipment is performed via the companion Android App</p>
+                        <p><a class="btn btn-secondary" href="{{ url_for('documentation.help_home') }}" role="button">«
+                            Back to help</a></p>
+                    </div>
+                </div>
+
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-6">
+                            <h2>Initial Setup</h2>
+                            <p>When the app is first started, it will require the address of this OEE server.</p>
+                        </div>
+                        <div class="col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-address.jpg') }}"/>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-6">
+                            <p>Once connected to the server, the app will try and find its assigned machine. If it has
+                                not been paired to a machine, the IP of this tablet should be added to the machine in
+                                the admin page. The tablet will say its IP address at the top of the screen. If this
+                                address does not sound correct (e.g. 127.0.0.1) then it's possible you have an error in
+                                your server configuration. An example nginx config can be found in this project's
+                                repository</p>
+                        </div>
+                        <div class="col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-no-machine.jpg') }}"/>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-6">
+                            <h2>Normal Operation</h2>
+                            <p>At the login screen for the app, an operator can login with their user ID and password.
+                                The name of the assigned machine can be seen at the top of this view.
+                                User IDs can be found on the admin tab, where passwords can also be changed. The android
+                                app only accepts numerical passwords for ease of entry in suboptimal conditions. </p>
+                        </div>
+                        <div class="col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-login.png') }}"/>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-6">
+                            <p>After login, the user will be prompted to start a job on the assigned machine. The data
+                                entered here can be modified on request. </p>
+                        </div>
+                        <div class="col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-start-job.png') }}"/>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-6">
+                            <p></p>
+                        </div>
+
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-12 col-lg-3">
+                            <p>During a job the tablet displays the current state of the machine. This can be changed by
+                                tapping the dropdown </p>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-uptime.png') }}"/>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-change-activity.png') }}"/>
+                        </div>
+                        <div class="col-lg-2 col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-quality-issue.png') }}"/>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-6">
+                            <p>At the end of a job, the tablet will request additional data from the user. The data
+                                requested at this stage can be modified on request</p>
+                        </div>
+                        <div class="col-4">
+                            <img class="img-thumbnail my-2"
+                                 src="{{ url_for('static', filename='images/android-end-job.png') }}"/>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+{% endblock %}
+

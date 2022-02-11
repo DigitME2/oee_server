@@ -1,0 +1,48 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="container mt-2">
+        <div>
+
+            <main role="main">
+                <div class="jumbotron">
+                    <div class="container">
+                        <h1 class="display-3">Help pages</h1>
+                        <p>This is an open source project to monitor overall equipment effectiveness (OEE), created by
+                            the DigitME2 team. Issues can be raised here:
+                            <a href=" https://github.com/DigitME2/oee_server">
+                                https://github.com/DigitME2/oee_server</a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h2>Setup help</h2>
+                            <p>The admin tab allows setup of the OEE map for your shop floor.</p>
+                            <p><a class="btn btn-secondary" href="{{ url_for('documentation.admin') }}" role="button">More info »</a></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h2>Visualisation Help</h2>
+                            <p>The data tab allows graphs and tables to be created to better visualise the data</p>
+                            <p><a class="btn btn-secondary" href="{{ url_for('documentation.data') }}" role="button">More info »</a></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h2>Android App Help</h2>
+                            <p> This app is accompanied by an Android app for the collection of live equipment data</p>
+                            <p><a class="btn btn-secondary" href="{{ url_for('documentation.android') }}" role="button">More info »</a></p>
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+{% endblock %}
+

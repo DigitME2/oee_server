@@ -48,6 +48,7 @@ def create_app(config_class=Config):
 
     from app.admin import bp as admin_bp
     from app.default import bp as default_bp
+    from app.documentation import bp as doc_bp
     from app.errors import bp as errors_bp
     from app.login import bp as users_bp
     from app.oee_displaying import bp as oee_displaying_bp
@@ -60,11 +61,13 @@ def create_app(config_class=Config):
 
     app.register_blueprint(admin_bp)
     app.register_blueprint(default_bp)
+    app.register_blueprint(doc_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(android_bp)
     app.register_blueprint(pausable_bp)
+
 
     @app.before_first_request
     def initial_setup():

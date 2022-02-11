@@ -1,0 +1,70 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="container mt-2">
+        <div>
+
+            <main role="main">
+                <div class="jumbotron">
+                    <div class="container">
+                        <h1 class="display-3">Setup</h1>
+                        <p><a class="btn btn-secondary" href="{{ url_for('documentation.help_home') }}" role="button">«
+                            Back to help</a></p>
+                    </div>
+                </div>
+
+                <div class="container">
+                    <!-- Example row of columns -->
+                    <div class="row">
+                        <div class="col">
+                            <p><a href="{{ url_for('admin.admin_home') }}" role="button">
+                                The admin tab</a>
+                                is where setup data can be entered.</p>
+                            <img class="img-thumbnail" src="{{ url_for('static', filename='images/admin-home.png') }}"/>
+
+                            <p>The <b>Users</b> tab lists the users that have been created. The admin controls all the
+                                accounts, creating new users and changing passwords via this interface.
+                                For users that log in via the Android app, a numerical password must be used.</p>
+
+                            <p>The <b>Schedules</b> tab controls the planned production time of your equipment. A
+                                schedule is assigned to each machine, allowing multiple to be changed at once. Planned
+                                production time is used to calculate availability in the OEE calculation. These
+                                schedules are computed at midnight each day, so changing a schedule will not affect any
+                                calculations in the past. </p>
+
+                            <p>The <b>Machines</b> tab lists the equipment that has been created. Selecting one
+                                allows it to be edited, or click "Create" to add another. Each piece of equipment can be
+                                assigned an Android tablet for data collection. The tablets should be given a static IP,
+                                which can be entered in this screen to pair the tablet to the machine.
+                                Workflow types, once created, allow different flows of work on Android tablets, for
+                                example some workflows may request a reason for excessive downtime from the operator.
+                                Once created, equipment cannot be
+                                removed. De-select "Active" if it is no longer needed. </p>
+
+                            <p>The <b>Machine Groups</b> tab allows machines to be categorised into groups, which
+                                helps during visualisation </p>
+
+                            <p>The <b>Activity Codes</b> tab allows editing of the status codes of the equipment.
+                                The first 4 will always represent No User, Up, Down, Setting. The names and colours of
+                                these can be tweaked but do not use these codes for any other purpose. New codes can be
+                                added for any purpose. The colour selected here will be reflected in visualisation and
+                                on the paired Android tablet. Once created, codes cannot be removed. De-select "Active"
+                                if it is no longer needed. </p>
+
+                            <p>For additional config options, such as database credentials and running in demonstration
+                                mode, the file <kbd>config.py</kbd> can be edited in the install folder of this server
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+{% endblock %}
+
