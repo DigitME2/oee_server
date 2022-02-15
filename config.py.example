@@ -60,6 +60,9 @@ class Config(object):
 
     WORKFLOW_TYPES = ["default", "pausable_setting", "pausable"]
 
+    # This can only be set before first run. The database needs to be dropped if it is changed
+    IDEAL_CYCLE_TIME_UNITS = "seconds"  # "minutes" "hours"
+
     # The database IDs for activity codes
     NO_USER_CODE_ID = 1
     UNEXPLAINED_DOWNTIME_CODE_ID = 2

@@ -55,10 +55,12 @@ def check_default_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
+        wo_number_text = "Job Number"
+        ideal_cycle_time_text = f"Ideal Cycle Time ({Config.IDEAL_CYCLE_TIME_UNITS[0]})"
         return json.dumps({"workflow_type": "default",
                            "state": "no_job",
-                           "requested_data": {"wo_number": "Job Number",
-                                              "ideal_cycle_time": "Ideal Cycle Time"}})
+                           "requested_data": {"wo_number": wo_number_text,
+                                              "ideal_cycle_time": ideal_cycle_time_text}})
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
@@ -171,6 +173,7 @@ def android_start_job():
 
     if user_session.user.has_job():
         return 400
+
 
     # Create the job
     job = Job(start_time=now,

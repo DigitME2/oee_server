@@ -18,7 +18,7 @@ def get_machine_performance(machine_id, time_start: datetime, time_end: datetime
         # I've already considered what happens if this job ran outside of the requested start/end and it would be ok,
         # The ratio would still be the same
         if job.ideal_cycle_time and job.quantity_produced:
-            ideal_machine_runtime_s += job.ideal_cycle_time * job.quantity_produced
+            ideal_machine_runtime_s += job.ideal_cycle_time_seconds() * job.quantity_produced
         else:
             current_app.logger.warning(f"No ideal cycle time or quantity for job {job.id}. "
                                        f"Assuming 100% Performance for this job in OEE calculation")
