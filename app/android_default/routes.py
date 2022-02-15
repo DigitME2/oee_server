@@ -174,7 +174,6 @@ def android_start_job():
     if user_session.user.has_job():
         return 400
 
-
     # Create the job
     job = Job(start_time=now,
               user_id=user_session.user_id,
@@ -248,7 +247,8 @@ def android_end_job():
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
 
     try:
-        quantity_produced = int(request.json["quantity_produced"])
+        quantity_produced = float(request.json["quantity_produced"])
+        quantity_rejects = float(request.json["rejects"])
     except KeyError:
         current_app.logger.error(f"Received incorrect data from {user_session} while ending job")
         return json.dumps({"success": False,
@@ -260,6 +260,7 @@ def android_end_job():
     current_job.active = None
 
     current_job.quantity_produced = quantity_produced
+    current_job.quantity_rejects = quantity_rejects
 
     db.session.commit()
 
