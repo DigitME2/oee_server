@@ -13,7 +13,7 @@ from app.data_analysis.oee.availability import get_activity_duration_dict, calcu
 from app.data_analysis.oee.oee import get_daily_group_oee, get_daily_machine_oee
 from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
 from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity, Settings
-from app.oee_displaying.helpers import get_machine_status
+from app.visualisation.helpers import get_machine_status
 from config import Config
 
 logger = getLogger()
@@ -295,35 +295,6 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
     return plot(fig,
                 output_type="div",
                 include_plotlyjs=True)
-
-
-def create_group_oee_line(graph_start_date: date, graph_end_date: date):
-    """ Takes two times and creates a line graph of the OEE for each machine group between these times
-    The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
-    groups = MachineGroup.query.all()
-    d = Settings.query.get(1).first_start.date()
-    dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
-    if len(dates) == 0:
-        return 0
-    fig = go.Figure()
-    for group in groups:
-        group_oee_list = []
-        for d in dates:
-            daily_group_oee = get_daily_group_oee(group_id=group.id, date=d)
-            group_oee_list.append(daily_group_oee)
-
-        fig.add_trace(go.Scatter(x=dates, y=group_oee_list, name=group.name, mode='lines+markers'))
-    layout = Layout()
-    layout.xaxis.update(range=[graph_start_date, graph_end_date])
-    layout.xaxis.tickformat = '%a %d-%m-%Y'
-    layout.xaxis.showgrid = False
-    layout.xaxis.dtick = 86400000  # Space between ticks = 1 day
-    fig.layout = layout
-
-    return plot(fig,
-                output_type="div",
-                include_plotlyjs=True,
-                config={"showLink": False})
 
 
 def create_oee_line(graph_start_date: date, graph_end_date: date, machine_ids):

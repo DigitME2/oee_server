@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask import request, current_app
 
-from app.android_pausable.helpers import has_been_set
+from app.android.helpers import has_been_set
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_machines_last_job
 from app.default.models import Job, Activity, ActivityCode
 from app.extensions import db
@@ -14,10 +14,11 @@ from config import Config
 # TODO This blueprint broke when I changed the default fields stored with a job. To fix it we can either switch the date
 # collected by the tablet, or use the old data collected by the tablet and convert it into ideal_cycle_time etc
 
-REQUESTED_DATA_JOB_START = {"wo_number": "Job Number   10W",
-                            "planned_run_time": "Planned Run Time",
-                            "planned_quantity": "Planned Qty",
-                            "planned_cycle_time": "Planned Cycle Time"}
+WO_NUMBER_TEXT = "Job Number"
+CYCLE_TIME_TEXT = f"Ideal Cycle Time ({Config.IDEAL_CYCLE_TIME_UNITS[0]})"
+
+REQUESTED_DATA_JOB_START = {"wo_number": WO_NUMBER_TEXT,
+                            "ideal_cycle_time": CYCLE_TIME_TEXT}
 
 REQUESTED_DATA_SETTING_START = {"wo_number": "Job Number   10W"}
 

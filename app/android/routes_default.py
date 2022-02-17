@@ -40,8 +40,8 @@ def android_check_state():
     if machine.workflow_type == "default":
         return check_default_machine_state(user_session)
 
-    if "android_pausable" in current_app.blueprints.keys():
-        from app.android_pausable.routes import check_pausable_machine_state
+    if "android_delayed_exp" in current_app.blueprints.keys():
+        from app.android_delayed_exp.pausable_routes import check_pausable_machine_state
         if machine.workflow_type == "pausable_setting" or \
                 machine.workflow_type == "pausable":
             return check_pausable_machine_state(user_session)

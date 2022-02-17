@@ -58,7 +58,7 @@ def logout():
 
 @bp.route('/end_all_sessions', methods=['POST'])
 def end_all_sessions():
-    """ Ends all user_sessions. This will stop all android_default sessions but does not log people out of flask_login"""
+    """ Ends all user_sessions. This will stop all android sessions but does not log people out of flask_login"""
     end_user_sessions()
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 

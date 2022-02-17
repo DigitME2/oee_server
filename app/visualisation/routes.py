@@ -6,14 +6,14 @@ from sqlalchemy import inspect
 
 from app.default.models import Machine, MachineGroup, Settings
 from app.extensions import db
-from app.oee_displaying import bp
-from app.oee_displaying.forms import MACHINES_CHOICES_HEADERS, GanttForm, OeeLineForm, \
+from app.visualisation import bp
+from app.visualisation.forms import MACHINES_CHOICES_HEADERS, GanttForm, OeeLineForm, \
     DowntimeBarForm, JobTableForm, \
     WOTableForm, RawDatabaseTableForm, ActivityDurationsTableForm, SchedulesGanttForm
-from app.oee_displaying.graphs import create_machine_gantt, create_multiple_machines_gantt, \
-    create_dashboard_gantt, create_group_oee_line, create_downtime_bar, create_schedules_gantt, create_oee_line
-from app.oee_displaying.helpers import parse_requested_machine_list
-from app.oee_displaying.tables import get_work_order_table, get_job_table, get_raw_database_table, \
+from app.visualisation.graphs import create_machine_gantt, create_multiple_machines_gantt, \
+    create_dashboard_gantt, create_downtime_bar, create_schedules_gantt, create_oee_line
+from app.visualisation.helpers import parse_requested_machine_list
+from app.visualisation.tables import get_work_order_table, get_job_table, get_raw_database_table, \
     get_user_activity_table, get_machine_activity_table
 
 

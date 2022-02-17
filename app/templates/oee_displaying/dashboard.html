@@ -53,7 +53,7 @@
         $graph = $(".plotly-graph-div");
         $body.addClass("loading");
         $.ajax({
-            url: '{{ url_for('oee_displaying.dashboard') }}',
+            url: '{{ url_for('visualisation.dashboard') }}',
             method: "GET",
             data: {
                 start: "{{ start }}",

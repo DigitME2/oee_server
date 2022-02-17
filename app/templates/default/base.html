@@ -38,8 +38,8 @@
             <ul class="navbar-nav">
                 {% if current_user.admin %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.admin_home') }}">Admin</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.data') }}">Data</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('oee_displaying.dashboard',
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('visualisation.data') }}">Data</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('visualisation.dashboard',
                     machine_group=1,
                     start="09:00",
                     end="18:00") }}">Dashboard</a></li>
