@@ -5,7 +5,7 @@ from random import randrange
 from flask import current_app
 
 from app import Config
-from app.default.db_helpers import complete_last_activity, machine_schedule_active, create_scheduled_activities
+from app.default.db_helpers import complete_last_activity, machine_schedule_active
 from app.default.models import Machine, Job, Activity, ActivityCode, DemoSettings
 from app.extensions import db
 from app.login.models import User, UserSession

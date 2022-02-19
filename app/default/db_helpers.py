@@ -12,7 +12,7 @@ from app.extensions import db
 from config import Config
 
 
-def complete_last_activity(machine_id, time_end: datetime = None, activity_code_id=None,):
+def complete_last_activity(machine_id, time_end: datetime = None, activity_code_id=None, ):
     """ Gets the most recent active activity for a machine and then ends it with the current time, or a provided time.
     If an activity_code_id is provided, the activity will be updated with this code"""
 
@@ -68,7 +68,8 @@ def get_current_machine_schedule_activity_id(target_machine_id):
     """ Get the current scheduled activity of a machine by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
     # The line below is causing a sql.programmingerror and im not sure why
-    activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id, ScheduledActivity.time_end == None).all()
+    activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id,
+                                                ScheduledActivity.time_end == None).all()
 
     if len(activities) == 0:
         current_app.logger.debug(f"No current scheduled activity on machine ID {target_machine_id}")
@@ -294,10 +295,67 @@ def backfill_missed_schedules():
         return
     dates = [datetime.now().date() - timedelta(days=x) for x in range(0, no_of_days_to_backfill + 1)]
     for d in dates:
-        create_scheduled_activities(create_date=d)
+        create_all_scheduled_activities(create_date=d)
 
 
-def create_scheduled_activities(create_date: date = None):
+def create_day_scheduled_activities(machine: Machine, shift_start, shift_end, create_date: date = None):
+    """ Create a day's scheduled activity for a single machine"""
+    if not create_date:
+        create_date = datetime.now().date()
+
+    current_app.logger.info(f"Creating Scheduled Activities for {create_date.strftime('%d-%m-%y')}")
+    last_midnight = datetime.combine(date=create_date, time=time(hour=0, minute=0, second=0, microsecond=0))
+    next_midnight = last_midnight + timedelta(days=1)
+
+    # Check to see if any scheduled activities already exist for today and skip if any exist
+    existing_activities = ScheduledActivity.query \
+        .filter(ScheduledActivity.machine_id == machine.id) \
+        .filter(ScheduledActivity.time_start >= last_midnight) \
+        .filter(ScheduledActivity.time_end <= next_midnight).all()
+    if len(existing_activities) > 0:
+        current_app.logger.info(f"Scheduled activities already exist on {create_date} for {machine} Skipping...")
+        return
+
+    if shift_start != last_midnight:  # Skip making this activity if it will be 0 length
+        before_shift = ScheduledActivity(machine_id=machine.id,
+                                         scheduled_machine_state=Config.MACHINE_STATE_OFF,
+                                         time_start=last_midnight,
+                                         time_end=shift_start)
+        db.session.add(before_shift)
+
+    if shift_start != shift_end:  # Skip making this activity if it will be 0 length
+        during_shift = ScheduledActivity(machine_id=machine.id,
+                                         scheduled_machine_state=Config.MACHINE_STATE_RUNNING,
+                                         time_start=shift_start,
+                                         time_end=shift_end)
+        db.session.add(during_shift)
+
+    if shift_end != next_midnight:  # Skip making this activity if it will be 0 length
+        after_shift = ScheduledActivity(machine_id=machine.id,
+                                        scheduled_machine_state=Config.MACHINE_STATE_OFF,
+                                        time_start=shift_end,
+                                        time_end=next_midnight)
+        db.session.add(after_shift)
+
+    db.session.commit()
+
+
+def create_all_scheduled_activities1(create_date: date = None):
+    for machine in Machine.query.all():
+        # Get the shift for this day of the week
+        weekday = create_date.weekday()
+        shift = machine.schedule.get_shifts().get(weekday)
+
+        # Create datetime objects with today's date and the times from the schedule table
+        shift_start = datetime.combine(create_date, datetime.strptime(shift[0], "%H%M").timetz())
+        shift_end = datetime.combine(create_date, datetime.strptime(shift[1], "%H%M").timetz())
+
+        create_day_scheduled_activities(machine=machine, shift_start=shift_start, shift_end=shift_end,
+                                        create_date=create_date)
+
+
+def create_all_scheduled_activities(create_date: date = None):
+    """ Create all the scheduled activities on a date"""
     if not create_date:
         create_date = datetime.now().date()
 

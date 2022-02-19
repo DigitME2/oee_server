@@ -9,7 +9,7 @@ def admin_required(function):
     """ Decorator function to make sure the user is an admin. Functions should also be paired with @login_required"""
     @wraps(function)
     def wrapper(*args, **kwargs):
-        if current_user.admin:
+        if current_app.config['LOGIN_DISABLED'] or current_user.admin:
             return function(*args, **kwargs)
         else:
             return abort(403)

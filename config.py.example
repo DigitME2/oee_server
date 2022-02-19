@@ -40,8 +40,10 @@ class Config(object):
     package_dir = os.path.abspath(os.path.dirname(__file__))
     db_path = os.path.join(package_dir, db_name)
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
-
     SQLALCHEMY_ECHO = False
+
+    if strtobool(os.environ.get("TESTING", "false")):
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///testing.db"
 
     SECRET_KEY = os.environ.get('SECRET_KEY') or "yS7o773kuQ"
     SQLALCHEMY_TRACK_MODIFICATIONS = False

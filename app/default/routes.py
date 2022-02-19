@@ -4,7 +4,7 @@ from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import current_user, login_required
 
 from app.default import bp
-from app.default.db_helpers import create_scheduled_activities
+from app.default.db_helpers import create_all_scheduled_activities
 
 
 @bp.route('/')
@@ -31,5 +31,5 @@ def create_scheduled_activities_route():
     else:
         dt = datetime.now().date()
 
-    create_scheduled_activities(create_date=dt)
+    create_all_scheduled_activities(create_date=dt)
     return jsonify({'success': True}), 200, {'ContentType': 'application/json'}

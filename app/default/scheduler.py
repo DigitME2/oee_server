@@ -1,7 +1,7 @@
 from celery.schedules import crontab
 from flask import current_app
 
-from app.default.db_helpers import create_scheduled_activities
+from app.default.db_helpers import create_all_scheduled_activities
 from app.default.machine_simulator import simulate_machines
 from app.extensions import celery_app
 from config import Config
@@ -19,7 +19,7 @@ def setup_periodic_tasks(sender, **kwargs):
 @celery_app.task()
 def daily_machine_schedule_task():
     current_app.logger.debug("Running machine schedule celery task")
-    create_scheduled_activities()
+    create_all_scheduled_activities()
     return True
 
 
