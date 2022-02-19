@@ -3,6 +3,8 @@ from datetime import datetime
 
 from flask import request, current_app
 
+from app.android.helpers import REQUESTED_DATA_JOB_END, REQUESTED_DATA_JOB_START
+from app.android.routes_pausable import check_pausable_machine_state
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
 from app.default.models import Job, Activity, ActivityCode
 from app.extensions import db
@@ -12,7 +14,7 @@ from app.login.models import User, UserSession
 from config import Config
 
 
-@bp.route('/checkstate', methods=['GET'])
+@bp.route('/check-state', methods=['GET'])
 def android_check_state():
     """ The app calls this on opening, to see whether a user is logged in, or a job is active etc"""
 
@@ -40,11 +42,8 @@ def android_check_state():
     if machine.workflow_type == "default":
         return check_default_machine_state(user_session)
 
-    if "android_delayed_exp" in current_app.blueprints.keys():
-        from app.android_delayed_exp.pausable_routes import check_pausable_machine_state
-        if machine.workflow_type == "pausable_setting" or \
-                machine.workflow_type == "pausable":
-            return check_pausable_machine_state(user_session)
+    if machine.workflow_type == "pausable":
+        return check_pausable_machine_state(user_session)
     else:
         current_app.logger.error(f"Incorrect workflow ({machine.workflow_type}) assigned to {machine}")
         return 400
@@ -55,16 +54,14 @@ def check_default_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     if not any(job.active for job in user_session.jobs):
         current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
-        wo_number_text = "Job Number"
-        ideal_cycle_time_text = f"Ideal Cycle Time ({Config.IDEAL_CYCLE_TIME_UNITS[0]})"
+
         return json.dumps({"workflow_type": "default",
                            "state": "no_job",
-                           "requested_data": {"wo_number": wo_number_text,
-                                              "ideal_cycle_time": ideal_cycle_time_text}})
+                           "requested_data": REQUESTED_DATA_JOB_START})
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # Send the list of downtime reasons to populate a dropdown. Exclude setting and no user
+    # Send the list of downtime reasons to populate a dropdown. Exclude no user
     all_active_codes = ActivityCode.query.filter(ActivityCode.active,
                                                  ActivityCode.id != Config.NO_USER_CODE_ID).all()
     # Get the current activity code to set the colour and dropdown
@@ -86,11 +83,10 @@ def check_default_machine_state(user_session):
                        "current_activity": current_activity_code.short_description,
                        "activity_codes": [code.short_description for code in all_active_codes],
                        "colour": colour,
-                       "requested_data_on_end": {"quantity_produced": "Quantity Produced",
-                                                 "rejects": "Rejects"}})
+                       "requested_data_on_end": REQUESTED_DATA_JOB_END})
 
 
-@bp.route('/androidlogin', methods=['POST'])
+@bp.route('/android-login', methods=['POST'])
 def android_login():
     """The screen to log the user into the system."""
 
@@ -119,6 +115,7 @@ def android_login():
         job = Job.query.filter_by(user_id=user_id, active=True).first()
         response["success"] = False
         response["reason"] = f"User already has an active job {job.wo_number} on machine {job.machine.name}"
+        # todo If this happens I think it's best to end that job.
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
     # Check the password and log in if successful
@@ -139,7 +136,7 @@ def android_login():
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
 
-@bp.route('/androidlogout', methods=['POST'])
+@bp.route('/android-logout', methods=['POST'])
 def android_logout():
     """ Logs the user out of the system. """
     # Get the current user session based on the IP of the device accessing this page
@@ -163,7 +160,7 @@ def android_logout():
     return json.dumps({"success": True})
 
 
-@bp.route('/androidstartjob', methods=['POST'])
+@bp.route('/android-start-job', methods=['POST'])
 def android_start_job():
     if not request.is_json:
         return 404
@@ -205,7 +202,7 @@ def android_start_job():
     return json.dumps({"success": True})
 
 
-@bp.route('/androidupdate', methods=['POST'])
+@bp.route('/android-update', methods=['POST'])
 def android_update_activity():
     now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
@@ -241,7 +238,7 @@ def android_update_activity():
                        "colour": activity_code.graph_colour})
 
 
-@bp.route('/androidendjob', methods=['POST'])
+@bp.route('/android-end-job', methods=['POST'])
 def android_end_job():
     now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()

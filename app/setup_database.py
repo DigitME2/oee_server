@@ -99,12 +99,6 @@ def create_default_activity_codes():
                                long_description='The machine is in use',
                                graph_colour='#00ff80')
     db.session.add(uptime_code)
-    setting_code = ActivityCode(id=Config.SETTING_CODE_ID,
-                                code="ST",
-                                short_description="Setting",
-                                long_description="The machine is being set up",
-                                graph_colour="#ff8000")
-    db.session.add(setting_code)
     db.session.commit()
     current_app.logger.info("Created default activity codes on first startup")
 

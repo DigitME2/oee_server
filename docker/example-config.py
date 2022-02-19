@@ -44,13 +44,12 @@ class Config(object):
     ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
-    WORKFLOW_TYPES = ["default", "pausable_setting", "pausable"]
+    WORKFLOW_TYPES = ["default", "pausable"]
 
     # The database IDs for activity codes
     NO_USER_CODE_ID = 1
     UNEXPLAINED_DOWNTIME_CODE_ID = 2
     UPTIME_CODE_ID = 3  # Preferably 0 to keep it on the bottom of the graph
-    SETTING_CODE_ID = 4
 
     MACHINE_STATE_OFF = 0
     MACHINE_STATE_RUNNING = 1

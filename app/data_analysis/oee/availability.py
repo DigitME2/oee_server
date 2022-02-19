@@ -43,7 +43,8 @@ def get_machine_runtime(machine_id, requested_start: datetime, requested_end: da
         return run_time
 
 
-def get_activity_duration_dict(requested_start: datetime, requested_end: datetime, machine_id=None, user_id=None, use_description_as_key=False, units="seconds"):
+def get_activity_duration_dict(requested_start: datetime, requested_end: datetime, machine_id=None, user_id=None,
+                               use_description_as_key=False, units="seconds"):
     """ Returns a dict containing the total duration of each activity_code between two times in the format:
     activity_code_id: duration(seconds) e.g. 1: 600
     If use_description_as_key is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
