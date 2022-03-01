@@ -26,6 +26,7 @@ file_handler.setLevel(Config.FILE_LOGGING_LEVEL)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
+    app.config['LOGIN_DISABLED'] = False
 
     # Set up logger
     app.logger.setLevel(logging.DEBUG)
