@@ -10,21 +10,23 @@ The app is accompanied by an Android app, which connects to the server and takes
 ## Setup
 (Tested on Ubuntu 20.04)
 
+Create `config.py` in the root folder from `example-confs/config.py.example` and edit config options. Modify the secret key to a random string
+
 Run `npm install` in the `/app/static` directory.
 
-The app uses redis as a Celery broker, which is needed for periodic tasks. Redis can be installed with `sudo apt install redis` and modifying the address in `config.py` if necessary
-
-Rename `config.py.example` to `config.py` and edit config options. Modify the secret key to a random string
+The app uses redis as a Celery broker, which is needed for periodic tasks. Redis can be installed with `sudo apt install redis`. Modify `config.py` if using a non-standard redis setup.
 
 Run `pip install -r requirements.txt` in a virtual environment if necessary.
 
 Change `start.sh` to be executable `chmod 755 start.sh` and run it.
 (This requires gunicorn to be installed)
 
-`start.sh` runs 3 processes: The server (using gunicorn), a Celery worker and a Celery beat. If you wish to run this as 
-a service, an example supervisor config can be found in the docker folder
+`start.sh` runs 3 processes: The server (using gunicorn), a Celery worker and a Celery beat.
+
+To run at startup, the three processes can be run by systemd. Example configs are provided in the `example-confs` folder. Copy these to `/etc/systemd/system` and run `sudo systemctl daemon-reload` then `sudo systemctl enable oee_server oee_celery oee_celery_beat`. Make sure to edit the paths in the service config files.
 
 The software ideally uses nginx as a reverse proxy. This can be install with `sudo apt install nginx`. An example config is included in this repo. In order for the android app to work correctly, the proxy server must pass on the IP address of the android client.
+
 
 
 ## Documentation

@@ -1,0 +1,12 @@
+[Unit]
+Description=oee_celery_beat
+After=network.target
+
+[Service]
+User=oee
+WorkingDirectory=/home/user/oee_server
+ExecStart=/home/user/oee_server/venv/bin/celery -A celery_worker.celery_app beat
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
