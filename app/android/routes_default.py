@@ -70,7 +70,7 @@ def check_default_machine_state(user_session):
         current_activity = Activity.query.get(get_current_machine_activity_id(machine.id))
         current_activity_code = current_activity.activity_code
         colour = current_activity_code.graph_colour
-    except TypeError:
+    except (TypeError, AttributeError):
         # This could be raised if there are no activities
         current_app.logger.error(f"Active job screen requested with no activities.")
         colour = "#c9b3b3"
@@ -219,6 +219,10 @@ def android_update_activity():
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     # The activity code is obtained from the request
     activity_code = ActivityCode.query.filter_by(short_description=selected_activity_description).first()
+    if not activity_code:
+        # This can happen if the activity code description is changed without the tablet refreshing
+        # Returning a 500 will cause the tablet to refresh and get new descriptions
+        return 500
     # The machine state is calculated from the activity code
     if activity_code.id == Config.UPTIME_CODE_ID:
         machine_state = Config.MACHINE_STATE_RUNNING
