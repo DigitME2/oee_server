@@ -211,6 +211,12 @@ def android_update_activity():
     except KeyError:
         return json.dumps({"success": False})
 
+    activity_code = ActivityCode.query.filter_by(short_description=selected_activity_description).first()
+    if not activity_code:
+        # This can happen if the activity code description is changed without the tablet refreshing
+        # Returning a 500 will cause the tablet to refresh and get new descriptions
+        return 500
+
     # Mark the most recent activity in the database as complete
     complete_last_activity(machine_id=user_session.machine_id, time_end=now)
 
@@ -218,11 +224,7 @@ def android_update_activity():
     # The current job is the only active job belonging to the user session
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     # The activity code is obtained from the request
-    activity_code = ActivityCode.query.filter_by(short_description=selected_activity_description).first()
-    if not activity_code:
-        # This can happen if the activity code description is changed without the tablet refreshing
-        # Returning a 500 will cause the tablet to refresh and get new descriptions
-        return 500
+
     # The machine state is calculated from the activity code
     if activity_code.id == Config.UPTIME_CODE_ID:
         machine_state = Config.MACHINE_STATE_RUNNING
