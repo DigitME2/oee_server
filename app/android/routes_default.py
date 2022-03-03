@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from flask import request, current_app
+from flask import request, current_app, abort
 
 from app.android.helpers import REQUESTED_DATA_JOB_END, REQUESTED_DATA_JOB_START
 from app.android.routes_pausable import check_pausable_machine_state
@@ -46,7 +46,7 @@ def android_check_state():
         return check_pausable_machine_state(user_session)
     else:
         current_app.logger.error(f"Incorrect workflow ({machine.workflow_type}) assigned to {machine}")
-        return 400
+        return abort(400)
 
 
 def check_default_machine_state(user_session):
@@ -163,13 +163,13 @@ def android_logout():
 @bp.route('/android-start-job', methods=['POST'])
 def android_start_job():
     if not request.is_json:
-        return 404
+        return abort(404)
     now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     machine = user_session.machine
 
     if user_session.user.has_job():
-        return 400
+        return abort(400)
 
     # Create the job
     job = Job(start_time=now,
@@ -215,7 +215,7 @@ def android_update_activity():
     if not activity_code:
         # This can happen if the activity code description is changed without the tablet refreshing
         # Returning a 500 will cause the tablet to refresh and get new descriptions
-        return 500
+        return abort(500)
 
     # Mark the most recent activity in the database as complete
     complete_last_activity(machine_id=user_session.machine_id, time_end=now)
@@ -223,7 +223,6 @@ def android_update_activity():
     # Start a new activity
     # The current job is the only active job belonging to the user session
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # The activity code is obtained from the request
 
     # The machine state is calculated from the activity code
     if activity_code.id == Config.UPTIME_CODE_ID:
