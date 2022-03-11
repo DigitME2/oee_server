@@ -164,15 +164,24 @@ def android_logout():
 def android_start_job():
     if not request.is_json:
         return 404
-    now = datetime.now()
+
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     machine = user_session.machine
 
     if user_session.user.has_job():
         return 400
 
+    # TODO Create a "job start handler" which can take different inputs but always spits out ideal cycle time in seconds
+    # TODO Probably best to do away with having different units saved in the database for cycle time
+
+    if "start_time" in request.json:
+        s = datetime.strptime(request.json["start_time"], "%H:%M")
+        start_time = datetime.now().replace(hour=s.hour, minute=s.minute)
+    else:
+        start_time = datetime.now()
+
     # Create the job
-    job = Job(start_time=now,
+    job = Job(start_time=start_time,
               user_id=user_session.user_id,
               user_session_id=user_session.id,
               wo_number=request.json["wo_number"],
@@ -184,7 +193,7 @@ def android_start_job():
     db.session.commit()
 
     # End the current activity
-    complete_last_activity(machine_id=machine.id, time_end=now)
+    complete_last_activity(machine_id=machine.id, time_end=start_time)
 
     # Set the first activity
     starting_activity_code = Config.UPTIME_CODE_ID
@@ -195,7 +204,7 @@ def android_start_job():
                             activity_code_id=starting_activity_code,
                             user_id=user_session.user_id,
                             job_id=job.id,
-                            time_start=now)
+                            time_start=start_time)
     db.session.add(new_activity)
     db.session.commit()
     current_app.logger.info(f"{user_session.user} started {job}")
