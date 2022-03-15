@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from app.default.db_helpers import get_machines_last_job
+from app.default.models import Settings
 
 
 def get_machines_last_wo_number(machine_id):
@@ -13,11 +14,16 @@ def time_autofill():
 
 
 def get_job_start_data(input_type: str) -> dict:
+    current_settings = Settings.query.get_or_404(1)
     job_start_data = {"wo_number": {"title": "Job Number",
-                                    "type": "number",
+                                    "type": current_settings.job_number_input_type,
                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
                                            "autofill": ""}}
+    if current_settings.allow_delayed_job_start:
+        job_start_data["start_time"] = {"title": "Start Time",
+                                        "type": "time",
+                                        "autofill": "current"}
     if input_type == "cycle_time_seconds":
         job_start_data["ideal_cycle_time"]["title"] = f"Ideal cycle time (sec)"
 
@@ -48,7 +54,6 @@ def get_job_start_data(input_type: str) -> dict:
 
 
 def parse_cycle_time(input_type: str, json_data) -> int:
-
     if input_type == "cycle_time_seconds":
         data_in = float(json_data["ideal_cycle_time"])
         cycle_time_seconds = data_in
@@ -89,4 +94,3 @@ REQUESTED_DATA_JOB_END = {"quantity_produced": {"title": "Quantity Produced",
                           "rejects": {"title": "Rejects",
                                       "type": "number",
                                       "autofill": ""}}
-

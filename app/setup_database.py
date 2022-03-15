@@ -66,7 +66,7 @@ def setup_database():
             first_start = datetime.now() - timedelta(days=Config.DAYS_BACKFILL)
         else:
             first_start = datetime.now()
-        settings = Settings(threshold=500, dashboard_update_interval_s=10, first_start=first_start)
+        settings = Settings(job_number_input_type="numeric", dashboard_update_interval_s=10, first_start=first_start)
         db.session.add(settings)
         db.session.commit()
         current_app.logger.info("Created default settings on first startup")

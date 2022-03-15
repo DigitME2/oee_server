@@ -131,11 +131,9 @@ class Settings(db.Model):
     # Only allow one row in this table
     id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
     dashboard_update_interval_s = db.Column(db.Integer)
-    threshold = db.Column(db.Integer)
+    job_number_input_type = db.Column(db.String)
+    allow_delayed_job_start = db.Column(db.Boolean)
     first_start = db.Column(db.DateTime)
-
-    def __repr__(self):
-        return f"<Settings threshold:'{self.threshold}'>"
 
 
 class DemoSettings(db.Model):
