@@ -73,7 +73,8 @@ def create_app(config_class=Config):
         with app.app_context():
             # Fill the database with default values
             from app.setup_database import setup_database
-            setup_database()
+            if not Config.TESTING:
+                setup_database()
 
             from app.default.db_helpers import backfill_missed_schedules
             backfill_missed_schedules()

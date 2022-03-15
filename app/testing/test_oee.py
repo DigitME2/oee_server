@@ -1,25 +1,15 @@
 import unittest
 from datetime import datetime, time, timedelta
 
-from app import create_app
 from app.data_analysis.oee.availability import calculate_machine_availability
-from app.default.db_helpers import create_all_scheduled_activities, create_day_scheduled_activities
-from app.default.models import ScheduledActivity, Machine, Activity
+from app.default.db_helpers import create_day_scheduled_activities
+from app.default.models import Machine, Activity
 from app.extensions import db
-from app.setup_database import setup_database
-from app.data_analysis.oee import availability, quality, performance
+from app.testing.base import BaseTest
 from config import Config
 
 
-class OEETests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.app = create_app()
-        with self.app.app_context():
-            db.create_all()
-            setup_database()
-
-    def tearDown(self) -> None:
-        pass
+class OEETests(BaseTest):
 
     def test_availibility(self):
         with self.app.app_context():

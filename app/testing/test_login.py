@@ -9,15 +9,10 @@ from app.login.models import User
 from app import create_app
 from app.extensions import db
 from app.setup_database import setup_database
+from app.testing.base import BaseTest
 
 
-class TestLogin(unittest.TestCase):
-    def setUp(self) -> None:
-        self.app = create_app()
-        with self.app.app_context():
-            setup_database()
-            self.test_client = self.app.test_client()
-
+class TestLogin(BaseTest):
     def test_routes(self):
         response = self.test_client.get('/login')
         self.assertEqual(response.status_code, 200)
