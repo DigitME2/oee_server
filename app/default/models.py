@@ -12,6 +12,7 @@ class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
     workflow_type = db.Column(db.String)
+    job_start_input_type = db.Column(db.String)
     group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
@@ -41,7 +42,7 @@ class Job(db.Model):
     end_time = db.Column(db.DateTime)
     wo_number = db.Column(db.String, nullable=False)
     part_number = db.Column(db.String)
-    ideal_cycle_time = db.Column(f"ideal_cycle_time_{Config.IDEAL_CYCLE_TIME_UNITS}", db.Float)
+    ideal_cycle_time_s = db.Column(db.Integer)
     quantity_produced = db.Column(db.Integer)
     quantity_rejects = db.Column(db.Integer)
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
@@ -51,16 +52,6 @@ class Job(db.Model):
     notes = db.Column(db.String)
 
     activities = db.relationship('Activity', backref='job')
-
-    def ideal_cycle_time_seconds(self):
-        if Config.IDEAL_CYCLE_TIME_UNITS == "seconds":
-            return self.ideal_cycle_time
-        elif Config.IDEAL_CYCLE_TIME_UNITS == "minutes":
-            return self.ideal_cycle_time * 60
-        elif Config.IDEAL_CYCLE_TIME_UNITS == "hours":
-            return self.ideal_cycle_time * 3600
-        else:
-            return None
 
     def __repr__(self):
         return f"<Job {self.wo_number} (ID {self.id})>"

@@ -199,22 +199,9 @@ def edit_machine():
     if creating_new_machine:
         # Create a new machine
         machine = Machine(name="", active=True)
-        # Add and flush now to retrieve an id for the new entry
-        db.session.add(machine)
-        db.session.flush()
-        message = "Create new machine"
-
-        # Create a list of existing machine IDs to pass to data validation
-        for m in Machine.query.all():
-            ids.append(m.id)
-        # Allow it to accept the id that has just been assigned for the new entry
-        if machine.id in ids:
-            ids.remove(machine.id)
 
     # Otherwise get the machine to be edited
     elif 'machine_id' in request.args:
-        # Prevent the ID from being edited for existing machines
-        form.id.render_kw = {'readonly': True}
         try:
             machine_id = int(request.args['machine_id'])
             machine = Machine.query.get_or_404(machine_id)
@@ -223,9 +210,6 @@ def edit_machine():
                                     f"machine_id provided : {request.args['machine_id']}")
             error_message = f"Error parsing machine_id : {request.args['machine_id']}"
             return abort(400, error_message)
-        # Show a warning to the user
-        message = f"This machine ID ({machine_id}) can only be set when a new machine is being created. " \
-                  "If the machine is no longer needed, deselect \"Active\" for this machine to hide it from the users."
 
     else:
         error_message = "No machine_id specified"
@@ -248,8 +232,6 @@ def edit_machine():
     form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
     # Don't allow duplicate device IPs
     form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine"), DataRequired()]
-    # Don't allow duplicate IDs
-    form.id.validators = [NoneOf(ids, message="A machine with that ID already exists"), DataRequired()]
 
     if form.validate_on_submit():
         current_app.logger.info(f"{machine} edited by {current_user}")
@@ -257,6 +239,7 @@ def edit_machine():
         machine.name = form.name.data
         machine.active = form.active.data
         machine.workflow_type = form.workflow_type.data
+        machine.job_start_input_type = form.job_start_input_type.data
         machine.schedule_id = form.schedule.data
         # If no machine group is selected, null the column instead of 0
         if form.group.data == '0':
@@ -271,10 +254,8 @@ def edit_machine():
 
         # If creating a new machine, save the ID and start an activity on the machine
         if creating_new_machine:
-            machine.id = form.id.data
             current_app.logger.info(f"{machine} created by {current_user}")
-            first_act = Activity(machine_id=machine.id,
-                                 time_start=datetime.now(),
+            first_act = Activity(time_start=datetime.now(),
                                  machine_state=Config.MACHINE_STATE_OFF,
                                  activity_code_id=Config.NO_USER_CODE_ID)
             db.session.add(first_act)
@@ -290,19 +271,17 @@ def edit_machine():
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page
-    form.id.data = machine.id
     form.active.data = machine.active
     form.schedule.data = str(machine.schedule_id)
     form.group.data = str(machine.group_id)
     form.workflow_type.data = str(machine.workflow_type)
+    form.job_start_input_type.data = str(machine.job_start_input_type)
 
     if not creating_new_machine:
         form.name.data = machine.name
         form.device_ip.data = machine.device_ip
 
-    return render_template("admin/edit_machine.html",
-                           form=form,
-                           message=message)
+    return render_template("admin/edit_machine.html", form=form)
 
 
 @bp.route('/editmachinegroup', methods=['GET', 'POST'])

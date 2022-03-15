@@ -3,8 +3,9 @@ from datetime import datetime
 
 from flask import request, current_app
 
-from app.android.helpers import REQUESTED_DATA_JOB_END, REQUESTED_DATA_JOB_START
-from app.android.routes_pausable import check_pausable_machine_state
+from app.android.helpers import parse_cycle_time
+from app.android.workflow_default import check_default_machine_state
+from app.android.workflow_pausable import check_pausable_machine_state
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
 from app.default.models import Job, Activity, ActivityCode
 from app.extensions import db
@@ -47,43 +48,6 @@ def android_check_state():
     else:
         current_app.logger.error(f"Incorrect workflow ({machine.workflow_type}) assigned to {machine}")
         return 400
-
-
-def check_default_machine_state(user_session):
-    """ Checks for, and returns, the state for a machine that follows the default workflow"""
-    # If there are no active jobs on the user session, send to new job screen
-    if not any(job.active for job in user_session.jobs):
-        current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
-
-        return json.dumps({"workflow_type": "default",
-                           "state": "no_job",
-                           "requested_data": REQUESTED_DATA_JOB_START})
-
-    # The current job is whatever job is currently active on the assigned machine
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # Send the list of downtime reasons to populate a dropdown. Exclude no user
-    all_active_codes = ActivityCode.query.filter(ActivityCode.active,
-                                                 ActivityCode.id != Config.NO_USER_CODE_ID).all()
-    # Get the current activity code to set the colour and dropdown
-    try:
-        machine = user_session.machine
-        current_activity = Activity.query.get(get_current_machine_activity_id(machine.id))
-        current_activity_code = current_activity.activity_code
-        colour = current_activity_code.graph_colour
-    except TypeError:
-        # This could be raised if there are no activities
-        current_app.logger.error(f"Active job screen requested with no activities.")
-        colour = "#c9b3b3"
-        current_activity_code = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID)
-
-    current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-    return json.dumps({"workflow_type": "default",
-                       "state": "active_job",
-                       "wo_number": current_job.wo_number,
-                       "current_activity": current_activity_code.short_description,
-                       "activity_codes": [code.short_description for code in all_active_codes],
-                       "colour": colour,
-                       "requested_data_on_end": REQUESTED_DATA_JOB_END})
 
 
 @bp.route('/android-login', methods=['POST'])
@@ -171,8 +135,7 @@ def android_start_job():
     if user_session.user.has_job():
         return 400
 
-    # TODO Create a "job start handler" which can take different inputs but always spits out ideal cycle time in seconds
-    # TODO Probably best to do away with having different units saved in the database for cycle time
+    ideal_cycle_time_s = parse_cycle_time(input_type=machine.job_start_input_type, json_data=request.json)
 
     if "start_time" in request.json:
         s = datetime.strptime(request.json["start_time"], "%H:%M")
@@ -185,7 +148,7 @@ def android_start_job():
               user_id=user_session.user_id,
               user_session_id=user_session.id,
               wo_number=request.json["wo_number"],
-              ideal_cycle_time=request.json["ideal_cycle_time"],
+              ideal_cycle_time_s=ideal_cycle_time_s,
               machine_id=machine.id,
               active=True)
 

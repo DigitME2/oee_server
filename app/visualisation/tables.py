@@ -20,7 +20,7 @@ class WOTable(Table):
     end = Col('End')
     operator = Col('Operator')
     actual_run_time = Col('Duration')
-    ideal_cycle_time = Col(f"Ideal Cycle Time {Config.IDEAL_CYCLE_TIME_UNITS}")
+    ideal_cycle_time_s = Col(f"Ideal Cycle Time (Seconds)")
 
 
 def get_work_order_table(start_date: date, end_date: date) -> str:
@@ -74,7 +74,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
             work_order["actual_run_time"] = end_time - start_time
 
         work_order["actual_run_time"] = sum(wj.quantity_produced for wj in wo_jobs if wj.quantity_produced is not None)
-        work_order["ideal_cycle_time"] = sum(wj.ideal_cycle_time_seconds() for wj in wo_jobs if wj.ideal_cycle_time is not None)
+        work_order["ideal_cycle_time_s"] = sum(wj.ideal_cycle_time_s for wj in wo_jobs if wj.ideal_cycle_time_s is not None)
         work_order["quantity_produced"] = sum(wj.quantity_produced for wj in wo_jobs if wj.quantity_produced is not None)
         items.append(work_order)
     table = WOTable(items=items)
@@ -105,7 +105,7 @@ def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
         item = {"job_id": job.id,
                 "wo_number": job.wo_number,
                 "part_number": job.part_number,
-                "ideal_cycle_time": job.ideal_cycle_time,
+                "ideal_cycle_time_s": job.ideal_cycle_time_s,
                 "quantity_produced": job.quantity_produced,
                 "rejects": job.quantity_rejects}
         try:
@@ -149,7 +149,7 @@ class JobTable(Table):
     start = Col('Start')
     end = Col('End')
     operator = Col('Operator')
-    ideal_cycle_time = Col(f"Ideal Cycle Time ({str(Config.IDEAL_CYCLE_TIME_UNITS)[0:1]})")
+    ideal_cycle_time_s = Col(f"Ideal Cycle Time (s)")  # todo make this readable when it's on the order of hours
     quantity_produced = Col("Total Qty")
     rejects = Col("Rejects Qty")
 
