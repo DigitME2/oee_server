@@ -66,7 +66,8 @@ def setup_database():
             first_start = datetime.now() - timedelta(days=Config.DAYS_BACKFILL)
         else:
             first_start = datetime.now()
-        settings = Settings(threshold=500, dashboard_update_interval_s=10, first_start=first_start)
+        settings = Settings(job_number_input_type="numeric", allow_delayed_job_start=False,
+                            dashboard_update_interval_s=10, first_start=first_start)
         db.session.add(settings)
         db.session.commit()
         current_app.logger.info("Created default settings on first startup")
@@ -131,7 +132,9 @@ def create_demo_activity_codes():
 def create_default_machine():
     machine1 = Machine(name="Machine 1",
                        group_id=1,
-                       schedule_id=1)
+                       schedule_id=1,
+                       workflow_type="default",
+                       job_start_input_type="cycle_time_seconds")
     db.session.add(machine1)
     db.session.commit()
     current_app.logger.info("Created default machine on first startup")
@@ -161,7 +164,8 @@ def create_demo_machines():
                           workflow_type="default",
                           device_ip="127.0.0." + str(ip_end),
                           group_id=randrange(1, 3),
-                          schedule_id=1)
+                          schedule_id=1,
+                          job_start_input_type="cycle_time_seconds")
         db.session.add(machine)
     db.session.commit()
     current_app.logger.info("Created default machine on first startup")

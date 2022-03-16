@@ -1,13 +1,9 @@
 import unittest
 
-from app import create_app
+from app.testing.base import BaseTest
 
 
-class DocumentationTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self.app = create_app()
-        with self.app.app_context():
-            self.test_client = self.app.test_client()
+class DocumentationTest(BaseTest):
 
     def test_routes(self):
         for route in ["/help", "/help/admin", "/help/data", '/help/android']:

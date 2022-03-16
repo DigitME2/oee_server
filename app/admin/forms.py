@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField
+from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField
 from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional
 from wtforms.widgets import TextArea
 from wtforms_components import TimeField
@@ -42,13 +42,21 @@ class ScheduleForm(FlaskForm):
 
 
 class MachineForm(FlaskForm):
+    job_start_input_type_choices = [("cycle_time_seconds", "Ideal cycle time (seconds)"),
+                                     ("cycle_time_minutes", "Ideal cycle time (minutes)"),
+                                     ("cycle_time_hours", "Ideal cycle time (hours)"),
+                                     ("parts_per_second", "Parts per second"),
+                                     ("parts_per_minute", "Parts per minute"),
+                                     ("parts_per_hour", "Parts per hour"),
+                                     ("planned_qty_minutes", "Planned quantity & Planned time (minutes)")]
+
     active = BooleanField()
-    id = IntegerField()
     name = StringField(validators=[DataRequired()])
     device_ip = StringField("Operator Device IP Address", validators=[Optional(), IPAddress(ipv4=True, ipv6=False)])
     group = SelectField("Machine Group")
     workflow_type = SelectField("Workflow Type")
     schedule = SelectField("Schedule")
+    job_start_input_type = SelectField("Job Start Input Type", choices=job_start_input_type_choices)
     submit = SubmitField('Save')
 
 
@@ -69,5 +77,7 @@ class RegisterForm(FlaskForm):
 
 class SettingsForm(FlaskForm):
     dashboard_update_interval = IntegerField('Dashboard update frequency (Seconds)', validators=[DataRequired()])
-    explanation_threshold = IntegerField('Explanation Threshold (Seconds)', validators=[DataRequired()])
+    job_number_input_type = RadioField("Job Code Input type", choices=[("text", "Alphanumeric"),
+                                                                       ("number", "Numbers only")])
+    allow_delayed_job_start = BooleanField("Allow operator to enter adjusted start time during job start")
     submit = SubmitField('Save')

@@ -3,72 +3,70 @@
 {% block content %}
     <div class="container mt-2">
         <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
-        <p>{{ message|safe }}</p> <br>
+
 
         <form action="" method="post">
             {{ form.hidden_tag() }}
 
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    {{ form.id.label }}
-                    {{ form.id(size=32, class_="form-control") }}
-
-                    {% for error in form.id.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
+            <div class="form-row my-4">
+                <div class="form-group col-md-4">
+                    {{ form.name.label }}
+                    {{ form.name(size=32, autocomplete="off", class_="form-control") }}
+                    {% for error in form.name.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
                 </div>
 
-                <div class="form-group col-md-6">
+                <div class="form-group col-md-2 my-4">
                     <div class="form-check" style="position: absolute; bottom: 5px">
                         {{ form.active(size=32, class_="form-check-input") }}
                         {{ form.active.label(class_="form-check-label") }}
                     </div>
                 </div>
-            </div>
-
-            <div class="form-row">
                 <div class="form-group col-md-6">
-                    {{ form.name.label }}<br>
-                    {{ form.name(size=32, autocomplete="off", class_="form-control") }}<br>
-                    {% for error in form.name.errors %}
-                        <span class="text-danger">[{{ error }}]</span>
-                    {% endfor %}
-                </div>
-                <div class="form-group col-md-6">
-                    {{ form.device_ip.label }}<br>
-                    {{ form.device_ip(size=32, autocomplete="off", class_="form-control") }}<br>
+                    {{ form.device_ip.label }}
+                    {{ form.device_ip(size=32, autocomplete="off", class_="form-control") }}
                     {% for error in form.device_ip.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row my-4">
                 <div class="form-group col-md-6">
-                    {{ form.group.label }}<br>
-                    {{ form.group(class_="form-control") }}<br>
+                    {{ form.group.label }}
+                    {{ form.group(class_="form-control") }}
                     {% for error in form.group.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
                 <div class="form-group col-md-6">
-                    {{ form.schedule.label }}<br>
-                    {{ form.schedule(class_="form-control") }}<br>
+                    {{ form.schedule.label }}
+                    {{ form.schedule(class_="form-control") }}
                     {% for error in form.schedule.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="form-row">
-                {{ form.workflow_type.label }}<br>
-                {{ form.workflow_type(class_="form-control") }}<br>
-                {% for error in form.workflow_type.errors %}
-                    <span class="text-danger">[{{ error }}]</span>
-                {% endfor %}
+            <div class="form-row my-4">
+                <div class="form-group col-md-6">
+                    {{ form.workflow_type.label }}
+                    {{ form.workflow_type(class_="form-control") }}
+                    {% for error in form.workflow_type.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group col-md-6">
+                    {{ form.job_start_input_type.label }}
+                    {{ form.job_start_input_type(class_="form-control") }}
+                    {% for error in form.job_start_input_type.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
             </div>
-            <br>
-            <div class="form-row">
+
+            <div class="form-row my-4">
                 <div class="form-group col-md-6">
                     {{ form.submit(class="btn btn-success") }}
                 </div>
