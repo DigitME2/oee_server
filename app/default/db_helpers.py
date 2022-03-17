@@ -1,3 +1,4 @@
+import logging
 import math as maths
 from datetime import datetime, timedelta, date, time
 from operator import attrgetter
@@ -272,6 +273,9 @@ def get_machines_last_job(machine_id):
 
 def machine_schedule_active(machine, dt: datetime = None):
     """ Return true if the machine is scheduled to be running at a specific time (or now, if not specified)"""
+    if not machine.schedule:
+        logging.warning(f"No schedule for machine {machine.id}")
+        return False
     if not dt:
         dt = datetime.now()
     # Get the shift for this day of the week
@@ -340,20 +344,6 @@ def create_day_scheduled_activities(machine: Machine, shift_start, shift_end, cr
     db.session.commit()
 
 
-def create_all_scheduled_activities1(create_date: date = None):
-    for machine in Machine.query.all():
-        # Get the shift for this day of the week
-        weekday = create_date.weekday()
-        shift = machine.schedule.get_shifts().get(weekday)
-
-        # Create datetime objects with today's date and the times from the schedule table
-        shift_start = datetime.combine(create_date, datetime.strptime(shift[0], "%H%M").timetz())
-        shift_end = datetime.combine(create_date, datetime.strptime(shift[1], "%H%M").timetz())
-
-        create_day_scheduled_activities(machine=machine, shift_start=shift_start, shift_end=shift_end,
-                                        create_date=create_date)
-
-
 def create_all_scheduled_activities(create_date: date = None):
     """ Create all the scheduled activities on a date"""
     if not create_date:
@@ -364,6 +354,9 @@ def create_all_scheduled_activities(create_date: date = None):
     next_midnight = last_midnight + timedelta(days=1)
 
     for machine in Machine.query.all():
+        if not machine.schedule:
+            logging.warning(f"No schedule for machine {machine.id}")
+            continue
 
         # Check to see if any scheduled activities already exist for today and skip if any exist
         existing_activities = ScheduledActivity.query \
@@ -377,7 +370,6 @@ def create_all_scheduled_activities(create_date: date = None):
         # Get the shift for this day of the week
         weekday = create_date.weekday()
         shift = machine.schedule.get_shifts().get(weekday)
-        # FIXME this caused a crash in before_first_request when machine was None. Unsure how this happened. 11/03/22
 
         # Create datetime objects with today's date and the times from the schedule table
         shift_start = datetime.combine(create_date, datetime.strptime(shift[0], "%H%M").timetz())
