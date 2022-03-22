@@ -251,7 +251,12 @@ def edit_machine():
             machine.device_ip = None
         else:
             machine.device_ip = form.device_ip.data
+        try:
+            db.session.add(machine)
+            db.session.commit()
 
+        except IntegrityError as e:
+            return str(e)
         # If creating a new machine, save the ID and start an activity on the machine
         if creating_new_machine:
             current_app.logger.info(f"{machine} created by {current_user}")
@@ -260,14 +265,6 @@ def edit_machine():
                                  activity_code_id=Config.NO_USER_CODE_ID)
             db.session.add(first_act)
             current_app.logger.debug(f"{first_act} started on machine creation")
-
-        try:
-            db.session.add(machine)
-            db.session.commit()
-
-        except IntegrityError as e:
-            return str(e)
-
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page
