@@ -82,8 +82,8 @@ def new_user():
 @admin_required
 def change_password():
     """ The page to change a user's password. The user_id is passed to this page."""
-    if current_user.admin is not True:
-        abort(403)
+    if not current_app.config['LOGIN_DISABLED'] and not current_user.admin:
+        return abort(403)
     user = User.query.get_or_404(request.args.get('user_id'))
     form = ChangePasswordForm()
     if form.validate_on_submit():
