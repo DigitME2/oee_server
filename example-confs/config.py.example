@@ -4,6 +4,8 @@ from distutils.util import strtobool
 
 class Config(object):
 
+    VERSION = "v3.0.0"
+
     # Set during testing
     TESTING = strtobool(os.environ.get("DEMO_MODE", "false"))
     # Run the server in a demo mode, with fake data and an intro screen
