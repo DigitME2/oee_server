@@ -12,12 +12,12 @@
                 <div class="card-body overflow-auto" style="max-height: 30rem;">
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <a href="{{ url_for('admin.new_user') }}">Create New</a>
+                            <a id="create_new_user_btn" href="{{ url_for('admin.new_user') }}">Create New</a>
                         </li>
 
                         {% for user in users %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('admin.change_password', user_id=user.id, action="reset_password") }}">
+                                <a id="edit_user_{{ user.id }}" href="{{ url_for('admin.change_password', user_id=user.id, action="reset_password") }}">
                                     {{ user.username }} (ID: {{ user.id }})
                                 </a>
                             </li>
@@ -33,12 +33,12 @@
                 <div class="card-body overflow-auto" style="max-height: 30rem;">
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <a href="{{ url_for('admin.machine_schedule', new=true) }}">Create New</a>
+                            <a id="create_new_schedule_btn" href="{{ url_for('admin.machine_schedule', new=true) }}">Create New</a>
                         </li>
 
                         {% for s in schedules %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
+                                <a id="edit_schedule_{{ s.id }}" href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
                                     {{ s.name }}
                                 </a>
                             </li>
@@ -54,12 +54,12 @@
                 <div class="card-body overflow-auto" style="max-height: 30rem;">
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <a href="{{ url_for('admin.edit_machine', new=true) }}">Create New</a>
+                            <a id="create_new_machine_btn" href="{{ url_for('admin.edit_machine', new=true) }}">Create New</a>
                         </li>
 
                         {% for m in machines %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('admin.edit_machine',  machine_id=m.id) }}">
+                                <a id="edit_machine_{{ m.id }}" href="{{ url_for('admin.edit_machine',  machine_id=m.id) }}">
                                     {{ m.name }}
                                 </a>
                             </li>
@@ -75,12 +75,12 @@
                 <div class="card-body overflow-auto" style="max-height: 30rem;">
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <a href="{{ url_for('admin.edit_machine_group', new=true) }}">Create New</a>
+                            <a id="create_new_group_btn" href="{{ url_for('admin.edit_machine_group', new=true) }}">Create New</a>
                         </li>
 
                         {% for mg in machine_groups %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('admin.edit_machine_group', machine_group_id=mg.id) }}">
+                                <a id="edit_group_{{ mg.id }}" href="{{ url_for('admin.edit_machine_group', machine_group_id=mg.id) }}">
                                     {{ mg.name }}
                                 </a>
                             </li>
@@ -97,12 +97,12 @@
                 <div class="card-body overflow-auto" style="max-height: 30rem;">
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <a href="{{ url_for('admin.edit_activity_code', new=true) }}">Create New</a>
+                            <a id="create_new_activity_code_btn" href="{{ url_for('admin.edit_activity_code', new=true) }}">Create New</a>
                         </li>
 
                         {% for ac in activity_codes %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">
+                                <a id="edit_activity_code_{{ ac.id }}" href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">
                                     {{ ac.code }} - {{ ac.short_description }}
                                 </a>
                             </li>

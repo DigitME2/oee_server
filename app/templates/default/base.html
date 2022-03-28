@@ -39,24 +39,24 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 {% if current_user.admin %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.admin_home') }}">Admin</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('visualisation.data') }}">Data</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('visualisation.dashboard',
+                    <li class="nav-item"><a id="nav_admin_btn" class="nav-link" href="{{ url_for('admin.admin_home') }}">Admin</a></li>
+                    <li class="nav-item"><a id="nav_data_btn" class="nav-link" href="{{ url_for('visualisation.data') }}">Data</a></li>
+                    <li class="nav-item"><a id="nav_dashboard_btn" class="nav-link" href="{{ url_for('visualisation.dashboard',
                     machine_group=1,
                     start="09:00",
                     end="18:00") }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.settings') }}">Settings</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('documentation.help_home') }}">Help</a>
+                    <li class="nav-item"><a id="nav_settings_btn" class="nav-link" href="{{ url_for('admin.settings') }}">Settings</a></li>
+                    <li class="nav-item"><a id="nav_help_btn" class="nav-link" href="{{ url_for('documentation.help_home') }}">Help</a>
                     </li>
                 {% endif %}
             </ul>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
                     {% if current_user.is_anonymous %}
-                        <li class="nav-item  navbar-dark"><a class="nav-link"
+                        <li class="nav-item  navbar-dark"><a id="nav_login_btn" class="nav-link"
                                                              href="{{ url_for('login.login') }}">Login</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login.logout') }}">Logout</a></li>
+                        <li class="nav-item"><a id="nav_logout_btn" class="nav-link" href="{{ url_for('login.logout') }}">Logout</a></li>
                     {% endif %}
                 </ul>
             </div>
