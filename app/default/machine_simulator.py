@@ -11,11 +11,11 @@ from app.extensions import db
 from app.login.models import User, UserSession
 
 
-def create_new_demo_user(username, machine, simulation_datetime=None):
+def create_new_demo_user(username, user_id, machine, simulation_datetime=None):
     if not simulation_datetime:
         simulation_datetime = datetime.now()
-    user = User(username=username)
-    user.set_password("secret_bot_password!!!")
+    user = User(id=user_id, username=username)
+    user.set_password(str(user_id))
     db.session.add(user)
     db.session.commit()
     user_session = UserSession(user_id=user.id,
@@ -97,6 +97,8 @@ def simulate_machines(simulation_datetime: datetime = None):
     if not simulation_datetime:
         simulation_datetime = datetime.now()
     for machine in Machine.query.all():
+        if machine.id == 1:
+            continue  # Don't simulate the first machine
         chance_to_skip_simulation = 0.90
         if random.random() < chance_to_skip_simulation:
             continue
@@ -104,7 +106,7 @@ def simulate_machines(simulation_datetime: datetime = None):
         username = names[machine.id]
         user = User.query.filter_by(username=username).first()
         if user is None:
-            user = create_new_demo_user(username, machine)
+            user = create_new_demo_user(username, machine.id, machine)
             start_new_job(machine, user)
         # Don't run jobs if the machine is not scheduled to be running
         if not machine_schedule_active(machine, dt=simulation_datetime):
@@ -151,14 +153,16 @@ def dt_range(start_dt, end_dt, frequency_seconds):
 
 
 names = [
-    "Barry",
+    "test",
+    "admin"
     "Pam",
-    "Sterling",
+    "Cyril",
+    "Lana",
+    "Barry",
     "Cheryl",
     "Ray",
-    "Lana",
     "Brett",
-    "Cyril",
+    "Sterling",
     "Mallory",
     "Leonard",
     "Ron",
