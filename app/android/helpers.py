@@ -13,13 +13,13 @@ def time_autofill():
     return datetime.now().strftime("HH:mm")
 
 
-def get_job_start_data(input_type: str) -> dict:
+def get_job_start_data(input_type: str, input_autofill) -> dict:
     current_settings = Settings.query.get_or_404(1)
     job_start_data = {"wo_number": {"title": "Job Number",
                                     "type": current_settings.job_number_input_type,
                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
-                                           "autofill": ""}}
+                                           "autofill": input_autofill}}
     if current_settings.allow_delayed_job_start:
         job_start_data["start_time"] = {"title": "Start Time",
                                         "type": "time",

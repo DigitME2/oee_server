@@ -57,6 +57,8 @@ class MachineForm(FlaskForm):
     workflow_type = SelectField("Workflow Type")
     schedule = SelectField("Schedule")
     job_start_input_type = SelectField("Job Start Input Type", choices=job_start_input_type_choices)
+    autofill_input_bool = BooleanField("Enable Autofill")
+    autofill_input_amount = IntegerField("Job Start Input Autofill")
     submit = SubmitField('Save')
 
 

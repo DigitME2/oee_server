@@ -240,6 +240,8 @@ def edit_machine():
         machine.active = form.active.data
         machine.workflow_type = form.workflow_type.data
         machine.job_start_input_type = form.job_start_input_type.data
+        machine.autofill_job_start_input = form.autofill_input_bool.data
+        machine.autofill_job_start_amount = form.autofill_input_amount.data
         machine.schedule_id = form.schedule.data
         # If no machine group is selected, null the column instead of 0
         if form.group.data == '0':
@@ -273,6 +275,8 @@ def edit_machine():
     form.group.data = str(machine.group_id)
     form.workflow_type.data = str(machine.workflow_type)
     form.job_start_input_type.data = str(machine.job_start_input_type)
+    form.autofill_input_bool.data = bool(machine.autofill_job_start_input)
+    form.autofill_input_amount.data = str(machine.autofill_job_start_amount)
 
     if not creating_new_machine:
         form.name.data = machine.name
