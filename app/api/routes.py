@@ -1,7 +1,7 @@
 import json
 from time import time
 
-from flask import request, jsonify
+from flask import request, jsonify, abort
 
 from app.api import bp
 from app.default.models import Machine, Activity
@@ -87,5 +87,33 @@ def machine_activity():
                         "timestamp_end": new_activity.timestamp_end})
     response.status_code = 201
     return response
+
+
+@bp.route('/activity/<activity_id>', methods=['PUT'])
+def edit_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if not request.is_json:
+        response = jsonify({"error": "Request is not in json format"})
+        response.status_code = 400
+        return response
+
+    data = request.get_json()
+    # I was getting an issue with get_json() sometimes returning a string and sometimes dict so I did this
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    if "activity_code_id" in data:
+        activity.activity_code_id = data["activity_code_id"]
+        db.session.commit()
+        response = jsonify({"message": "Success"})
+        response.status_code = 200
+        return response
+    else:
+        abort(400)
+
+
+
+
+
 
 

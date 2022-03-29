@@ -25,7 +25,7 @@ def login():
         if current_user.admin:
             return redirect(url_for('admin.admin_home'))
         else:
-            return redirect(url_for('export.export_home'))
+            return redirect(url_for('default.view_activities'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -41,7 +41,7 @@ def login():
             if user.admin:
                 next_page = url_for('admin.admin_home')
             else:
-                next_page = url_for('export.export_home')
+                next_page = url_for('default.view_activities')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)
