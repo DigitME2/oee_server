@@ -50,6 +50,32 @@
             </div>
 
             <div class="form-row my-4">
+
+                <div class="form-group col-md-6">
+                    {{ form.job_start_input_type.label }}
+                    {{ form.job_start_input_type(class_="form-control") }}
+                    {% for error in form.job_start_input_type.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.autofill_input_amount.label }}
+                    {{ form.autofill_input_amount(size=32, class_="form-control") }}
+                    {% for error in form.autofill_input_amount.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group col-md-2 my-4">
+                    <div class="form-check" style="position: absolute; bottom: 5px">
+                        {{ form.autofill_input_bool(size=32, class_="form-check-input") }}
+                        {{ form.autofill_input_bool.label(class_="form-check-label") }}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="form-row my-4">
                 <div class="form-group col-md-6">
                     {{ form.workflow_type.label }}
                     {{ form.workflow_type(class_="form-control") }}
@@ -58,11 +84,7 @@
                     {% endfor %}
                 </div>
                 <div class="form-group col-md-6">
-                    {{ form.job_start_input_type.label }}
-                    {{ form.job_start_input_type(class_="form-control") }}
-                    {% for error in form.job_start_input_type.errors %}
-                        <span class="text-danger">[{{ error }}]</span>
-                    {% endfor %}
+
                 </div>
             </div>
 
