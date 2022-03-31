@@ -1,7 +1,6 @@
 import logging
 
 from app.extensions import db
-from config import Config
 
 logger = logging.getLogger('flask.app')
 
@@ -13,6 +12,8 @@ class Machine(db.Model):
     name = db.Column(db.String, unique=True, nullable=False)
     workflow_type = db.Column(db.String)
     job_start_input_type = db.Column(db.String)
+    autofill_job_start_input = db.Column(db.Boolean)
+    autofill_job_start_amount = db.Column(db.Float)
     group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
     device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
@@ -140,5 +141,3 @@ class DemoSettings(db.Model):
     # Only allow one row in this table
     id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
     last_machine_simulation = db.Column(db.DateTime)
-
-

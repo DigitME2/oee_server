@@ -58,7 +58,7 @@
             data: {
                 start: "{{ start }}",
                 end:"{{ end }}",
-                machine_group: 1,
+                machine_group: {{ machine_group.id }},
                 update: true //This tells the server not to send plotly.js again
             },
             success: function (response) {

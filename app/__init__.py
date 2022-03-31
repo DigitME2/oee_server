@@ -48,6 +48,7 @@ def create_app(config_class=Config):
     celery_app.conf.update(app.config)
 
     from app.admin import bp as admin_bp
+    from app.api import bp as api_bp
     from app.default import bp as default_bp
     from app.documentation import bp as doc_bp
     from app.errors import bp as errors_bp
@@ -60,6 +61,7 @@ def create_app(config_class=Config):
         app.register_blueprint(testing_bp)
 
     app.register_blueprint(admin_bp)
+    app.register_blueprint(api_bp)
     app.register_blueprint(default_bp)
     app.register_blueprint(doc_bp)
     app.register_blueprint(errors_bp)
