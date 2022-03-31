@@ -169,19 +169,18 @@ def dashboard():
         end = (start + timedelta(hours=8))
 
     if 'update' in request.args and request.args['update']:
-        return create_dashboard_gantt(graph_start=start,
-                                      graph_end=end,
-                                      machine_ids=machine_ids,
-                                      title=graph_title,
-                                      include_plotlyjs=True)
+        include_plotly_js = True
     else:
+        include_plotly_js = False
+    graph = create_dashboard_gantt(graph_start=start,
+                                   graph_end=end,
+                                   machine_ids=machine_ids,
+                                   title=graph_title,
+                                   include_plotlyjs=include_plotly_js)
 
-        graph = create_dashboard_gantt(graph_start=start,
-                                       graph_end=end,
-                                       machine_ids=machine_ids,
-                                       title=graph_title)
-        return render_template("oee_displaying/dashboard.html",
-                               update_interval_ms=update_interval_ms,
-                               graph=graph,
-                               start=request.args['start'],
-                               end=request.args['end'])
+    return render_template("oee_displaying/dashboard.html",
+                           update_interval_ms=update_interval_ms,
+                           machine_group=machine_group,
+                           graph=graph,
+                           start=request.args['start'],
+                           end=request.args['end'])
