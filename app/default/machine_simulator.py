@@ -37,14 +37,14 @@ def end_job(job, machine, simulation_datetime=None):
     job.quantity_produced = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) * (random.randrange(80, 100)/100))
     job.quantity_rejects = int(job.quantity_produced * (random.random()/4))
     job.active = None
-    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime)
+    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
     new_activity = Activity(machine_id=machine.id,
                             time_start=simulation_datetime,
                             machine_state=1,
                             activity_code_id=Config.NO_USER_CODE_ID,
                             job_id=job.id)
     db.session.add(new_activity)
-    db.session.commit()
+    #db.session.commit()
 
 
 def start_new_job(machine, user, simulation_datetime=None):
@@ -69,7 +69,7 @@ def change_activity(machine, job, user, simulation_datetime=None):
     # Run for the current time if no datetime given
     if not simulation_datetime:
         simulation_datetime = datetime.now()
-    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime)
+    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
     chance_the_activity_is_uptime = 0.8
     if random.random() < chance_the_activity_is_uptime:
         new_activity = Activity(machine_id=machine.id,
@@ -83,7 +83,7 @@ def change_activity(machine, job, user, simulation_datetime=None):
         new_activity = Activity(machine_id=machine.id,
                                 time_start=simulation_datetime,
                                 machine_state=0,
-                                activity_code_id=randrange(2, len(ActivityCode.query.all())),
+                                activity_code_id=randrange(2, 8),
                                 job_id=job.id,
                                 user_id=user.id)
     db.session.add(new_activity)
@@ -129,7 +129,7 @@ def simulate_machines(simulation_datetime: datetime = None):
             if random.random() < chance_to_start_job:
                 start_new_job(machine, user, simulation_datetime)
         DemoSettings.query.get(1).last_machine_simulation = simulation_datetime
-    db.session.commit()
+    #db.session.commit()
 
 
 def backfill_missed_simulations():
@@ -142,6 +142,7 @@ def backfill_missed_simulations():
     # Create scheduled activities
     for i in dt_range(simulation_start, datetime.now(), Config.DATA_SIMULATION_FREQUENCY_SECONDS):
         simulate_machines(i)
+    db.session.commit()
 
 
 def dt_range(start_dt, end_dt, frequency_seconds):
