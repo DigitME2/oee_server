@@ -13,7 +13,7 @@ class BaseTest(unittest.TestCase):
         os.environ['TESTING'] = "True"
         from config import Config
         if "test" not in Config.db_name:
-            raise Exception("'Test' not in db_name. Are you running tests on a production database?")
+            raise Exception("'Test' not in db_name. Are you running tests on a production database? Set TESTING=True")
         cls.app = create_app()
         with cls.app.app_context():
             db.drop_all()

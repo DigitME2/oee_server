@@ -3,6 +3,7 @@ from datetime import datetime, time
 from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
+from wtforms import BooleanField
 from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
@@ -190,6 +191,11 @@ def edit_machine():
 
     form.workflow_type.choices = Config.WORKFLOW_TYPES
 
+    # Create checkboxes for downtime codes
+    for ac in ActivityCode.query.all():
+        form.activity_codes_checkboxes.append_entry(data=True)#todo make the link between activity codes and machines
+        form.activity_codes_checkboxes.entries[-1].label.text = ac.short_description
+
     # If new=true then the request is for a new machine to be created
     if 'new' in request.args and request.args['new'] == "True":
         creating_new_machine = True
@@ -282,9 +288,7 @@ def edit_machine():
         form.name.data = machine.name
         form.device_ip.data = machine.device_ip
 
-    activity_codes = ActivityCode.query.all()
-
-    return render_template("admin/edit_machine.html", form=form, activity_codes=activity_codes)
+    return render_template("admin/edit_machine.html", form=form)
 
 
 @bp.route('/editmachinegroup', methods=['GET', 'POST'])
