@@ -282,7 +282,9 @@ def edit_machine():
         form.name.data = machine.name
         form.device_ip.data = machine.device_ip
 
-    return render_template("admin/edit_machine.html", form=form)
+    activity_codes = ActivityCode.query.all()
+
+    return render_template("admin/edit_machine.html", form=form, activity_codes=activity_codes)
 
 
 @bp.route('/editmachinegroup', methods=['GET', 'POST'])

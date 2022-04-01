@@ -59,6 +59,7 @@ class MachineForm(FlaskForm):
     job_start_input_type = SelectField("Job Start Input Type", choices=job_start_input_type_choices)
     autofill_input_bool = BooleanField("Enable Autofill")
     autofill_input_amount = IntegerField("Job Start Input Autofill")
+    downtime_reasons = []
     submit = SubmitField('Save')
 
 

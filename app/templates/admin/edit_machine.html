@@ -113,8 +113,35 @@
                     </small>
                 </div>
                 <div class="form-group col-md-6">
-
+                    <div class="row mx-3">
+                        {% for ac in activity_codes %}
+                            <div class="col-auto border justify-content-center">
+                                <div class="row">
+                                    <div class="col-auto my-2 ">
+                                        <div class="d-flex align-middle">
+                                            {{ form.autofill_input_bool(size=32, class_="") }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto form-check align-middle">
+                                        {{ form.autofill_input_bool.label(class_="mb-5") }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
+                {#                <div class="form-group col-md-6">#}
+                {#                    #}
+                {#                        <div></div>#}
+                {#                    <div class="form-group col-md-2 my-4">#}
+                {#                        <div class="form-check" style="position: absolute; bottom: 5px">#}
+                {#                            #}
+                {#                            {{ form.autofill_input_bool(size=32, class_="form-check-input") }}#}
+                {#                            {{ form.autofill_input_bool.label(class_="form-check-label") }}#}
+                {#                        </div>#}
+                {#                    </div>#}
+                {#                    {% endfor %}#}
+                {#                </div>#}
             </div>
 
             <div class="form-row my-4">
