@@ -15,12 +15,15 @@
                     {% for error in form.name.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="nameHelp" class="form-text text-muted">
+                        The name of your machine or equipment
+                    </small>
                 </div>
 
-                <div class="form-group col-md-2 my-4">
+                <div class="form-group col-md-2 my-4 align-middle">
                     <div class="form-check" style="position: absolute; bottom: 5px">
-                        {{ form.active(size=32, class_="form-check-input") }}
-                        {{ form.active.label(class_="form-check-label") }}
+                        {{ form.active(size=32, class_="") }}
+                        {{ form.active.label(class_="mb-3") }}
                     </div>
                 </div>
                 <div class="form-group col-md-6">
@@ -29,6 +32,9 @@
                     {% for error in form.device_ip.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="ipHelp" class="form-text text-muted">
+                        The static IP Address of the tablet/device assigned to this equipment
+                    </small>
                 </div>
             </div>
 
@@ -39,6 +45,12 @@
                     {% for error in form.group.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="groupHelp" class="form-text text-muted">
+                        The machine group that this machine is assigned to.
+                        <a href="{{ url_for('admin.edit_machine_group', new=True) }}">
+                            Click here to create a new group
+                        </a>
+                    </small>
                 </div>
                 <div class="form-group col-md-6">
                     {{ form.schedule.label }}
@@ -46,6 +58,12 @@
                     {% for error in form.schedule.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="scheduleHelp" class="form-text text-muted">
+                        The planned working schedule for this machine.
+                        <a href="{{ url_for('admin.machine_schedule', new=True) }}">
+                            Click here to create a new schedule
+                        </a>
+                    </small>
                 </div>
             </div>
 
@@ -57,6 +75,10 @@
                     {% for error in form.job_start_input_type.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="autofillHelp" class="form-text text-muted">
+                        The information requested from the operator when starting a job. This will always be converted
+                        to ideal cycle time (seconds) in the database
+                    </small>
                 </div>
                 <div class="form-group col-md-4">
                     {{ form.autofill_input_amount.label }}
@@ -64,12 +86,15 @@
                     {% for error in form.autofill_input_amount.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="autofillAmountHelp" class="form-text text-muted">
+                        A value to autofill the input on the tablet. This can be edited by the operator
+                    </small>
                 </div>
 
                 <div class="form-group col-md-2 my-4">
                     <div class="form-check" style="position: absolute; bottom: 5px">
-                        {{ form.autofill_input_bool(size=32, class_="form-check-input") }}
-                        {{ form.autofill_input_bool.label(class_="form-check-label") }}
+                        {{ form.autofill_input_bool(size=32, class_="") }}
+                        {{ form.autofill_input_bool.label(class_="mb-5") }}
                     </div>
                 </div>
 
@@ -82,6 +107,10 @@
                     {% for error in form.workflow_type.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+                    <small id="workflowHelp" class="form-text text-muted">
+                        The workflow followed by the tablet (e.g. pausable workflows will request a downtime reason
+                        after the end of the downtime)
+                    </small>
                 </div>
                 <div class="form-group col-md-6">
 
