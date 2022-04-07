@@ -56,10 +56,6 @@ def create_app(config_class=Config):
     from app.visualisation import bp as oee_displaying_bp
     from app.android import bp as android_bp
 
-    if os.path.exists('app/testing'):
-        from app.testing import bp as testing_bp
-        app.register_blueprint(testing_bp)
-
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(default_bp)
@@ -68,7 +64,6 @@ def create_app(config_class=Config):
     app.register_blueprint(users_bp)
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(android_bp)
-
 
     @app.before_first_request
     def initial_setup():
