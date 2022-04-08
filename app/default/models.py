@@ -6,6 +6,11 @@ logger = logging.getLogger('flask.app')
 
 SHIFT_STRFTIME_FORMAT = "%H%M"  # Time is stored in the database as a string and converted to a time object
 
+# Stores activity code exclusions. If a machine has an activity code in this table, its device won't show this code.
+machine_activity_codes_association_table = db.Table('machine_activity_code_exclusion', db.Model.metadata,
+                                                    db.Column('machine_id', db.ForeignKey('machine.id')),
+                                                    db.Column('activity_code_id', db.ForeignKey('activity_code.id')))
+
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -22,6 +27,7 @@ class Machine(db.Model):
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
 
     scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
+    excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
     jobs = db.relationship('Job', backref='machine')
 
     def __repr__(self):

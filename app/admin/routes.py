@@ -3,7 +3,6 @@ from datetime import datetime, time
 from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
-from wtforms import BooleanField
 from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
@@ -118,51 +117,25 @@ def machine_schedule():
     if form.validate_on_submit():
         # Save the data from the form to the database
         schedule.name = form.name.data
-        schedule.mon_start = form.mon_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.mon_end = form.mon_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.tue_start = form.tue_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.tue_end = form.tue_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.wed_start = form.wed_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.wed_end = form.wed_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.thu_start = form.thu_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.thu_end = form.thu_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.fri_start = form.fri_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.fri_end = form.fri_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.sat_start = form.sat_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.sat_end = form.sat_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.sun_start = form.sun_start.data.strftime(SHIFT_STRFTIME_FORMAT)
-        schedule.sun_end = form.sun_end.data.strftime(SHIFT_STRFTIME_FORMAT)
-        # Check that end is always after the start
-        if schedule.mon_end < schedule.mon_start or \
-                schedule.tue_end < schedule.tue_start or \
-                schedule.wed_end < schedule.wed_start or \
-                schedule.thu_end < schedule.thu_start or \
-                schedule.fri_end < schedule.fri_start or \
-                schedule.sat_end < schedule.sat_start or \
-                schedule.sun_end < schedule.sun_start:
-            db.session.rollback()
-            return abort(400)
+        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+            start = getattr(form, day + "_start").data.strftime(SHIFT_STRFTIME_FORMAT)
+            end = getattr(form, day + "_end").data.strftime(SHIFT_STRFTIME_FORMAT)
+            if end < start:
+                db.session.rollback()
+                return abort(400)
+            setattr(schedule, day + "_start", start)
+            setattr(schedule, day + "_end", end)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
     # Set the form data to show data from the database
     form.name.data = schedule.name
     blank_time = time().strftime(SHIFT_STRFTIME_FORMAT)  # Replace empty times with 00:00
-    form.mon_start.data = datetime.strptime(schedule.mon_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.mon_end.data = datetime.strptime(schedule.mon_end or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.tue_start.data = datetime.strptime(schedule.tue_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.tue_end.data = datetime.strptime(schedule.tue_end or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.wed_start.data = datetime.strptime(schedule.wed_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.wed_end.data = datetime.strptime(schedule.wed_end or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.thu_start.data = datetime.strptime(schedule.thu_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.thu_end.data = datetime.strptime(schedule.thu_end or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.fri_start.data = datetime.strptime(schedule.fri_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.fri_end.data = datetime.strptime(schedule.fri_end or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.sat_start.data = datetime.strptime(schedule.sat_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.sat_end.data = datetime.strptime(schedule.sat_end or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.sun_start.data = datetime.strptime(schedule.sun_start or blank_time, SHIFT_STRFTIME_FORMAT)
-    form.sun_end.data = datetime.strptime(schedule.sun_end or blank_time, SHIFT_STRFTIME_FORMAT)
-
+    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+        start_form = getattr(form, day + "_start")
+        start_form.data = datetime.strptime(getattr(schedule, day + "_start", blank_time), SHIFT_STRFTIME_FORMAT)
+        end_form = getattr(form, day + "_end")
+        end_form.data = datetime.strptime(getattr(schedule, day + "_end", blank_time), SHIFT_STRFTIME_FORMAT)
     return render_template("admin/schedule.html",
                            form=form)
 
@@ -191,11 +164,6 @@ def edit_machine():
 
     form.workflow_type.choices = Config.WORKFLOW_TYPES
 
-    # Create checkboxes for downtime codes
-    for ac in ActivityCode.query.all():
-        form.activity_codes_checkboxes.append_entry(data=True)#todo make the link between activity codes and machines
-        form.activity_codes_checkboxes.entries[-1].label.text = ac.short_description
-
     # If new=true then the request is for a new machine to be created
     if 'new' in request.args and request.args['new'] == "True":
         creating_new_machine = True
@@ -206,7 +174,7 @@ def edit_machine():
         # Create a new machine
         machine = Machine(name="", active=True)
 
-    # Otherwise get the machine to be edited
+    # Otherwise, get the machine to be edited
     elif 'machine_id' in request.args:
         try:
             machine_id = int(request.args['machine_id'])
@@ -221,6 +189,10 @@ def edit_machine():
         error_message = "No machine_id specified"
         current_app.logger.warn("No machine_id specified in URL")
         return abort(400, error_message)
+
+    # Get downtime codes for checkboxes
+    always_excluded_downtime_codes = [Config.NO_USER_CODE_ID, Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
+    activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(always_excluded_downtime_codes)).all()
 
     # Create validators for the form
     # Create a list of existing names and IPs to prevent duplicates being entered
@@ -249,6 +221,16 @@ def edit_machine():
         machine.autofill_job_start_input = form.autofill_input_bool.data
         machine.autofill_job_start_amount = form.autofill_input_amount.data
         machine.schedule_id = form.schedule.data
+
+        # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
+        for ac in activity_codes:
+            if ac.short_description not in request.form and ac not in machine.excluded_activity_codes:
+                # If it's not checked, and it's not in the excluded activity codes, add it
+                machine.excluded_activity_codes.append(ac)
+            if ac.short_description in request.form and ac in machine.excluded_activity_codes:
+                # If it's checked, and it's already in the excluded activity codes, remove it
+                machine.excluded_activity_codes.pop(machine.excluded_activity_codes.index(ac))
+
         # If no machine group is selected, null the column instead of 0
         if form.group.data == '0':
             machine.group_id = None
@@ -288,7 +270,10 @@ def edit_machine():
         form.name.data = machine.name
         form.device_ip.data = machine.device_ip
 
-    return render_template("admin/edit_machine.html", form=form)
+    return render_template("admin/edit_machine.html",
+                           form=form,
+                           excluded_activity_code_ids=[code.id for code in machine.excluded_activity_codes],
+                           activity_codes=activity_codes)
 
 
 @bp.route('/editmachinegroup', methods=['GET', 'POST'])
@@ -312,7 +297,7 @@ def edit_machine_group():
         machine_group = MachineGroup(name="")
         db.session.add(machine_group)
 
-    # Otherwise get the machine group to be edited
+    # Otherwise, get the machine group to be edited
     elif 'machine_group_id' in request.args:
         try:
             machine_group_id = int(request.args['machine_group_id'])
@@ -369,7 +354,7 @@ def edit_activity_code():
         activity_code = ActivityCode(active=True)
         message = "Create new activity code"
 
-    # Otherwise get the activity code to be edited
+    # Otherwise, get the activity code to be edited
     elif 'ac_id' in request.args:
         try:
             activity_code_id = int(request.args['ac_id'])

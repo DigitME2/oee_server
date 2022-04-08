@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField, \
-    FieldList
+    FieldList, FloatField
 from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional
 from wtforms.widgets import TextArea
 from wtforms_components import TimeField
@@ -59,7 +59,7 @@ class MachineForm(FlaskForm):
     schedule = SelectField("Schedule")
     job_start_input_type = SelectField("Job Start Input Type", choices=job_start_input_type_choices)
     autofill_input_bool = BooleanField("Enable Autofill")
-    autofill_input_amount = IntegerField("Job Start Input Autofill")
+    autofill_input_amount = FloatField("Job Start Input Autofill")
     activity_codes_checkboxes = FieldList(BooleanField())
     submit = SubmitField('Save')
 

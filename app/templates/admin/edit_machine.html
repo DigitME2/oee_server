@@ -113,16 +113,21 @@
                     </small>
                 </div>
                 <div class="form-group col-6">
-                Available Downtime Codes
+                    Available Downtime Codes
                     <div class="row mx-3 mt-1">
-                        {% for checkbox in form.activity_codes_checkboxes %}
+                        {% for code in activity_codes %}
                             <div class="col-auto border rounded-pill justify-content-center">
                                 <div class="row">
                                     <div class="col-auto my-1 mx-1">
-                                        {{ checkbox.label }}
+                                        <label for="{{ code.short_description + "id" }}"> {{ code.short_description }}</label>
                                     </div>
                                     <div class="col-auto form-check my-1">
-                                        {{ checkbox(size=32, class_="") }}
+                                        <input type="checkbox" id="{{ code.short_description + "id" }}"
+                                               name="{{ code.short_description }}" value="True"
+                                               {% if code.id not in excluded_activity_code_ids %}
+                                               checked="checked"
+                                                {% endif %}
+                                        >
                                     </div>
                                 </div>
                             </div>

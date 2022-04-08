@@ -54,7 +54,7 @@ def android_check_state():
 def android_login():
     """The screen to log the user into the system."""
 
-    current_app.logger.debug("Login attempt to /androidlogin")
+    current_app.logger.debug("Login attempt to /android-login")
     response = {}
 
     # Return failure if correct arguments not supplied
@@ -127,11 +127,13 @@ def android_logout():
 @bp.route('/android-start-job', methods=['POST'])
 def android_start_job():
     if not request.is_json:
-        return abort(404)
+        return abort(400)
     now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-    machine = user_session.machine
+    if not user_session:
+        return abort(400)
 
+    machine = user_session.machine
     if user_session.user.has_job():
         return abort(400)
 

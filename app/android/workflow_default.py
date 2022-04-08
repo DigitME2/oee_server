@@ -39,6 +39,7 @@ def check_default_machine_state(user_session):
         current_activity_code = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID)
 
     current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
+    # todo Dont send excluded downtime codes
     return json.dumps({"workflow_type": "default",
                        "state": "active_job",
                        "wo_number": current_job.wo_number,
