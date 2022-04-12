@@ -23,12 +23,10 @@ def check_default_machine_state(user_session):
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    # Send the list of downtime reasons to populate a dropdown. Exclude no user
-    all_active_codes = ActivityCode.query.filter(ActivityCode.active,
-                                                 ActivityCode.id != Config.NO_USER_CODE_ID).all()
+
     # Get the current activity code to set the colour and dropdown
+    machine = user_session.machine
     try:
-        machine = user_session.machine
         current_activity = Activity.query.get(get_current_machine_activity_id(machine.id))
         current_activity_code = current_activity.activity_code
         colour = current_activity_code.graph_colour
@@ -38,12 +36,19 @@ def check_default_machine_state(user_session):
         colour = "#c9b3b3"
         current_activity_code = ActivityCode.query.get(Config.UNEXPLAINED_DOWNTIME_CODE_ID)
 
+    # Send the list of downtime reasons to populate a dropdown. Exclude no user
+    codes_to_show = ActivityCode.query.filter(ActivityCode.active,
+                                              ActivityCode.id != Config.NO_USER_CODE_ID).all()
+    # Exclude excluded codes for the particular machine
+    for code in codes_to_show:
+        if code in machine.excluded_activity_codes:
+            codes_to_show.pop(codes_to_show.index(code))
+
     current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-    # todo Dont send excluded downtime codes
     return json.dumps({"workflow_type": "default",
                        "state": "active_job",
                        "wo_number": current_job.wo_number,
                        "current_activity": current_activity_code.short_description,
-                       "activity_codes": [code.short_description for code in all_active_codes],
+                       "activity_codes": [code.short_description for code in codes_to_show],
                        "colour": colour,
                        "requested_data_on_end": REQUESTED_DATA_JOB_END})
