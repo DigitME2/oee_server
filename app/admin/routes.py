@@ -133,9 +133,11 @@ def machine_schedule():
     blank_time = time().strftime(SHIFT_STRFTIME_FORMAT)  # Replace empty times with 00:00
     for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
         start_form = getattr(form, day + "_start")
-        start_form.data = datetime.strptime(getattr(schedule, day + "_start", blank_time), SHIFT_STRFTIME_FORMAT)
+        start_form.data = datetime.strptime(getattr(schedule, day + "_start", blank_time) or blank_time,
+                                            SHIFT_STRFTIME_FORMAT)
         end_form = getattr(form, day + "_end")
-        end_form.data = datetime.strptime(getattr(schedule, day + "_end", blank_time), SHIFT_STRFTIME_FORMAT)
+        end_form.data = datetime.strptime(getattr(schedule, day + "_end", blank_time) or blank_time,
+                                          SHIFT_STRFTIME_FORMAT)
     return render_template("admin/schedule.html",
                            form=form)
 
