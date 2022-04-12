@@ -131,7 +131,8 @@ def create_default_machine():
                        group_id=1,
                        schedule_id=1,
                        workflow_type="default",
-                       job_start_input_type="cycle_time_seconds")
+                       job_start_input_type="cycle_time_seconds",
+                       autofill_job_start_amount=0)
     db.session.add(machine1)
     db.session.commit()
     current_app.logger.info("Created default machine on first startup")

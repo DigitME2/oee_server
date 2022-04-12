@@ -209,7 +209,7 @@ def edit_machine():
     # Don't allow duplicate machine names
     form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
     # Don't allow duplicate device IPs
-    form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine"), DataRequired()]
+    form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine")]
 
     if form.validate_on_submit():
         current_app.logger.info(f"{machine} edited by {current_user}")
@@ -264,7 +264,7 @@ def edit_machine():
     form.workflow_type.data = str(machine.workflow_type)
     form.job_start_input_type.data = str(machine.job_start_input_type)
     form.autofill_input_bool.data = bool(machine.autofill_job_start_input)
-    form.autofill_input_amount.data = str(machine.autofill_job_start_amount)
+    form.autofill_input_amount.data = machine.autofill_job_start_amount
 
     if not creating_new_machine:
         form.name.data = machine.name
