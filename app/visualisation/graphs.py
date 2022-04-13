@@ -10,9 +10,9 @@ from plotly.graph_objs.layout import Shape, Annotation
 from plotly.offline import plot
 
 from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
-from app.data_analysis.oee.oee import get_daily_group_oee, get_daily_machine_oee
+from app.data_analysis.oee.oee import get_daily_machine_oee
 from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
-from app.default.models import Activity, Machine, ActivityCode, MachineGroup, ScheduledActivity, Settings
+from app.default.models import Activity, Machine, ActivityCode, ScheduledActivity, Settings
 from app.visualisation.helpers import get_machine_status
 from config import Config
 
@@ -51,7 +51,11 @@ def apply_default_layout(layout):
     return layout
 
 
-def create_machine_gantt(machine_id, graph_start: datetime, graph_end: datetime, hide_jobless=False):
+def create_machine_gantt(machine_id,
+                         graph_start: datetime,
+                         graph_end: datetime,
+                         hide_jobless=False,
+                         highlight_jobs=False):
     """ Create a gantt chart of the usage of a single machine, between the two times provided"""
 
     if machine_id is None:
@@ -90,7 +94,8 @@ def create_machine_gantt(machine_id, graph_start: datetime, graph_end: datetime,
     layout.showlegend = True
 
     # Highlight jobs
-    layout = highlight_jobs(activities, layout)
+    if highlight_jobs:
+        layout = highlight_jobs_on_gantt_layout(activities, layout)
 
     # Pass the changed layout back to fig
     fig['layout'] = layout
@@ -447,7 +452,7 @@ def get_scheduled_activities_df(activities: List[ScheduledActivity], group_by, g
     return df
 
 
-def highlight_jobs(activities, layout):
+def highlight_jobs_on_gantt_layout(activities, layout):
     """ Creates 'highlight' shapes to show the times of jobs on the graph"""
     # Get all of the jobs from the activities
     jobs = []
