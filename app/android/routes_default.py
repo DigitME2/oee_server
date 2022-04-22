@@ -32,7 +32,7 @@ def android_check_state():
             machine_text = f"Error: No machine assigned to this client IP ({request.remote_addr})"
         else:
             machine_text = machine.name
-        return json.dumps({"workflow_type": "",
+        return json.dumps({"workflow_type": "default",
                            "state": "no_user",
                            "machine": machine_text,
                            "ip": request.remote_addr})

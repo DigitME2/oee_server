@@ -12,9 +12,12 @@ def check_pausable_machine_state(user_session):
     # If there are no active jobs on the user session, send to new job screen
     machine = user_session.machine
     if not any(job.active for job in user_session.jobs):
+        input_autofill = user_session.machine.autofill_job_start_amount \
+            if user_session.machine.autofill_job_start_input else ""
         return json.dumps({"workflow_type": "pausable",
                            "state": "no_job",
-                           "requested_data": get_job_start_data(input_type=user_session.machine.job_start_input_type)})
+                           "requested_data": get_job_start_data(input_type=user_session.machine.job_start_input_type,
+                                                                input_autofill=input_autofill)})
 
     # The current job is whatever job is currently active on the assigned machine
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
