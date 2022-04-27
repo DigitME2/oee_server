@@ -65,7 +65,7 @@ class Config(object):
     ROTATING_LOG_FILE_COUNT = 10
     LOG_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
-    WORKFLOW_TYPES = ["default", "pausable"]
+    WORKFLOW_TYPES = ["default", "pausable", "running_total"]
 
     # The database IDs for activity codes
     NO_USER_CODE_ID = 1

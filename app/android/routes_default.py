@@ -4,8 +4,7 @@ from datetime import datetime
 from flask import request, current_app, abort
 
 from app.android.helpers import parse_cycle_time
-from app.android.workflow_default import check_default_machine_state
-from app.android.workflow_pausable import check_pausable_machine_state
+from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
 from app.default.models import Job, Activity, ActivityCode
 from app.extensions import db
@@ -41,13 +40,17 @@ def android_check_state():
     current_app.logger.debug(f"Machine using {machine.workflow_type}")
 
     if machine.workflow_type == "default":
-        return check_default_machine_state(user_session)
+        workflow = DefaultWorkflow(user_session)
 
-    if machine.workflow_type == "pausable":
-        return check_pausable_machine_state(user_session)
+    elif machine.workflow_type == "pausable":
+        workflow = PausableWorkflow(user_session)
+
+    elif machine.workflow_type == "running_total":
+        workflow = RunningTotalWorkflow(user_session)
     else:
         current_app.logger.error(f"Incorrect workflow ({machine.workflow_type}) assigned to {machine}")
         return abort(400)
+    return workflow.build_server_response()
 
 
 @bp.route('/android-login', methods=['POST'])
