@@ -13,6 +13,7 @@ from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, UserSession
 from config import Config
 
+
 @bp.route('/android-update-quantity', methods=['POST'])
 def running_total_update_quantity():
     print(request.json)

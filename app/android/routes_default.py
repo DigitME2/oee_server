@@ -24,7 +24,7 @@ def android_check_state():
     # Get the machine assigned to this device
     machine = get_assigned_machine(request.remote_addr)
 
-    # If there is no user session, send to login screen. Also send here if there is no assigned machine
+    # If there is no user session, send to the login screen. Also send here if there is no assigned machine
     if user_session is None or machine is None:
         # Show an error to the user if no machine is assigned
         if machine is None:
@@ -131,7 +131,6 @@ def android_logout():
 def android_start_job():
     if not request.is_json:
         return abort(400)
-    now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     if not user_session:
         return abort(400)
