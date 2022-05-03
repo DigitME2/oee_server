@@ -237,8 +237,8 @@ def android_end_job():
     current_job.end_time = now
     current_job.active = None
 
-    current_job.quantity_produced = quantity_produced
-    current_job.quantity_rejects = quantity_rejects
+    current_job.quantity_produced += quantity_produced
+    current_job.quantity_rejects += quantity_rejects
 
     db.session.commit()
 

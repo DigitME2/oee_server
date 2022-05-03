@@ -123,6 +123,12 @@ class RunningTotalWorkflow(Workflow):
 
     def __init__(self, user_session: UserSession):
         super().__init__(user_session)
-        self.workflow_type = "running_total"    
+        self.workflow_type = "running_total"
+
+    def active_job_response(self):
+        default_response = json.loads(super().active_job_response())
+        response = default_response
+        response["current_quantity"] = self.job.quantity_produced
+        return json.dumps(response)
 
 
