@@ -14,7 +14,7 @@ from app.login.helpers import start_user_session, end_user_sessions
 from app.login.models import User, UserSession
 from config import Config
 
-redis = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT)
+r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
 
 
 @bp.route('/check-state', methods=['GET'])
@@ -85,10 +85,10 @@ def android_login():
         job = Job.query.filter_by(user_id=user_id, active=True).first()
         # If this is the second attempt, end the job and log in the user
         redis_key = f"login_attempted_user_{user_id}"
-        previous_login_attempt = redis.get(redis_key)
+        previous_login_attempt = r.get(redis_key)
         if previous_login_attempt:
             current_app.logger.info(f"Logging out user_id:{user_id}")
-            redis.delete(redis_key)
+            r.delete(redis_key)
             job.end_time = datetime.now()
             job.active = None
             db.session.commit()
@@ -96,7 +96,7 @@ def android_login():
             response["success"] = False
             response["reason"] = f"User already has an active job on machine {job.machine.name}. " \
                                  f"Log in again to end this job."
-            redis.set(redis_key, "True", 600)
+            r.set(redis_key, "True", 600)
             return json.dumps(response), 200, {'ContentType': 'application/json'}
 
     # Check the password and log in if successful

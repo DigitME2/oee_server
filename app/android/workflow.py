@@ -1,5 +1,6 @@
 import json
 
+import redis
 from flask import current_app, request
 
 from app.android.helpers import REQUESTED_DATA_JOB_END, get_job_start_data
@@ -7,6 +8,8 @@ from app.default.db_helpers import get_current_machine_activity_id
 from app.default.models import Job, Activity, ActivityCode
 from app.login.models import UserSession
 from config import Config
+
+r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
 
 
 class Workflow:
@@ -128,7 +131,10 @@ class RunningTotalWorkflow(Workflow):
     def active_job_response(self):
         default_response = json.loads(super().active_job_response())
         response = default_response
+
+        if r.exists(f"job_{self.job.id}_last_update"):
+            response["last_update"] = r.get(f"job_{self.job.id}_last_update")
+        else:
+            response["last_update"] = self.job.start_time.timestamp()
         response["current_quantity"] = self.job.quantity_produced
         return json.dumps(response)
-
-
