@@ -9,4 +9,4 @@ db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'login.login'
-celery_app = Celery('tasks', broker=Config.REDIS_ADDRESS, backend=Config.REDIS_ADDRESS)
+celery_app = Celery('tasks', broker=Config.CELERY_BROKER, backend=Config.CELERY_BROKER)
