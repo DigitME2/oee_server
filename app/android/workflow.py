@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import redis
 from flask import current_app, request
@@ -137,4 +138,8 @@ class RunningTotalWorkflow(Workflow):
         else:
             response["last_update"] = self.job.start_time.timestamp()
         response["current_quantity"] = self.job.quantity_produced
+        response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
+
+        current_app.logger.debug(f"last update timestamp = {response['last_update']}")
+        current_app.logger.debug(f"now = {datetime.now().timestamp()}")
         return json.dumps(response)

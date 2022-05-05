@@ -35,6 +35,7 @@ def running_total_update_quantity():
     timestamp = datetime.now().timestamp()
     r.set(f"job_{current_job.id}_last_update", timestamp, ex=86400)
 
-    return json.dumps({"quantity_produced": current_job.quantity_produced,
+    return json.dumps({"success": True,
+                       "quantity_produced": current_job.quantity_produced,
                        "quantity_rejects": current_job.quantity_rejects,
                        "last_update": timestamp})
