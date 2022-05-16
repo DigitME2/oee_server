@@ -14,12 +14,20 @@ def time_autofill():
 
 
 def get_job_start_data(input_type: str, input_autofill) -> dict:
+    """ Returns a dict for the data requested at the start of a job,
+    allowing the android device to build a start job form.
+
+    For custom validation, a "validation" entry can be added to each data dictionary. This should be a JSON list
+    containing the allowed values for the data e.g. "wo_number": {"title": "Job No", ... , "validation": "[1, 2, 3]"}
+    Don't send an empty validation list or nothing will be allowed. Omit the validation entry if none required.
+    """
     current_settings = Settings.query.get_or_404(1)
     job_start_data = {"wo_number": {"title": "Job Number",
                                     "type": current_settings.job_number_input_type,
                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
                                            "autofill": input_autofill}}
+    # job_start_data["wo_number"]["validation"] = custom_validation_list()
     if current_settings.allow_delayed_job_start:
         job_start_data["start_time"] = {"title": "Start Time",
                                         "type": "time",
