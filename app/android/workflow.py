@@ -45,6 +45,8 @@ class Workflow:
             if self.user_session.machine.autofill_job_start_input else ""
         return json.dumps({"workflow_type": self.workflow_type,
                            "state": self.state,
+                           "machine_name": self.machine.name,
+                           "user_name": self.user_session.user.username,
                            "requested_data": get_job_start_data(input_type=input_type,
                                                                 input_autofill=input_autofill)})
 
