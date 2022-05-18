@@ -114,6 +114,9 @@
                 </div>
                 <div class="form-group col-6">
                     Available Downtime Codes
+                    <small id="workflowHelp" class="form-text text-muted">
+                        Un-check to stop this code from being shown on the tablet
+                    </small>
                     <div class="row mx-3 mt-1">
                         {% for code in activity_codes %}
                             <div class="col-auto border rounded-pill justify-content-center">
@@ -138,9 +141,9 @@
 
             <div class="form-row my-4">
                 <div class="form-group col-6">
-                    {{ form.workflow_type.label }}
-                    {{ form.workflow_type(class_="form-control") }}
-                    {% for error in form.workflow_type.errors %}
+                    {{ form.job_start_activity.label }}
+                    {{ form.job_start_activity(class_="form-control") }}
+                    {% for error in form.job_start_activity.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                     <small id="workflowHelp" class="form-text text-muted">

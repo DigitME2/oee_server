@@ -177,7 +177,7 @@ def android_start_job():
     complete_last_activity(machine_id=machine.id, time_end=start_time)
 
     # Set the first activity
-    starting_activity_code = Config.UPTIME_CODE_ID
+    starting_activity_code = machine.job_start_activity_id
 
     # Start a new activity
     new_activity = Activity(machine_id=machine.id,

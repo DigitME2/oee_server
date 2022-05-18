@@ -201,7 +201,7 @@ def edit_machine():
     for ac in ActivityCode.query.filter(ActivityCode.id != Config.NO_USER_CODE_ID).all():
         activity_code_choices.append((str(ac.id), str(ac.short_description)))
     form.group.choices = groups
-    form.job_start_input_type.choices = activity_code_choices
+    form.job_start_activity.choices = activity_code_choices
 
     # Create validators for the form
     # Create a list of existing names and IPs to prevent duplicates being entered
@@ -275,6 +275,7 @@ def edit_machine():
     form.job_start_input_type.data = str(machine.job_start_input_type)
     form.autofill_input_bool.data = bool(machine.autofill_job_start_input)
     form.autofill_input_amount.data = machine.autofill_job_start_amount
+    form.job_start_activity.data = str(machine.job_start_activity_id)
 
     if not creating_new_machine:
         form.name.data = machine.name
