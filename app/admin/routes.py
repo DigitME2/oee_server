@@ -192,9 +192,16 @@ def edit_machine():
         current_app.logger.warn("No machine_id specified in URL")
         return abort(400, error_message)
 
-    # Get downtime codes for checkboxes
-    always_excluded_downtime_codes = [Config.NO_USER_CODE_ID, Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
-    activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(always_excluded_downtime_codes)).all()
+    # Get downtime codes for exclusion checkboxes
+    non_excludable_codes = [Config.NO_USER_CODE_ID, Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
+    optional_activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(non_excludable_codes)).all()
+
+    # Create first activity dropdown
+    activity_code_choices = []
+    for ac in ActivityCode.query.filter(ActivityCode.id != Config.NO_USER_CODE_ID).all():
+        activity_code_choices.append((str(ac.id), str(ac.short_description)))
+    form.group.choices = groups
+    form.job_start_input_type.choices = activity_code_choices
 
     # Create validators for the form
     # Create a list of existing names and IPs to prevent duplicates being entered
@@ -223,9 +230,10 @@ def edit_machine():
         machine.autofill_job_start_input = form.autofill_input_bool.data
         machine.autofill_job_start_amount = form.autofill_input_amount.data
         machine.schedule_id = form.schedule.data
+        machine.job_start_activity_id = form.job_start_activity.data
 
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
-        for ac in activity_codes:
+        for ac in optional_activity_codes:
             if ac.short_description not in request.form and ac not in machine.excluded_activity_codes:
                 # If it's not checked, and it's not in the excluded activity codes, add it
                 machine.excluded_activity_codes.append(ac)
@@ -275,7 +283,7 @@ def edit_machine():
     return render_template("admin/edit_machine.html",
                            form=form,
                            excluded_activity_code_ids=[code.id for code in machine.excluded_activity_codes],
-                           activity_codes=activity_codes)
+                           activity_codes=optional_activity_codes)
 
 
 @bp.route('/editmachinegroup', methods=['GET', 'POST'])

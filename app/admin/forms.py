@@ -44,12 +44,13 @@ class ScheduleForm(FlaskForm):
 
 class MachineForm(FlaskForm):
     job_start_input_type_choices = [("cycle_time_seconds", "Ideal cycle time (seconds)"),
-                                     ("cycle_time_minutes", "Ideal cycle time (minutes)"),
-                                     ("cycle_time_hours", "Ideal cycle time (hours)"),
-                                     ("parts_per_second", "Parts per second"),
-                                     ("parts_per_minute", "Parts per minute"),
-                                     ("parts_per_hour", "Parts per hour"),
-                                     ("planned_qty_minutes", "Planned quantity & Planned time (minutes)")]
+                                    ("cycle_time_minutes", "Ideal cycle time (minutes)"),
+                                    ("cycle_time_hours", "Ideal cycle time (hours)"),
+                                    ("parts_per_second", "Parts per second"),
+                                    ("parts_per_minute", "Parts per minute"),
+                                    ("parts_per_hour", "Parts per hour"),
+                                    ("planned_qty_minutes", "Planned quantity & Planned time (minutes)"),
+                                    ("no_cycle_time", "No Cycle Time Input")]
 
     active = BooleanField()
     name = StringField(validators=[DataRequired()])
@@ -61,6 +62,7 @@ class MachineForm(FlaskForm):
     autofill_input_bool = BooleanField("Enable Autofill", validators=[Optional()])
     autofill_input_amount = FloatField("Job Start Input Autofill")
     activity_codes_checkboxes = FieldList(BooleanField())
+    job_start_activity = SelectField("First Activity on Job Start")
     submit = SubmitField('Save')
 
 

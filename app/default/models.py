@@ -25,6 +25,7 @@ class Machine(db.Model):
     user_sessions = db.relationship("UserSession", backref="machine")
     activities = db.relationship('Activity', backref='machine')
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
+    job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'))
 
     scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)

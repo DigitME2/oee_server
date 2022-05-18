@@ -137,6 +137,22 @@
             </div>
 
             <div class="form-row my-4">
+                <div class="form-group col-6">
+                    {{ form.workflow_type.label }}
+                    {{ form.workflow_type(class_="form-control") }}
+                    {% for error in form.workflow_type.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                    <small id="workflowHelp" class="form-text text-muted">
+                        The default activity to show when a job is first started
+                    </small>
+                </div>
+                <div class="form-group col-6">
+
+                </div>
+            </div>
+
+            <div class="form-row my-4">
                 <div class="form-group col-md-6">
                     {{ form.submit(class="btn btn-success") }}
                 </div>
