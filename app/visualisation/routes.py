@@ -9,12 +9,12 @@ from app.extensions import db
 from app.visualisation import bp
 from app.visualisation.forms import MACHINES_CHOICES_HEADERS, GanttForm, OeeLineForm, \
     DowntimeBarForm, JobTableForm, \
-    WOTableForm, RawDatabaseTableForm, ActivityDurationsTableForm, SchedulesGanttForm
+    WOTableForm, RawDatabaseTableForm, ActivityDurationsTableForm, SchedulesGanttForm, OeeTableForm, ProdTableForm
 from app.visualisation.graphs import create_machine_gantt, create_multiple_machines_gantt, \
     create_dashboard_gantt, create_downtime_bar, create_schedules_gantt, create_oee_line
 from app.visualisation.helpers import parse_requested_machine_list
 from app.visualisation.tables import get_work_order_table, get_job_table, get_raw_database_table, \
-    get_user_activity_table, get_machine_activity_table
+    get_user_activity_table, get_machine_activity_table, get_oee_table, get_machine_production_table
 
 
 @bp.route('/data', methods=['GET', 'POST'])
@@ -42,6 +42,10 @@ def data():
     oee_line_form = OeeLineForm()
     oee_line_form.key.choices = machines_choices
 
+    oee_table_form = OeeTableForm()
+
+    prod_table_form = ProdTableForm()
+
     downtime_bar_form = DowntimeBarForm()
     downtime_bar_form.key.choices = machines_choices
 
@@ -55,7 +59,8 @@ def data():
     raw_db_table_form = RawDatabaseTableForm()
     raw_db_table_form.key.choices = table_name_choices
 
-    forms = [gantt_form, oee_line_form, downtime_bar_form, job_table_form, activity_table_form, schedule_gantt_form]
+    forms = [gantt_form, oee_line_form, oee_table_form, prod_table_form, downtime_bar_form, job_table_form, activity_table_form,
+             schedule_gantt_form]
 
     # Check which form has been sent by the user
     form_sent = next((form for form in forms if form.__class__.__name__ == request.form.get('formType')), None)
@@ -77,6 +82,14 @@ def data():
         graph = create_oee_line(graph_start_date=oee_line_form.start_date.data,
                                 graph_end_date=oee_line_form.end_date.data,
                                 machine_ids=machine_ids)
+
+    elif isinstance(form_sent, OeeTableForm) and oee_table_form.validate_on_submit():
+        graph = get_oee_table(start_date=oee_table_form.start_date.data,
+                              end_date=oee_table_form.end_date.data)
+
+    elif isinstance(form_sent, ProdTableForm) and prod_table_form.validate_on_submit():
+        graph = get_machine_production_table(start_date=prod_table_form.start_date.data,
+                                             end_date=prod_table_form.end_date.data)
 
     elif isinstance(form_sent, DowntimeBarForm) and downtime_bar_form.validate_on_submit():
         start = datetime.combine(date=downtime_bar_form.start_date.data, time=downtime_bar_form.start_time.data)

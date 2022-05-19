@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 from flask import current_app
 
 from app.default.db_helpers import get_legible_duration, get_current_machine_activity_id
-from app.default.models import Machine, Activity
+from app.default.models import Machine, Activity, Job
 from app.extensions import db
 from app.login.models import User, UserSession
 
@@ -84,6 +84,22 @@ def parse_requested_machine_list(requested_machines) -> list:
         return []
 
 
+def get_daily_machine_production(machine: Machine, d: datetime.date):
+    """ Takes a machine and a date, then gets the total production for the day """
+    start = datetime.combine(date=d, time=time(hour=0, minute=0, second=0, microsecond=0))
+    end = start + timedelta(days=1)
+    quantity = 0
+    jobs = Job.query \
+        .filter(Job.start_time <= end) \
+        .filter(Job.end_time >= start) \
+        .filter(Job.machine_id == machine.id).all()
+
+    for job in jobs:
+        quantity += job.quantity_produced
+
+    return quantity
+
+
 def yesterday():
     return datetime.now() - timedelta(days=1)
 
@@ -98,3 +114,7 @@ def tomorrow():
 
 def a_month_ago():
     return datetime.now() - timedelta(days=28)
+
+
+def a_week_ago():
+    return datetime.now() - timedelta(days=7)

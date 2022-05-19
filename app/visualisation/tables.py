@@ -1,14 +1,75 @@
-from datetime import datetime, time, date
+from datetime import datetime, time, date, timedelta
 
 import pandas as pd
 from flask import current_app
 from flask_table import Table, Col, create_table
 
 from app.data_analysis.oee.availability import get_activity_duration_dict, get_schedule_dict
-from app.default.models import Job, ActivityCode, Machine
+from app.data_analysis.oee.oee import get_daily_machine_oee
+from app.default.models import Job, ActivityCode, Machine, Settings
 from app.extensions import db
 from app.login.models import User
+from app.visualisation.helpers import get_daily_machine_production
 from config import Config
+
+
+# class OEETable(Table):
+#     table_id = "jobTable"
+#     classes = ["dataTable table table-striped table-bordered"]
+#     machine = Col('Machine')
+
+
+def get_oee_table(start_date: date, end_date: date) -> str:
+    if end_date >= datetime.now().date():
+        end_date = (datetime.now() - timedelta(days=1)).date()
+    machines = Machine.query.all()
+    dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+    items = []
+    OEETable = create_table().add_column('machine', Col('Machine'))
+    OEETable.classes = ["dataTable table table-striped table-bordered"]
+    for machine in machines:
+        item = {"machine": machine.name}
+        for d in dates:
+            oee = get_daily_machine_oee(machine_id=machine.id, date=d)
+            column_header = d.strftime("%Y/%m/%d")
+            OEETable.add_column(column_header, Col(column_header))
+            item[column_header] = ("%.1f" % oee)
+        items.append(item)
+    table = OEETable(items)
+    table_html = f"<h1 id=\"table-title\">" \
+                 f"OEE" \
+                 f"</h1>" \
+                 + table.__html__()
+
+    return table_html
+
+
+def get_machine_production_table(start_date: date, end_date: date):
+    if end_date >= datetime.now().date():
+        end_date = (datetime.now() - timedelta(days=1)).date()
+    machines = Machine.query.all()
+    dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+    items = []
+    ProdTable = create_table().add_column('machine', Col('Machine'))
+    ProdTable.classes = ["dataTable table table-striped table-bordered"]
+    for machine in machines:
+        item = {"machine": machine.name}
+        for d in dates:
+            production_quantity = get_daily_machine_production(machine=machine, d=d)
+            column_header = d.strftime("%Y/%m/%d")
+            ProdTable.add_column(column_header, Col(column_header))
+            item[column_header] = ("%.1f" % production_quantity)
+        items.append(item)
+    table = ProdTable(items)
+    table_html = f"<h1 id=\"table-title\">" \
+                 f"Quantity Produced" \
+                 f"</h1>" \
+                 + table.__html__()
+
+    return table_html
+
+
+
 
 
 class WOTable(Table):

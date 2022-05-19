@@ -331,7 +331,7 @@ def create_oee_line(graph_start_date: date, graph_end_date: date, machine_ids):
                 config={"showLink": False})
 
 
-def create_downtime_bar(machine_ids, graph_start: datetime, graph_end: datetime):
+def create_downtime_bar(machine_ids, graph_start: datetime, graph_end: datetime, hide_no_user=True):
     total_activities_dict = None
     for machine_id in machine_ids:
         activities_dict = get_activity_duration_dict(requested_start=graph_start,
@@ -347,6 +347,9 @@ def create_downtime_bar(machine_ids, graph_start: datetime, graph_end: datetime)
             for n in total_activities_dict:
                 total_activities_dict[n] += activities_dict[n]
 
+    # Remove the "no user" code if requested:
+    if hide_no_user:
+        del total_activities_dict["No User"]
     activity_code_names = list(total_activities_dict.keys())
     activity_code_durations = list(total_activities_dict.values())
     fig = go.Figure([go.Bar(x=activity_code_names, y=activity_code_durations)])
