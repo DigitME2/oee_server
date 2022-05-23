@@ -13,12 +13,6 @@ from app.visualisation.helpers import get_daily_machine_production
 from config import Config
 
 
-# class OEETable(Table):
-#     table_id = "jobTable"
-#     classes = ["dataTable table table-striped table-bordered"]
-#     machine = Col('Machine')
-
-
 def get_oee_table(start_date: date, end_date: date) -> str:
     if end_date >= datetime.now().date():
         end_date = (datetime.now() - timedelta(days=1)).date()
@@ -58,7 +52,7 @@ def get_machine_production_table(start_date: date, end_date: date):
             production_quantity = get_daily_machine_production(machine=machine, d=d)
             column_header = d.strftime("%Y/%m/%d")
             ProdTable.add_column(column_header, Col(column_header))
-            item[column_header] = ("%.1f" % production_quantity)
+            item[column_header] = production_quantity
         items.append(item)
     table = ProdTable(items)
     table_html = f"<h1 id=\"table-title\">" \

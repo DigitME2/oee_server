@@ -83,7 +83,7 @@ def change_activity(machine, job, user, simulation_datetime=None):
         new_activity = Activity(machine_id=machine.id,
                                 time_start=simulation_datetime,
                                 machine_state=0,
-                                activity_code_id=randrange(2, 8),
+                                activity_code_id=randrange(2, 7),
                                 job_id=job.id,
                                 user_id=user.id)
     db.session.add(new_activity)

@@ -88,6 +88,8 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
             end = act.time_end
 
         # Calculate the duration and add to the dict
+        if act.activity_code is None:
+            print("here")
         key = act.activity_code.short_description if use_description_as_key else act.activity_code_id
         activities_dict[key] += (end - start).total_seconds()
 
