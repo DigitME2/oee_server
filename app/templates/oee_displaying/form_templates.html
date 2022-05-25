@@ -28,7 +28,7 @@
 
                 <div class="form-group pr-2">
                     {{ form.start_date.label }}
-                    {{ form.start_date(class_="form-control") }}
+                    {{ form.start_date(class_="form-control datepicker") }}
                     {% for error in form.start_date.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
@@ -44,7 +44,7 @@
 
                 <div class="form-group pr-2">
                     {{ form.end_date.label }}
-                    {{ form.end_date(class_="form-control") }}
+                    {{ form.end_date(class_="form-control datepicker") }}
                     {% for error in form.end_date.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
@@ -66,7 +66,7 @@
 
                 <div class="form-group pr-2">
                     {{ form.start_date.label }}
-                    {{ form.start_date(class_="form-control") }}
+                    {{ form.start_date(class_="form-control datepicker") }}
                     {% for error in form.start_date.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
@@ -74,7 +74,7 @@
 
                 <div class="form-group pr-2">
                     {{ form.end_date.label }}
-                    {{ form.end_date(class_="form-control") }}
+                    {{ form.end_date(class_="form-control datepicker") }}
                     {% for error in form.end_date.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
@@ -92,7 +92,7 @@
             <div class="form-row mt-2">
                 <div class="form-group pr-2">
                     {{ form.start_date.label }}
-                    {{ form.start_date(class_="form-control") }}
+                    {{ form.start_date(class_="form-control datepicker") }}
                     {% for error in form.start_date.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
@@ -100,7 +100,7 @@
 
                 <div class="form-group pr-2">
                     {{ form.end_date.label }}
-                    {{ form.end_date(class_="form-control") }}
+                    {{ form.end_date(class_="form-control datepicker") }}
                     {% for error in form.end_date.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}

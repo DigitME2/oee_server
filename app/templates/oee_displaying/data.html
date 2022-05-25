@@ -85,7 +85,7 @@
 
 
     <script>
-        {#Script to add the datatable library to the table#}
+        {# Script to add the datatable library to the table. #}
         $(document).ready(function () {
                 $('.dataTable').DataTable({
                     dom: 'Bfrtip',
@@ -105,6 +105,15 @@
             document.title = document.getElementById("table-title").innerText
         }
     })
+    </script>
+
+{#    Datepicker#}
+    <script src="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.js')}}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.css') }}">
+    <script>
+        $( function() {
+            $( ".datepicker" ).datepicker({ dateFormat: "yy-mm-dd"});
+        } );
     </script>
 
 {% endblock %}

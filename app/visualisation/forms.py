@@ -26,6 +26,17 @@ the forms use a template stub from form_templates.html. These can be set with fo
 
 
 class BaseDatesForm(FlaskForm):
+
+    def __init__(self):
+        super().__init__()
+        # Set the ID differently per class, so they don't have the same ID on the web page (this breaks datepicker)
+        self.start_date.id = self.get_class_name() + "-start-date"
+        self.end_date.id = self.get_class_name() + "-end-date"
+
+    @classmethod
+    def get_class_name(cls):
+        return cls.__name__.lower()
+
     form_template = "date"
     start_date = DateField(validators=[DataRequired()], label="Start Date (YYYY-MM-DD)", default=a_week_ago)
     end_date = DateField(validators=[DataRequired()], label="End Date (YYYY-MM-DD)", default=yesterday)
@@ -33,6 +44,16 @@ class BaseDatesForm(FlaskForm):
 
 
 class BaseTimeAndDatesForm(FlaskForm):
+    def __init__(self):
+        super().__init__()
+        # Set the ID differently per class, so they don't have the same ID on the web page (this breaks datepicker)
+        self.start_date.id = self.get_class_name() + "-start-date"
+        self.end_date.id = self.get_class_name() + "-end-date"
+
+    @classmethod
+    def get_class_name(cls):
+        return cls.__name__.lower()
+
     start_date = DateField(validators=[DataRequired()], label="Start Date (YYYY-MM-DD)", default=today)
     end_date = DateField(validators=[DataRequired()], label="End Date (YYYY-MM-DD)", default=tomorrow)
     start_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_start_time")
