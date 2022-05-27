@@ -24,23 +24,6 @@ class AdminTest(BaseTest):
                 response = self.test_client.get(route)
                 self.assertEqual(response.status_code, 200)
 
-    # Dont bother doing this, its too hard and ineffective with wtforms. Use selenium or something
-    # def test_create_machine(self):
-    #     with self.test_client:
-    #         self.app.config['LOGIN_DISABLED'] = True
-    #         data = {
-    #             "name": "Machine 1",
-    #             "active": True,
-    #             "device_ip": "1.1.1.1",
-    #             "workflow_type": "default",
-    #             "group": 1,
-    #             "job_start_input_type": "cycle_time_seconds",
-    #             "schedule_id": 1
-    #         }
-    #         self.test_client.post('/editmachine?new=True', data=data)
-    #         response =
-    #         self.assertEqual(response.status_code, 200)
-
 
 if __name__ == '__main__':
     unittest.main()
