@@ -15,26 +15,39 @@
 
                 {{ form.code.label }}
                 {{ form.code(size=32, class_="form-control") }}
+                <small id="autofillAmountHelp" class="form-text text-muted">
+                    Optional. A short, 1 or 2-letter code for downtime reasons.
+                </small>
+
                 {% for error in form.code.errors %}
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
+                <br>
 
 
                 {{ form.short_description.label }}<br>
-                {{ form.short_description(size=32, class_="form-control") }}<br>
+                {{ form.short_description(size=32, class_="form-control") }}
+                <small id="autofillAmountHelp" class="form-text text-muted">
+                    Required. The name of the downtime reason that will be shown on the tablet and in graphs.
+                </small>
                 {% for error in form.short_description.errors %}
                     <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
+                <br>
 
                 <p>
                     {{ form.long_description.label }}<br>
-                    {{ form.long_description(size=32, class_="form-control") }}<br>
+                    {{ form.long_description(size=32, class_="form-control") }}
+                    <small id="autofillAmountHelp" class="form-text text-muted">
+                        Optional. A longer description to clarify when this downtime code should be used.
+                    </small>
+                    <br>
                     {% for error in form.long_description.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
 
                 <p>
-                    {{ form.graph_colour.label }}<br>
+                    {{ form.graph_colour.label }}
                     {{ form.graph_colour(size=32, class_="jscolor form-control") }}<br>
                     {% for error in form.long_description.errors %}
                         <span class="text-danger">[{{ error }}]</span>
@@ -53,4 +66,7 @@
 
     </div>
 
+    <style>
+
+    </style>
 {% endblock %}
