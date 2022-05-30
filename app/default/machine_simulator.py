@@ -6,7 +6,7 @@ from flask import current_app
 
 from app import Config
 from app.default.db_helpers import complete_last_activity, machine_schedule_active
-from app.default.models import Machine, Job, Activity, ActivityCode, DemoSettings
+from app.default.models import Machine, Job, Activity, DemoSettings
 from app.extensions import db
 from app.login.models import User, UserSession
 
@@ -34,7 +34,8 @@ def end_job(job, machine, simulation_datetime=None):
         simulation_datetime = datetime.now()
     job.end_time = simulation_datetime
     # Calculate a fake amount produced based on ideal amount produced multiplied by a 80-100%
-    job.quantity_produced = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) * (random.randrange(80, 100)/100))
+    job.quantity_produced = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) *
+                                (random.randrange(80, 100)/100))
     job.quantity_rejects = int(job.quantity_produced * (random.random()/4))
     job.active = None
     complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
@@ -44,7 +45,6 @@ def end_job(job, machine, simulation_datetime=None):
                             activity_code_id=Config.NO_USER_CODE_ID,
                             job_id=job.id)
     db.session.add(new_activity)
-    #db.session.commit()
 
 
 def start_new_job(machine, user, simulation_datetime=None):
@@ -61,7 +61,6 @@ def start_new_job(machine, user, simulation_datetime=None):
               active=True,
               user_session_id=session.id)
     db.session.add(job)
-    #db.session.commit()
 
 
 def change_activity(machine, job, user, simulation_datetime=None):
@@ -87,10 +86,10 @@ def change_activity(machine, job, user, simulation_datetime=None):
                                 job_id=job.id,
                                 user_id=user.id)
     db.session.add(new_activity)
-    #db.session.commit()
 
 
 def simulate_machines(simulation_datetime: datetime = None):
+    current_app.logger.debug(f"Simulating machines in database address {Config.DATABASE_ADDRESS}")
     if not Config.DEMO_MODE:
         current_app.logger.warning("Fake data being created when app is not in DEMO_MODE")
     # Run for the current time if no datetime given
@@ -102,7 +101,7 @@ def simulate_machines(simulation_datetime: datetime = None):
         chance_to_skip_simulation = 0.90
         if random.random() < chance_to_skip_simulation:
             continue
-        # Get the machine's user by using the machine id as the index on a fake names list. Create it if it does not exist
+        # Get the machine's user by using machine id as the index on a fake names list. Create it if it doesn't exist
         username = names[machine.id]
         user = User.query.filter_by(username=username).first()
         if user is None:
@@ -129,7 +128,7 @@ def simulate_machines(simulation_datetime: datetime = None):
             if random.random() < chance_to_start_job:
                 start_new_job(machine, user, simulation_datetime)
         DemoSettings.query.get(1).last_machine_simulation = simulation_datetime
-    #db.session.commit()
+    db.session.commit()
 
 
 def backfill_missed_simulations():
