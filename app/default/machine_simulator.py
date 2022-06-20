@@ -89,7 +89,7 @@ def change_activity(machine, job, user, simulation_datetime=None):
 
 
 def simulate_machines(simulation_datetime: datetime = None):
-    current_app.logger.debug(f"Simulating machines in database address {Config.DATABASE_ADDRESS}")
+    current_app.logger.debug(f"Simulating machines in database address {Config.SQLALCHEMY_DATABASE_URI}")
     if not Config.DEMO_MODE:
         current_app.logger.warning("Fake data being created when app is not in DEMO_MODE")
     # Run for the current time if no datetime given
