@@ -95,18 +95,17 @@ def simulate_machines(simulation_datetime: datetime = None):
     # Run for the current time if no datetime given
     if not simulation_datetime:
         simulation_datetime = datetime.now()
-    for machine in Machine.query.all():
+    for i in range(1, 9):  # Simulate the first 8 machines
+        machine = Machine.query.get(i)
         if machine.id == 1:
             continue  # Don't simulate the first machine
         chance_to_skip_simulation = 0.90
         if random.random() < chance_to_skip_simulation:
             continue
-        # Get the machine's user by using machine id as the user id.
-
-        user = User.query.get(machine.id).first()
+        # Get the machine's user by using machine id as the index on a fake names list. Create it if it doesn't exist
+        username = names[machine.id]
+        user = User.query.filter_by(username=username).first()
         if user is None:
-            # Create a fake user using the fake name list
-            username = names[machine.id]
             user = create_new_demo_user(username, machine.id, machine)
             start_new_job(machine, user)
         # Don't run jobs if the machine is not scheduled to be running
