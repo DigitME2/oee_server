@@ -28,7 +28,7 @@ class Config(object):
         DATABASE_NAME = "oee_webapp_demo"
     else:
         DATABASE_NAME = os.environ.get('DATABASE_NAME') or "oee_webapp"
-    SQLALCHEMY_DATABASE_URI = "postgres://{user}:{password}@{address}:{port}/{database}".format(
+    SQLALCHEMY_DATABASE_URI = "postgresql://{user}:{password}@{address}:{port}/{database}".format(
         user=DATABASE_USER,
         password=DATABASE_PASSWORD,
         address=DATABASE_ADDRESS,
