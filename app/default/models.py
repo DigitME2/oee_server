@@ -125,7 +125,7 @@ class ActivityCode(db.Model):
     """ Holds the codes to identify activities"""
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String, unique=True)
-    short_description = db.Column(db.String, nullable=False)
+    short_description = db.Column(db.String, nullable=False, unique=True)
     long_description = db.Column(db.String)
     graph_colour = db.Column(db.String)
     active = db.Column(db.Boolean, default=True)

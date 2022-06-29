@@ -2,6 +2,7 @@ from datetime import datetime, time
 
 from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
 
@@ -359,14 +360,8 @@ def edit_machine_group():
 def edit_activity_code():
     """The page to edit an activity code"""
 
-    # If new=true then the request is for a new activity code to be created
-    if 'new' in request.args and request.args['new'] == "True":
-        # Create a new activity code
-        activity_code = ActivityCode(active=True)
-        message = "Create new activity code"
-
-    # Otherwise, get the activity code to be edited
-    elif 'ac_id' in request.args:
+    # Get the activity code to be edited (If no code is given we will create a new one)
+    if 'ac_id' in request.args:
         try:
             activity_code_id = int(request.args['ac_id'])
             activity_code = ActivityCode.query.get_or_404(activity_code_id)
@@ -385,20 +380,18 @@ def edit_activity_code():
                       If this code is no longer needed, deselect \"Active\" for this code " \
                       "and create another activity code instead."
     else:
-        error_message = "No activity code specified in URL"
-        current_app.logger.warn(error_message)
-        return abort(400, error_message)
+        activity_code = None
+        message = "Create new activity code"
 
     form = ActivityCodeForm()
-    # Get a list of existing activity codes to use for form validation to prevent repeat codes
-    all_activity_codes = []
-    for ac in ActivityCode.query.all():
-        all_activity_codes.append(str(ac.code))
-    if activity_code.code in all_activity_codes:
-        all_activity_codes.remove(activity_code.code)  # Don't prevent the form from entering the current code
-    form.code.validators = [NoneOf(all_activity_codes, message="Code already exists"), DataRequired()]
 
     if form.validate_on_submit():
+        if not activity_code:  # Create a new activity code
+            # Set the ID manually (instead of autoincrement) due to issues with Postgresql
+            # These issues occur because we manually assigned the IDs of the first 3 activity codes
+            activity_code_id = db.session.query(func.max(ActivityCode.id)).first()[0] + 1
+            activity_code = ActivityCode(id=activity_code_id, active=True)
+        message = "Create new activity code"
         activity_code.code = form.code.data
         activity_code.active = form.active.data
         activity_code.short_description = form.short_description.data
@@ -408,20 +401,21 @@ def edit_activity_code():
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
-    # Fill out the form with existing values
-    form.active.data = activity_code.active
-    form.code.data = activity_code.code
-    form.short_description.data = activity_code.short_description
-    form.long_description.data = activity_code.long_description
-    form.graph_colour.data = activity_code.graph_colour
+    form.active.data = True
+    if activity_code:
+        # Fill out the form with existing values
+        form.active.data = activity_code.active
+        form.code.data = activity_code.code
+        form.short_description.data = activity_code.short_description
+        form.long_description.data = activity_code.long_description
+        form.graph_colour.data = activity_code.graph_colour
 
-    # Prevent duplicate codes from being created
+    # Get a list of existing activity codes to use for form validation to prevent repeat codes
     codes = []
     for ac in ActivityCode.query.all():
-        codes.append(str(ac.code))
-    if activity_code.code in codes:
-        codes.remove(activity_code.code)
-    form.code.validators = [NoneOf(codes), DataRequired()]
+        if activity_code and activity_code.id != ac.id:  # Don't prevent the form from entering the current code
+            codes.append(str(ac.code))
+    form.code.validators = [NoneOf(codes, message="Code already exists"), DataRequired()]
 
     return render_template("admin/edit_activity_code.html",
                            form=form,
