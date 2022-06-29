@@ -1,9 +1,9 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-
     {% set ns = namespace(date=None) %}
     <div class="container mt-5">
+        <p class="font-italic">Show a user's activities and allow the activity code to be changed</p>
         {% if current_user.admin %}
             <div class="dropdown">
                 <button class="btn btn-dark dropdown-toggle" type="button" id="userSelect"
