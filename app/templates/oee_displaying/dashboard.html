@@ -4,38 +4,6 @@
     {{ graph|safe }}
 </div>
 
-
-{#<script>#}
-{##}
-{#    const updateInterval = setInterval(update, 5000);#}
-{#    const graph = document.getElementsByClassName("plotly-graph-div")[0];#}
-{##}
-{#    function update() {#}
-{#        //var data_update = {#}
-{#//#}
-{#        //};#}
-{#//#}
-{#        //var layout_update = {#}
-{#        //    title: 'new title',#}
-{#        //};#}
-{##}
-{#        const layout = graph.layout;#}
-{#        console.log(layout);#}
-{#        Plotly.relayout(graph, layout);#}
-{##}
-{#    }#}
-{##}
-{##}
-{#    window.onresize = function () {#}
-{#        // noinspection ES6ModulesDependencies (plotly.js is sent to template by flask)#}
-{#        Plotly.relayout(graph, {#}
-{#            width: 0.95 * window.innerWidth#}
-{#        });#}
-{##}
-{#    };#}
-{##}
-{#</script>#}
-
 <script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}" type="text/javascript"></script>
 <script src="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.js') }}"
         type="text/javascript"></script>
@@ -43,14 +11,10 @@
 <script type=text/javascript>
     $body = $("body");
 
+    const updateInterval = setInterval(updateGraph, {{ update_interval_ms }});
 
-    const updateInterval = setInterval(getLayout, {{ update_interval_ms }});
-
-    window.onload = getLayout();
-
-
-    function getLayout() {
-        $graph = $(".graph");
+    function updateGraph() {
+        $graph = $(".plotly-graph-div").parent()
         $.ajax({
             url: '{{ url_for('visualisation.dashboard') }}',
             method: "GET",
@@ -58,14 +22,14 @@
                 start: "{{ start }}",
                 end:"{{ end }}",
                 machine_group: {{ machine_group.id }},
-                update: true //This tells the server not to send plotly.js again
+                update: true
             },
             success: function (response) {
-                // Replace the graph with the response
-                $graph.replaceWith(response);
+                $graph.replaceWith(response)
+                console.log("Updating graph")
             },
             error: function (error) {
-                console.log(error);
+                console.log(error)
             }
         });
     }

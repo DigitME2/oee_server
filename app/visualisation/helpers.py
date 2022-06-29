@@ -14,7 +14,7 @@ def get_machine_status(machine_id):
     # Get the current user logged on to the machine
     machine_user_id = get_machine_current_user(machine.id)
     if machine_user_id == -1:
-        machine_user_text = "No user"
+        machine_user_text = "No User"
     else:
         try:
             machine_user_text = User.query.get(machine_user_id).username

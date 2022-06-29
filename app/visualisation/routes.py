@@ -168,7 +168,7 @@ def dashboard():
     machines = machine_group.machines
     machine_ids = list(machine.id for machine in machines)
 
-    graph_title = f"Machine group {machine_group.name}"
+    graph_title = machine_group.name
 
     # If start is given in the url arguments, start the graph at that time on today's date
     # Start should be in the format HH:MM
