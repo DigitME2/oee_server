@@ -1,0 +1,47 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+
+    <div class="container mt-2">
+    <p class="font-italic">Create a URL to a Gantt chart that updates periodically. Intended for use in dashboard displays</p>
+        <form>
+            <div class="form-row">
+                <div class="form-group col-md-2">
+                    <label for="graphStart">Graph start time</label>
+                    <input type="time" class="form-control" id="graphStart">
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="graphEnd">Graph end time</label>
+                    <input type="time" class="form-control" id="graphEnd">
+                </div>
+
+                <div class="form-group col-md-6">
+                    <label for="groupSelect">Machine Group</label>
+                    <select class="form-control" id="groupSelect">
+                        {% for g in groups %}
+                            <option value="{{ g.id }}">{{ g.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <button type="button" class="btn btn-success" onclick="createURL()">Create Dashboard URL</button>
+
+    <p id="dashboardURL" class="text-xl-left mt-4"></p>
+
+    </div>
+
+    <script>
+    function createURL() {
+        let baseURL = window.location.origin
+        let start = document.getElementById("graphStart").value
+        let end = document.getElementById("graphEnd").value
+        let group = document.getElementById("groupSelect").value
+        let url = baseURL + "{{ url_for('visualisation.dashboard') }}" + "?" + "machine_group=" + group + "&start=" + start + "&end=" + end
+        document.getElementById("dashboardURL").innerText = url;
+    }
+    </script>
+
+
+{% endblock %}

@@ -141,6 +141,14 @@ def data():
                            last_form=form_sent)
 
 
+@bp.route('/create-dashboard')
+def create_dashboard():
+    machine_groups = MachineGroup.query.all()
+    return render_template("oee_displaying/create_dashboard.html",
+                           groups=machine_groups)
+
+
+
 @bp.route('/dashboard')
 def dashboard():
     # Get the update interval to send to the page
