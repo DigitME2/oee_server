@@ -41,11 +41,9 @@ def get_current_machine_activity_id(target_machine_id):
     activities = Activity.query.filter(Activity.machine_id == target_machine_id, Activity.time_end == None).all()
 
     if len(activities) == 0:
-        current_app.logger.debug(f"No current activity on machine ID {target_machine_id}")
         return None
 
     elif len(activities) == 1:
-        current_app.logger.debug(f"Current activity for machine ID {target_machine_id} -> {activities[0]}")
         return activities[0].id
 
     else:

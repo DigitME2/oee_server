@@ -148,7 +148,6 @@ def create_dashboard():
                            groups=machine_groups)
 
 
-
 @bp.route('/dashboard')
 def dashboard():
     # Get the update interval to send to the page
@@ -189,19 +188,23 @@ def dashboard():
     else:
         end = (start + timedelta(hours=8))
 
+    # If it's an update, only send the graph
     if 'update' in request.args and request.args['update']:
-        include_plotly_js = True
+        return create_dashboard_gantt(graph_start=start,
+                                      graph_end=end,
+                                      machine_ids=machine_ids,
+                                      title=graph_title,
+                                      include_plotlyjs=False)
     else:
-        include_plotly_js = False
-    graph = create_dashboard_gantt(graph_start=start,
-                                   graph_end=end,
-                                   machine_ids=machine_ids,
-                                   title=graph_title,
-                                   include_plotlyjs=include_plotly_js)
+        graph = create_dashboard_gantt(graph_start=start,
+                                       graph_end=end,
+                                       machine_ids=machine_ids,
+                                       title=graph_title,
+                                       include_plotlyjs=True)
 
-    return render_template("oee_displaying/dashboard.html",
-                           update_interval_ms=update_interval_ms,
-                           machine_group=machine_group,
-                           graph=graph,
-                           start=request.args['start'],
-                           end=request.args['end'])
+        return render_template("oee_displaying/dashboard.html",
+                               update_interval_ms=update_interval_ms,
+                               machine_group=machine_group,
+                               graph=graph,
+                               start=request.args['start'],
+                               end=request.args['end'])

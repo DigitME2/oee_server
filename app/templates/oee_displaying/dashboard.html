@@ -50,8 +50,7 @@
 
 
     function getLayout() {
-        $graph = $(".plotly-graph-div");
-        $body.addClass("loading");
+        $graph = $(".graph");
         $.ajax({
             url: '{{ url_for('visualisation.dashboard') }}',
             method: "GET",
