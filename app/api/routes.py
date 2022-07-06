@@ -1,7 +1,9 @@
 import json
-from time import time
+from datetime import datetime
+from typing import Optional
 
-from flask import request, jsonify, abort
+from flask import request, jsonify, abort, make_response
+from pydantic import BaseModel
 
 from app.api import bp
 from app.default.models import Machine, Activity
@@ -9,18 +11,26 @@ from app.extensions import db
 from config import Config
 
 
+class ActivityModel(BaseModel):
+    machine_id: int
+    user_id: Optional[int]
+    activity_code_id: int
+    time_start: datetime
+    time_end: datetime
+
+
+@bp.route('/api/activity', methods=['POST'])
+def activity():
+    """ Receives JSON data detailing a machine's activity and saves it to the database """
+    new_activity = ActivityModel(**request.get_json())
+    response = make_response(404)
+    return response
+
+
 @bp.route('/activity', methods=['POST'])
 def machine_activity():
-    """ Receives JSON data detailing a machine's activity and saves it to the database
-    Assigns a simple activity code depending on machine state
-    Example format:
-    {
-        "machine_id": 1,
-        "machine_state": 1,
-        "time_start": (DateTime),
-        "time_end": (DateTime)
-    }
-    """
+    """ Receives JSON data detailing a machine's activity and saves it to the database """
+
     # Return an error if the request is not in json format
     if not request.is_json:
         response = jsonify({"error": "Request is not in json format"})
