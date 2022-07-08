@@ -52,11 +52,16 @@ class Workflow:
 
     def active_job_response(self):
         current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-        return json.dumps({"workflow_type": self.workflow_type,
+        activity_codes_dicts = [{"activity_code_id": ac.id,
+                                 "colour": ac.graph_colour,
+                                 "description": ac.short_description}
+                                for ac in self.activity_codes]
+        return json.dumps({"machine_id": self.machine.id,
+                           "workflow_type": self.workflow_type,
                            "state": self.state,
                            "wo_number": self.job.wo_number,
-                           "current_activity": self.current_activity_code.short_description,
-                           "activity_codes": [code.short_description for code in self.activity_codes],
+                           "current_activity_code_id": self.current_activity_code.id,
+                           "activity_codes": activity_codes_dicts,
                            "colour": self.current_activity_code.graph_colour,
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
 
@@ -106,7 +111,7 @@ class PausableWorkflow(Workflow):
         return json.dumps({"workflow_type": self.workflow_type,
                            "state": self.state,
                            "wo_number": self.job.wo_number,
-                           "current_activity": self.current_activity_code.short_description,
+                           "current_activity_code_id": self.current_activity_code.id,
                            "colour": self.current_activity_code.graph_colour,
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
 

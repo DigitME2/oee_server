@@ -197,11 +197,11 @@ def android_update_activity():
     now = datetime.now()
     user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
     try:
-        selected_activity_description = request.json["selected_activity_code"]
+        activity_code_id = request.json["activity_code_id"]
     except KeyError:
         return json.dumps({"success": False})
 
-    activity_code = ActivityCode.query.filter_by(short_description=selected_activity_description).first()
+    activity_code = ActivityCode.query.get(activity_code_id)
     if not activity_code:
         # This can happen if the activity code description is changed without the tablet refreshing
         # Returning a 500 will cause the tablet to refresh and get new descriptions
@@ -228,7 +228,7 @@ def android_update_activity():
                             time_start=now)
     db.session.add(new_activity)
     db.session.commit()
-    current_app.logger.debug(f"Started {new_activity} for {current_job}")
+    current_app.logger.info(f"Set activity_code to {activity_code_id}")
     return json.dumps({"success": True,
                        "colour": activity_code.graph_colour})
 

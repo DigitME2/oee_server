@@ -1,6 +1,9 @@
 import logging
 
+import redis
+
 from app.extensions import db
+from sqlalchemy import event
 from config import Config
 
 logger = logging.getLogger('flask.app')
@@ -79,6 +82,15 @@ class Activity(db.Model):
 
     def __repr__(self):
         return f"<Activity machine:{self.machine_id} machine_state:{self.machine_state} (ID {self.id})>"
+
+
+@event.listens_for(Activity, 'after_insert')
+def receive_after_update(mapper, connection, target: Activity):
+    """ Publish changes to redis to allow updates to be pushed to clients"""
+    # Don't publish activities ending
+    if target.time_end is None:
+        r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT)
+        r.publish("machine" + str(target.machine_id) + "activity", target.activity_code_id)
 
 
 class Schedule(db.Model):
