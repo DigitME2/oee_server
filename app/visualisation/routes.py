@@ -183,8 +183,12 @@ def dashboard():
     # If 'end' is in the url arguments, end the graph at that time on today's date
     if 'end' in request.args:
         end_time = datetime.strptime(request.args['end'], "%H:%M")
-        end = datetime.now().replace(hour=end_time.hour, minute=end_time.minute)
-    # If no end given, show a 8 hour long graph
+        if end_time.hour == 0 and end_time.minute == 0:
+            # If midnight is given as the end time, use tomorrow's date
+            end = (datetime.now() + timedelta(days=1)).replace(hour=end_time.hour, minute=end_time.minute)
+        else:
+            end = datetime.now().replace(hour=end_time.hour, minute=end_time.minute)
+    # If no end given, show an 8-hour-long graph
     else:
         end = (start + timedelta(hours=8))
 
