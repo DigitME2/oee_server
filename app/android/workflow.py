@@ -61,6 +61,7 @@ class Workflow:
                            "state": self.state,
                            "wo_number": self.job.wo_number,
                            "current_activity_code_id": self.current_activity_code.id,
+                           "current_machine_state": self.current_activity.machine_state,
                            "activity_codes": activity_codes_dicts,
                            "colour": self.current_activity_code.graph_colour,
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
@@ -100,28 +101,12 @@ class PausableWorkflow(Workflow):
         elif self.machine_state == Config.MACHINE_STATE_RUNNING:
             response = self.active_job_response()
         elif self.machine_state == Config.MACHINE_STATE_OFF:
-            response = self.paused_job_response()
+            self.state = "paused"
+            response = self.active_job_response()
         else:
             current_app.logger.error(f"Invalid machine state: {self.machine_state}")
             raise Exception
         return response
-
-    def active_job_response(self):
-        current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
-        return json.dumps({"workflow_type": self.workflow_type,
-                           "state": self.state,
-                           "wo_number": self.job.wo_number,
-                           "current_activity_code_id": self.current_activity_code.id,
-                           "colour": self.current_activity_code.graph_colour,
-                           "requested_data_on_end": REQUESTED_DATA_JOB_END})
-
-    def paused_job_response(self):
-        current_app.logger.debug(f"Returning state: paused to {request.remote_addr}: active_job")
-        return json.dumps({"workflow_type": "pausable",
-                           "state": "paused",
-                           "activity_codes": [code.short_description for code in self.activity_codes],
-                           "wo_number": self.job.wo_number,
-                           "colour": self.current_activity_code.graph_colour})
 
     def get_machine_state(self):
         if hasattr(self, "current_activity"):

@@ -1,9 +1,9 @@
 import json
 from datetime import datetime
 
-from flask import request
+from flask import request, abort
 
-from app.default.db_helpers import complete_last_activity
+from app.default.db_helpers import complete_last_activity, get_current_machine_activity_id
 from app.default.models import Job, Activity, ActivityCode
 from app.extensions import db
 from app.login import bp
@@ -68,3 +68,29 @@ def pausable_resume_job():
     db.session.commit()
     return json.dumps({"success": True})
 
+
+@bp.route('/pausable-android-update', methods=['POST'])
+def pausable_select_activity_code():
+    """ Change the activity code of the running activity, but don't end it """
+    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    try:
+        activity_code_id = request.json["activity_code_id"]
+    except KeyError:
+        return json.dumps({"success": False})
+
+    activity_code = ActivityCode.query.get(activity_code_id)
+    if not activity_code:
+        # This can happen if the activity code description is changed without the tablet refreshing
+        # Returning a 500 will cause the tablet to refresh and get new descriptions
+        return abort(500)
+
+    # Get the last activity
+    last_activity_id = get_current_machine_activity_id(user_session.machine_id)
+    if last_activity_id is None:
+        return abort(500)
+
+    last_activity = db.session.query(Activity).get(last_activity_id)
+    last_activity.activity_code_id = activity_code_id
+    db.session.commit()
+
+    return json.dumps({"success": True})

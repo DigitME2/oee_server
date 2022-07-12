@@ -16,8 +16,9 @@ from config import Config
 
 class ActivityModel(BaseModel):
     machine_id: int
+    machine_state: int
     user_id: Optional[int]
-    activity_code_id: int
+    activity_code_id: Optional[int]
     time_start: datetime
     time_end: Optional[datetime]
 
@@ -33,9 +34,17 @@ r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses
 def activity():
     """ Receives JSON data detailing a machine's activity and saves it to the database """
     new_activity = ActivityModel(**request.get_json())
+    # Set the activity code id if it's not supplied
+    if not new_activity.activity_code_id:
+        if new_activity.machine_state == Config.MACHINE_STATE_RUNNING:
+            activity_code_id = Config.UPTIME_CODE_ID
+        else:
+            activity_code_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
+    else:
+        activity_code_id = new_activity.activity_code_id
     db_activity = Activity(machine_id=new_activity.machine_id,
-                           activity_code_id=new_activity.activity_code_id,
-                           machine_state=1,
+                           activity_code_id=activity_code_id,
+                           machine_state=new_activity.machine_state,
                            time_start=new_activity.time_start,
                            time_end=new_activity.time_end)
     complete_last_activity(machine_id=new_activity.machine_id, time_end=datetime.now())
