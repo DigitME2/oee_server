@@ -6,7 +6,7 @@ from distutils.util import strtobool
 
 class Config(object):
 
-    VERSION = "v3.0.0"
+    VERSION = "v6.0"
 
     # Set during testing
     TESTING = strtobool(os.environ.get("TESTING", "false"))
