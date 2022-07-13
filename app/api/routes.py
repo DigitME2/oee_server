@@ -14,121 +14,45 @@ from app.extensions import db
 from config import Config
 
 
-class ActivityModel(BaseModel):
+class MachineStateChange(BaseModel):
     machine_id: int
     machine_state: int
     user_id: Optional[int]
     activity_code_id: Optional[int]
-    time_start: datetime
-    time_end: Optional[datetime]
-
-    @validator('time_start', pre=True)
-    def time_validate(cls, v):
-        return datetime.fromtimestamp(v)
 
 
 r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
 
 
-@bp.route('/api/activity', methods=['POST'])
-def activity():
-    """ Receives JSON data detailing a machine's activity and saves it to the database """
-    new_activity = ActivityModel(**request.get_json())
+@bp.route('/api/machine-state-change', methods=['POST'])
+def change_machine_state():
+    """ Ends a machine's activity and starts a new one """
+    post_data = MachineStateChange(**request.get_json())
     # Set the activity code id if it's not supplied
-    if not new_activity.activity_code_id:
-        if new_activity.machine_state == Config.MACHINE_STATE_RUNNING:
+    if not post_data.activity_code_id:
+        if post_data.machine_state == Config.MACHINE_STATE_RUNNING:
             activity_code_id = Config.UPTIME_CODE_ID
         else:
             activity_code_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
     else:
-        activity_code_id = new_activity.activity_code_id
-    db_activity = Activity(machine_id=new_activity.machine_id,
-                           activity_code_id=activity_code_id,
-                           machine_state=new_activity.machine_state,
-                           time_start=new_activity.time_start,
-                           time_end=new_activity.time_end)
-    complete_last_activity(machine_id=new_activity.machine_id, time_end=datetime.now())
-    db.session.add(db_activity)
+        activity_code_id = post_data.activity_code_id
+    complete_last_activity(machine_id=post_data.machine_id)
+    act = Activity(machine_id=post_data.machine_id,
+                   activity_code_id=activity_code_id,
+                   machine_state=post_data.machine_state,
+                   time_start=datetime.now(),
+                   user_id=post_data.user_id)
+
+    db.session.add(act)
     db.session.commit()
     response = make_response("", 200)
-    current_app.logger.info(f"Activity set to {db_activity.activity_code_id}")
+    current_app.logger.info(f"Activity set to {act.activity_code_id}")
     return response
 
 
-@bp.route('/activity', methods=['POST'])
-def machine_activity():
-    """ Receives JSON data detailing a machine's activity and saves it to the database """
-
-    # Return an error if the request is not in json format
-    if not request.is_json:
-        response = jsonify({"error": "Request is not in json format"})
-        response.status_code = 400
-        return response
-
-    data = request.get_json()
-    # I was getting an issue with get_json() sometimes returning a string and sometimes dict so I did this
-    if isinstance(data, str):
-        data = json.loads(data)
-
-    # Get all of the arguments, respond with an error if not provided
-    if 'machine_id' not in data:
-        response = jsonify({"error": "No machine_id provided"})
-        response.status_code = 400
-        return response
-    machine = Machine.query.get(data['machine_id'])
-    if machine is None:
-        response = jsonify({"error": "Could not find machine with ID " + str(data['machine_id'])})
-        response.status_code = 400
-        return response
-
-    if 'machine_state' not in data:
-        response = jsonify({"error": "No machine_state provided"})
-        response.status_code = 400
-        return response
-    try:
-        machine_state = int(data['machine_state'])
-    except ValueError:
-        response = jsonify({"error": "Could not understand machine_state"})
-        response.status_code = 400
-        return response
-
-    if 'time_start' not in data:
-        response = jsonify({"error": "No time_start provided"})
-        response.status_code = 400
-        return response
-    time_start = data['time_start']
-
-    if 'timestamp_end' not in data:
-        response = jsonify({"error": "No timestamp_end provided"})
-        response.status_code = 400
-        return response
-    timestamp_end = data['timestamp_end']
-
-    if int(machine_state) == Config.MACHINE_STATE_RUNNING:
-        activity_id = Config.UPTIME_CODE_ID
-    else:
-        activity_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
-
-    # Create and save the activity
-    new_activity = Activity(machine_id=machine.id,
-                            machine_state=machine_state,
-                            activity_code_id=activity_id,
-                            time_start=time_start,
-                            timestamp_end=timestamp_end)
-    db.session.add(new_activity)
-    db.session.commit()
-
-    # Recreate the data and send it back to the client for confirmation
-    response = jsonify({"machine_id": machine.id,
-                        "machine_state": new_activity.machine_state,
-                        "time_start": new_activity.time_start,
-                        "timestamp_end": new_activity.timestamp_end})
-    response.status_code = 201
-    return response
-
-
-@bp.route('/activity/<activity_id>', methods=['PUT'])
+@bp.route('/api/activity/<activity_id>', methods=['PUT'])
 def edit_activity(activity_id):
+    """ Edit an activity without ending it"""
     activity = Activity.query.get_or_404(activity_id)
     if not request.is_json:
         response = jsonify({"error": "Request is not in json format"})
@@ -150,9 +74,10 @@ def edit_activity(activity_id):
         abort(400)
 
 
-@bp.route('/activity-updates', websocket=True)
+@bp.route('/api/activity-updates', websocket=True)
 def activity_updates():
-    """ Connect """
+    """ Receive updates on the activity changes for a machine. The first message sent by the client should be the
+    ID of the machine to be monitored. The server will then send the activity code ID every time it changes """
     ws = simple_websocket.Server(request.environ)
     p = r.pubsub()
     first_message = ws.receive()
