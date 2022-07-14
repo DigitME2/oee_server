@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=oee
 WorkingDirectory=/home/user/oee_server
-ExecStart=/home/user/oee_server/venv/bin/gunicorn -b :8000 -m 007 "app:create_app()"
+ExecStart=/home/user/oee_server/venv/bin/gunicorn -b :8000 -m 007 --workers=7 --worker-class=gevent "app:create_app()"
 Restart=always
 
 [Install]
