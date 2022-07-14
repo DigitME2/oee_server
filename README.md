@@ -38,6 +38,8 @@ To upgrade the database when updating to a new version, run
 
 ## Documentation
 
+Help files can be found in the app
+
 ### Workflow Types
 
 Machines can be assigned different work flows to determine the flow of the display on the android tablet. 
@@ -47,7 +49,6 @@ The default workflow has the user log in and go straight to the "start job" scre
 
 When run with `DEMO_MODE=True` in the `config.py` file, the app will fake inputs. On startup it will backfill missed data. The celery worker will fake inputs as long as the app is running.
 
-## Schedule
+## API
 
-In order for OEE to be calculated, each machine needs a schedule of planned uptime and planned downtime. A machine is assigned a schedule, and each day the "scheduled activities" are created and stored for that day. If for some reason the scheduler misses a day, they can be done by POSTing to /run_schedule.
-e.g. `curl -X POST http://localhost:5000/run_schedule?date=18-08-19`
+An external device can change the state of a machine by posting to /api/change-machine-state. The payload should be in the format {"machine_id": 1, "machine_state": 0}, where state=0 means the machine has gone down and 1 means back up. An activity code can be provided optionally, e.g. "activity_code_id": 1
