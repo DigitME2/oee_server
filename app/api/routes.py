@@ -8,7 +8,7 @@ from flask import request, jsonify, abort, make_response, current_app
 from pydantic import BaseModel, validator
 
 from app.api import bp
-from app.default.db_helpers import complete_last_activity
+from app.default.db_helpers import complete_last_activity, get_current_machine_activity_id
 from app.default.models import Machine, Activity
 from app.extensions import db
 from config import Config
@@ -80,9 +80,15 @@ def activity_updates():
     ID of the machine to be monitored. The server will then send the activity code ID every time it changes """
     ws = simple_websocket.Server(request.environ)
     p = r.pubsub()
+    # Wait for the client to send which machine to monitor
     first_message = ws.receive()
     first_message = json.loads(first_message)
     machine_id = first_message["machine_id"]
+    # Send the client the current activity code
+    last_activity_id = get_current_machine_activity_id(machine_id)
+    if last_activity_id is not None:
+        last_activity = db.session.query(Activity).get(last_activity_id)
+        ws.send(last_activity.activity_code_id)
     p.subscribe("machine" + str(machine_id) + "activity")
     current_app.logger.info(f"Machine ID {machine_id} websocket connected")
     try:
