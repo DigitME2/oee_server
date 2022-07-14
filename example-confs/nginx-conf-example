@@ -12,6 +12,12 @@ server {
 	location @flask {
 	    include proxy_params;
 		proxy_pass http://localhost:8000;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        keepalive_timeout 0;
+        proxy_read_timeout 5d;
+        proxy_send_timeout 5d;
 	}
 
 }
