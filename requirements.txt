@@ -41,7 +41,7 @@ pyparsing==3.0.9
 python-dateutil==2.8.2
 pytz==2022.1
 redis==4.3.4
-simple-websocket==0.5.2
+simple-websocket==0.6.0
 six==1.16.0
 SQLAlchemy==1.4.39
 tenacity==8.0.1
