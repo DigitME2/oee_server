@@ -22,8 +22,6 @@ logger = getLogger()
 SCHEDULED_UPTIME_KEY_STRING = "Scheduled uptime"
 SCHEDULED_DOWNTIME_KEY_STRING = "Scheduled downtime"
 
-# todo add titles to graphs
-
 
 def apply_default_layout(layout):
     layout.xaxis.rangeselector.buttons = [

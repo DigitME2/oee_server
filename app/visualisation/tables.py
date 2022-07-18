@@ -204,7 +204,7 @@ class JobTable(Table):
     start = Col('Start')
     end = Col('End')
     operator = Col('Operator')
-    ideal_cycle_time_s = Col(f"Ideal Cycle Time (s)")  # todo make this readable when it's on the order of hours
+    ideal_cycle_time_s = Col(f"Ideal Cycle Time (s)")  #
     quantity_produced = Col("Total Qty")
     rejects = Col("Rejects Qty")
 
