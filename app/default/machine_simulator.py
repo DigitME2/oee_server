@@ -35,24 +35,29 @@ def end_job(job, machine, simulation_datetime=None):
     job.end_time = simulation_datetime
     # Calculate a fake amount produced based on ideal amount produced multiplied by a 80-100%
     job.quantity_produced = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) *
-                                (random.randrange(80, 100)/100))
-    job.quantity_rejects = int(job.quantity_produced * (random.random()/4))
+                                (random.randrange(80, 100) / 100))
+    job.quantity_rejects = int(job.quantity_produced * (random.random() / 4))
     job.active = None
     complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
     new_activity = Activity(machine_id=machine.id,
                             time_start=simulation_datetime,
-                            machine_state=1,
+                            machine_state=0,
                             activity_code_id=Config.NO_USER_CODE_ID,
                             job_id=job.id)
     db.session.add(new_activity)
 
 
-def start_new_job(machine, user, simulation_datetime=None):
-    # Run for the current time if no datetime given
-    if not simulation_datetime:
-        simulation_datetime = datetime.now()
+def start_new_job(machine, user, simulation_datetime=datetime.now):
     current_app.logger.debug(f"Starting new job")
     session = UserSession.query.filter_by(user_id=user.id, active=True).first()
+    if session is None:
+        session = UserSession(user_id=user.id,
+                              machine_id=machine.id,
+                              device_ip="",
+                              time_login=simulation_datetime,
+                              active=True)
+        db.session.add(session)
+        db.session.commit()
     job = Job(start_time=simulation_datetime,
               user_id=user.id,
               wo_number=str(random.randint(1, 100000)),

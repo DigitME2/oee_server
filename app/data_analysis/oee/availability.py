@@ -1,16 +1,16 @@
+import logging
 from datetime import datetime, timedelta
 
 from flask import current_app
 
-from app.data_analysis import OEECalculationException
-from app.default.db_helpers import get_user_activities, get_machine_activities
+from app.default.db_helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end
 from app.default.models import Activity, ActivityCode, ScheduledActivity
 from config import Config
 
 
 def calculate_machine_availability(machine_id, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's availability for calculating OEE"""
-    runtime = get_machine_runtime(machine_id, time_start, time_end, units="seconds")
+    runtime = get_machine_runtime(machine_id, time_start, time_end)
     schedule_dict = get_schedule_dict(machine_id, time_start, time_end, units="seconds")
     scheduled_uptime = schedule_dict["Scheduled Run Time"]
     scheduled_downtime = schedule_dict["Scheduled Down Time"]
@@ -22,12 +22,14 @@ def calculate_machine_availability(machine_id, time_start: datetime, time_end: d
         availability = runtime / scheduled_uptime
     except ZeroDivisionError:
         return 1
+    if availability > 1:
+        logging.warning(f"Availability of >1 calculated for machine ID {machine_id} on {time_start.date()}")
     return availability
 
 
-def get_machine_runtime(machine_id, requested_start: datetime, requested_end: datetime, units="seconds"):
+def get_machine_runtime(machine_id, requested_start: datetime, requested_end: datetime):
     """ Takes a machine id and two times, and returns the amount of time the machine was running """
-    # Get all of the activities for the machine between the two given times, where the machine is up
+    # Get all the activities for the machine between the two given times, where the machine is up
     activities = Activity.query \
         .filter(Activity.machine_id == machine_id) \
         .filter(Activity.machine_state == Config.MACHINE_STATE_RUNNING) \
@@ -36,31 +38,29 @@ def get_machine_runtime(machine_id, requested_start: datetime, requested_end: da
 
     run_time = 0
     for act in activities:
-        run_time += (act.time_end - act.time_start).total_seconds()
-    if units == "minutes":
-        return run_time / 60
-    elif units == "seconds":
-        return run_time
+        start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
+        run_time += (end - start).total_seconds()
+    return run_time
 
 
 def get_activity_duration_dict(requested_start: datetime, requested_end: datetime, machine_id=None, user_id=None,
                                use_description_as_key=False, units="seconds"):
     """ Returns a dict containing the total duration of each activity_code between two times in the format:
     activity_code_id: duration(seconds) e.g. 1: 600
-    If use_description_as_key is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
+    If the use_description_as_key is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
 
     if user_id:
-        # Get all of the activities for a user
+        # Get all activities for a user
         activities = get_user_activities(user_id=user_id,
                                          time_start=requested_start,
                                          time_end=requested_end)
     elif machine_id:
-        # Get all of the activities for a machine
+        # Get all activities for a machine
         activities = get_machine_activities(machine_id=machine_id,
                                             time_start=requested_start,
                                             time_end=requested_end)
     else:
-        # Get all the activities
+        # Get all activities
         activities = Activity.query \
             .filter(Activity.time_end >= requested_start) \
             .filter(Activity.time_start <= requested_end).all()
@@ -75,17 +75,7 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
         activities_dict[key] = 0
 
     for act in activities:
-        # If the activity starts before the requested start, crop it to the requested start time
-        if act.time_start is not None and act.time_start > requested_start:
-            start = act.time_start
-        else:
-            start = requested_start
-
-        # If the activity extends past the requested end or has no end, crop it to the requested end (or current time)
-        if act.time_end is None or act.time_start > requested_end:
-            end = min([requested_end, datetime.now()])
-        else:
-            end = act.time_end
+        start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
 
         # Calculate the duration and add to the dict
         if act.activity_code is None:

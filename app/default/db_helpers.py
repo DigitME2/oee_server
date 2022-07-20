@@ -8,18 +8,15 @@ from typing import List
 from flask import current_app
 from sqlalchemy import func
 
-from app.default.models import Activity, Machine, ScheduledActivity, Settings
+from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job
 from app.extensions import db
 from config import Config
 
 
-def complete_last_activity(machine_id, time_end: datetime = None, activity_code_id=None, commit=True):
+def complete_last_activity(machine_id, time_end: datetime = datetime.now, activity_code_id=None, commit=True):
     """ Gets the most recent active activity for a machine and then ends it with the current time, or a provided time.
     If an activity_code_id is provided, the activity will be updated with this code"""
 
-    # Warning to future Sam, don't put datetime.now() as the default argument, it will break this function
-    if time_end is None:
-        time_end = datetime.now()
     # Get the last activity
     last_activity_id = get_current_machine_activity_id(machine_id)
     if last_activity_id is None:
@@ -396,3 +393,41 @@ def create_all_scheduled_activities(create_date: date = None):
             db.session.add(after_shift)
 
         db.session.commit()
+
+
+def get_activity_cropped_start_end(act: Activity,
+                                   requested_start: datetime,
+                                   requested_end: datetime) -> (datetime, datetime):
+    """ Crops the start and end of an activity if it overruns the requested start or end time."""
+    if act.time_start is not None and act.time_start > requested_start:
+        start = act.time_start
+    else:
+        start = requested_start
+
+        # If the activity extends past the requested end or has no end, crop it to the requested end (or current time)
+    if act.time_end is None or act.time_end > requested_end:
+        end = min([requested_end, datetime.now()])
+    else:
+        end = act.time_end
+    return start, end
+
+
+def get_job_cropped_start_end_ratio(job: Job,
+                                    requested_start: datetime,
+                                    requested_end: datetime) -> (datetime, datetime, float):
+    """ Crops the start and end of a job if it overruns the requested start or end time. Also returns the
+    ratio of time cropped to total time"""
+    if job.start_time is not None and job.start_time > requested_start:
+        start = job.start_time
+    else:
+        start = requested_start
+
+    # If the job extends past the requested end or has no end, crop it to the requested end (or current time)
+    if job.end_time is None or job.end_time > requested_end:
+        end = min([requested_end, datetime.now()])
+    else:
+        end = job.end_time
+    job_length = (job.end_time - job.start_time).total_seconds()
+    cropped_length = (end - start).total_seconds()
+    ratio_of_length_used = cropped_length / job_length
+    return start, end, ratio_of_length_used

@@ -11,7 +11,7 @@ from plotly.offline import plot
 
 from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
 from app.data_analysis.oee.oee import get_daily_machine_oee
-from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities
+from app.default.db_helpers import get_machine_activities, get_machine_scheduled_activities, get_activity_cropped_start_end
 from app.default.models import Activity, Machine, ActivityCode, ScheduledActivity, Settings
 from app.visualisation.helpers import get_machine_status
 from config import Config
@@ -378,20 +378,7 @@ def get_activities_df(activities: List[Activity], group_by, graph_start: datetim
             continue
         # Don't show values outside of graph time range
         if crop_overflow:
-            if act.time_start < graph_start:
-                start = graph_start
-            else:
-                start = act.time_start
-            if act.time_end is None:
-                # Extend the current activity to either graph end or current time
-                if graph_end >= datetime.now():
-                    end = datetime.now()
-                else:
-                    end = graph_end
-            elif act.time_end > graph_end:
-                end = graph_end
-            else:
-                end = act.time_end
+            start, end = get_activity_cropped_start_end(act, graph_start, graph_end)
         # Use actual times if they're not being cropped
         else:
             start = act.time_start
@@ -420,20 +407,7 @@ def get_scheduled_activities_df(activities: List[ScheduledActivity], group_by, g
             continue
         # Don't show values outside of graph time range
         if crop_overflow:
-            if act.time_start < graph_start:
-                start = graph_start
-            else:
-                start = act.time_start
-            if act.time_start is None:
-                # Extend the current activity to either graph end or current time
-                if graph_end >= datetime.now():
-                    end = datetime.now()
-                else:
-                    end = graph_end
-            elif act.time_end > graph_end:
-                end = graph_end
-            else:
-                end = act.time_end
+            start, end = get_activity_cropped_start_end(act, graph_start, graph_end)
         # Use actual times if they're not being cropped
         else:
             start = act.time_start
