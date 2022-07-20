@@ -108,7 +108,7 @@ def simulate_machines(simulation_datetime: datetime = None):
         if random.random() < chance_to_skip_simulation:
             continue
         # Get the user with the same ID as the machine for simplicity
-        user = User.query.get(machine.id).first()
+        user = User.query.get(machine.id)
         if user is None:
             username = names[machine.id]
             user = create_new_demo_user(username, machine.id, machine)
