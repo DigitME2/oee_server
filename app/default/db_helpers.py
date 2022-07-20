@@ -13,10 +13,12 @@ from app.extensions import db
 from config import Config
 
 
-def complete_last_activity(machine_id, time_end: datetime = datetime.now, activity_code_id=None, commit=True):
+def complete_last_activity(machine_id, time_end: datetime = None, activity_code_id=None, commit=True):
     """ Gets the most recent active activity for a machine and then ends it with the current time, or a provided time.
     If an activity_code_id is provided, the activity will be updated with this code"""
 
+    if time_end is None:
+        time_end = datetime.now()
     # Get the last activity
     last_activity_id = get_current_machine_activity_id(machine_id)
     if last_activity_id is None:

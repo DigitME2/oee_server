@@ -47,7 +47,10 @@ def end_job(job, machine, simulation_datetime=None):
     db.session.add(new_activity)
 
 
-def start_new_job(machine, user, simulation_datetime=datetime.now):
+def start_new_job(machine, user, simulation_datetime=None):
+    # Run for the current time if no datetime given
+    if not simulation_datetime:
+        simulation_datetime = datetime.now()
     current_app.logger.debug(f"Starting new job")
     session = UserSession.query.filter_by(user_id=user.id, active=True).first()
     if session is None:
