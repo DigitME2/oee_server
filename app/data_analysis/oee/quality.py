@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from flask import current_app
@@ -22,6 +23,8 @@ def get_machine_quality(machine_id, time_start: datetime, time_end: datetime) ->
             total_machine_rejects_produced += job.quantity_rejects
     try:
         quality = (total_machine_quantity_produced - total_machine_rejects_produced) / total_machine_quantity_produced
+        if quality > 1:
+            logging.warning(f"Quality of >1 calculated for machine ID {machine_id} on {time_start.date()}")
         return quality
     except ZeroDivisionError:
         current_app.logger.warning(f"0 quantity produced for machine id {machine_id} "
