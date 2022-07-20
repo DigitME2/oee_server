@@ -97,7 +97,6 @@ def change_activity(machine, job, user, simulation_datetime=None):
 
 
 def simulate_machines(simulation_datetime: datetime = None):
-    current_app.logger.debug(f"Simulating machines in database address {Config.SQLALCHEMY_DATABASE_URI}")
     if not Config.DEMO_MODE:
         current_app.logger.warning("Fake data being created when app is not in DEMO_MODE")
     # Run for the current time if no datetime given
@@ -141,6 +140,8 @@ def simulate_machines(simulation_datetime: datetime = None):
 
 
 def backfill_missed_simulations():
+    current_app.logger.debug(f"Simulating activity to backfill missed dates "
+                             f"at database address {Config.SQLALCHEMY_DATABASE_URI}")
     last_simulation = DemoSettings.query.get(1).last_machine_simulation
     # If the last simulation was too long ago, start from the requested days backfill
     if (datetime.now() - last_simulation) > timedelta(Config.DAYS_BACKFILL):
