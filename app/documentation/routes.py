@@ -1,14 +1,13 @@
 from flask import render_template
 
 from app.documentation import bp
-from config import Config
+from app import VERSION
 
 
 @bp.route('/help')
 def help_home():
     """ Shows app instructions """
-    version = getattr(Config, "VERSION", "")
-    return render_template('documentation/help.html', version=version)
+    return render_template('documentation/help.html', version=VERSION)
 
 
 @bp.route('/help/admin')
