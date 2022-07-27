@@ -213,6 +213,8 @@ def android_update_activity():
     # Start a new activity
     # The current job is the only active job belonging to the user session
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
+    if not current_job:
+        return json.dumps({"success": False, "reason": "No active job; unable to update activity"})
 
     # The machine state is calculated from the activity code
     if activity_code.id == Config.UPTIME_CODE_ID:
