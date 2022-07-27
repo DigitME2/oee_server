@@ -35,7 +35,7 @@ class Config(object):
 
     # SQLite database
     if USE_FRESH_DAILY_SQLITE_DB:
-        db_name = datetime.now().strftime("%Y-%M-%d")
+        db_name = datetime.now().strftime("%Y-%m-%d")
     else:
         db_name = "prod"
     if DEMO_MODE:
