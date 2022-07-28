@@ -1,0 +1,111 @@
+{% extends "default/base.html" %}
+{% import "oee_displaying/form_templates.html" as form_templates %}
+
+{% block content %}
+
+    <div class="container mt-2">
+        <form method="post">
+
+            {{ form.hidden_tag() }}
+            {{ form.csrf_token }}
+
+            <div class="form-row mt-2">
+                <div class="form-group pr-2">
+                    {{ form.key.label }}
+                    {{ form.key(class_="form-control") }}
+                </div>
+
+                <div class="form-group pr-2">
+                    {{ form.start_date.label }}
+                    {{ form.start_date(class_="form-control datepicker") }}
+                    {% for error in form.start_date.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group pr-2">
+                    {{ form.end_date.label }}
+                    {{ form.end_date(class_="form-control datepicker") }}
+                    {% for error in form.end_date.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {{ form.submit(class_="btn btn-success") }}
+        </form>
+
+
+        <div class="mt-5">
+            <div class="main_graph" id="main_graph">
+                {{ graph|safe }}
+            </div>
+        </div>
+    </div>
+
+    {# Datatables core libraries #}
+    <script src="{{ url_for('static', filename='node_modules/datatables.net/js/jquery.dataTables.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"
+            type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}"
+          type="text/css" rel="stylesheet">
+
+    {# To make the table size responsive for mobile #}
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-responsive/js/dataTables.responsive.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"
+            type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}"
+          type="text/css" rel="stylesheet">
+
+    {#  Buttons to download the table #}
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons/js/dataTables.buttons.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons/js/buttons.html5.min.js') }}"
+            type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css') }}"
+          type="text/css" rel="stylesheet">
+
+    {# Table download format options #}
+    <script src="{{ url_for('static', filename='node_modules/pdfmake/build/pdfmake.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/pdfmake/build/vfs_fonts.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/jszip/dist/jszip.min.js') }}"></script>
+
+
+    <script>
+        {# Script to add the datatable library to the table. #}
+        $(document).ready(function () {
+                $('.dataTable').DataTable({
+                    dom: 'Bfrtip',
+                    responsive: true,
+                    buttons: [
+                        'copy', 'excel', 'csv', 'pdf'
+                    ]
+                });
+            }
+        );
+    </script>
+
+    {#    Set the page title to match the title of any tables. This will also set the title of any downloaded file #}
+    <script>
+        $(document).ready(function () {
+            if (document.getElementById("table-title")) {
+                document.title = document.getElementById("table-title").innerText
+            }
+        })
+    </script>
+
+    {#    Datepicker#}
+    <script src="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.css') }}">
+    <script>
+        $(function () {
+            $(".datepicker").datepicker({dateFormat: "yy-mm-dd"});
+        });
+    </script>
+
+{% endblock %}

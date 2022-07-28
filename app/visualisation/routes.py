@@ -2,7 +2,10 @@ from datetime import datetime, timedelta
 
 from flask import abort, request, render_template, current_app
 from flask_login import login_required
+from flask_wtf import FlaskForm
 from sqlalchemy import inspect
+from wtforms import DateField, TimeField, SubmitField, SelectField
+from wtforms.validators import DataRequired, NoneOf
 
 from app.default.models import Machine, MachineGroup, Settings
 from app.extensions import db
@@ -12,9 +15,43 @@ from app.visualisation.forms import MACHINES_CHOICES_HEADERS, GanttForm, OeeLine
     WOTableForm, RawDatabaseTableForm, ActivityDurationsTableForm, SchedulesGanttForm, OeeTableForm, ProdTableForm
 from app.visualisation.graphs import create_machine_gantt, create_multiple_machines_gantt, \
     create_dashboard_gantt, create_downtime_bar, create_schedules_gantt, create_oee_line
-from app.visualisation.helpers import parse_requested_machine_list
+from app.visualisation.helpers import parse_requested_machine_list, today, tomorrow
 from app.visualisation.tables import get_work_order_table, get_job_table, get_raw_database_table, \
     get_user_activity_table, get_machine_activity_table, get_oee_table, get_machine_production_table
+
+
+# --------------- APQ GRAPH CODE -------------------------------
+
+class APQForm(FlaskForm):
+    start_date = DateField(validators=[DataRequired()], label="Start Date (YYYY-MM-DD)", default=today)
+    end_date = DateField(validators=[DataRequired()], label="End Date (YYYY-MM-DD)", default=tomorrow)
+    key = SelectField(validators=[DataRequired()],
+                      id="oee_machines")
+    submit = SubmitField('Submit')
+
+
+@bp.route('/apq-graph', methods=['GET', 'POST'])
+def apq():
+
+    # Get a list of machines to provide a dropdown
+    machines = Machine.query.all()
+    machine_name_choices = [(str(m.id), m.name) for m in machines]
+
+    # Create the form
+    form = APQForm()
+    form.key.choices = machine_name_choices
+
+    # If the form has been submitted we need to create the graph
+    if form.validate_on_submit():
+        graph = create_oee_line(graph_start_date=form.start_date.data,
+                                graph_end_date=form.end_date.data,
+                                machine_ids=[form.key.data])
+    else:
+        graph = None
+
+    return render_template("oee_displaying/apq_graph.html",
+                           form=form,
+                           graph=graph)
 
 
 @bp.route('/data', methods=['GET', 'POST'])
@@ -59,7 +96,8 @@ def data():
     raw_db_table_form = RawDatabaseTableForm()
     raw_db_table_form.key.choices = table_name_choices
 
-    forms = [gantt_form, oee_line_form, oee_table_form, prod_table_form, downtime_bar_form, job_table_form, activity_table_form,
+    forms = [gantt_form, oee_line_form, oee_table_form, prod_table_form, downtime_bar_form, job_table_form,
+             activity_table_form,
              schedule_gantt_form]
 
     # Check which form has been sent by the user
