@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, time, timedelta
 
-from app.data_analysis.oee.availability import calculate_machine_availability
+from app.data_analysis.oee.availability import get_machine_availability
 from app.default.db_helpers import create_day_scheduled_activities
 from app.default.models import Machine, Activity
 from app.extensions import db
@@ -27,7 +27,7 @@ class OEETests(BaseTest):
             db.session.add(act)
             db.session.commit()
 
-            availibility = calculate_machine_availability(machine.id, time_start=day_start, time_end=day_end)
+            availibility = get_machine_availability(machine.id, time_start=day_start, time_end=day_end)
 
             self.assertEqual(availibility, 1)
 

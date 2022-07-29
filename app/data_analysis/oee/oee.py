@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, time
 from flask import current_app
 
 from app.data_analysis import OEECalculationException
-from app.data_analysis.oee.availability import calculate_machine_availability
+from app.data_analysis.oee.availability import get_machine_availability
 from app.data_analysis.oee.models import DailyOEE
 from app.data_analysis.oee.performance import get_machine_performance
 from app.data_analysis.oee.quality import get_machine_quality
@@ -20,7 +20,7 @@ def calculate_machine_oee(machine_id, time_start: datetime, time_end: datetime):
         raise OEECalculationException("Machine OEE requested for future date")
 
     current_app.logger.info(f"Calculating OEE for machine {machine_id} between {time_start} and {time_end}")
-    availability = calculate_machine_availability(machine_id, time_start, time_end)
+    availability = get_machine_availability(machine_id, time_start, time_end)
     current_app.logger.debug(f"Availability: {availability}")
     performance = get_machine_performance(machine_id, time_start, time_end)
     current_app.logger.debug(f"Performance: {performance}")

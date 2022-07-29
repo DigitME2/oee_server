@@ -8,7 +8,7 @@ from app.default.models import Activity, ActivityCode, ScheduledActivity
 from config import Config
 
 
-def calculate_machine_availability(machine_id, time_start: datetime, time_end: datetime):
+def get_machine_availability(machine_id, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's availability for calculating OEE"""
     runtime = get_machine_runtime(machine_id, time_start, time_end)
     schedule_dict = get_schedule_dict(machine_id, time_start, time_end, units="seconds")
