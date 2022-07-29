@@ -47,29 +47,37 @@ def apq():
 
     # If the form has been submitted we need to create the graph
     if form.validate_on_submit():
+        # Parse the machine we want from the form, and the start and end date of the graph
         machine_ids = [form.key.data]
         graph_start_date = form.start_date.data,
         graph_end_date = form.end_date.data
 
+        # Get a list of dates to use as X axis
         d = Settings.query.get(1).first_start.date()
         dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
         if len(dates) == 0:
             return 0
         fig = go.Figure()
+
+        # Loop through the machines and get the OEE figure for each machine
         machine_ids.sort()
         for machine_id in machine_ids:
             machine = Machine.query.get(machine_id)
             machine_oee_figures = []
             for d in dates:
                 machine_oee_figures.append(get_daily_machine_oee(machine_id=machine_id, date=d))
+            # Add the trace to the graph
             fig.add_trace(go.Scatter(x=dates, y=machine_oee_figures, name=machine.name, mode='lines+markers'))
 
+        # Modify the layout
         layout = Layout()
         layout.xaxis.update(range=[graph_start_date, graph_end_date])
         layout.xaxis.tickformat = '%a %d-%m-%Y'
         layout.xaxis.showgrid = False
         layout.xaxis.dtick = 86400000  # Space between ticks = 1 day
         fig.layout = layout
+
+        # Plot the graph
         graph = plot(fig,
                      output_type="div",
                      include_plotlyjs=True,
