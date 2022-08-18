@@ -13,6 +13,7 @@ while 1:
     data, addr = s.recvfrom(1024)  # Wait for a packet
     print("Received broadcast:", data.decode("utf-8"))
 
-    if str(data).startswith(EXPECTED_TEXT):
+    if data.decode("utf-8") == EXPECTED_TEXT:
+        print("Responding...")
         s.sendto("DISCOVER_OEE_SERVER_RESPONSE".encode("utf-8"), addr)
     sleep(5)
