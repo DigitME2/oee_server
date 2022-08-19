@@ -1,0 +1,12 @@
+[Unit]
+Description=oee_server_discovery
+After=network.target
+
+[Service]
+User=oee
+WorkingDirectory=/home/user/oee_server
+ExecStart=/usr/bin/python3 device_discovery.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
