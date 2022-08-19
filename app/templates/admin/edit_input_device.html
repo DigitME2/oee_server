@@ -1,0 +1,30 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    <div class="container mt-2">
+        <h2>Edit Tablet</h2>
+        <form action="" method="post">
+            <div class="form-row">
+                <div class="col form-group">
+                    {{ form.hidden_tag() }}
+                    {{ form.name.label }}
+                    {{ form.name(size=32, autocomplete="off", class_="form-control") }}
+                    {% for error in form.name.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+                <div class="col form-group">
+                    {{ form.machine.label }}
+                    {{ form.machine(class_="form-control") }}
+                    {% for error in form.machine.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {{ form.submit(class_="btn btn-success") }}
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='node_modules/@eastdesire/jscolor/jscolor.min.js') }}"
+            type="text/javascript"></script>
+{% endblock %}

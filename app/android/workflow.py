@@ -39,7 +39,6 @@ class Workflow:
         return response
 
     def no_job_response(self):
-        current_app.logger.debug(f"Returning state:no_job to {request.remote_addr}: no_job")
         input_type = self.user_session.machine.job_start_input_type
         input_autofill = self.user_session.machine.autofill_job_start_amount \
             if self.user_session.machine.autofill_job_start_input else ""
@@ -51,7 +50,6 @@ class Workflow:
                                                                 input_autofill=input_autofill)})
 
     def active_job_response(self):
-        current_app.logger.debug(f"Returning state: active_job to {request.remote_addr}: active_job")
         activity_codes_dicts = [{"activity_code_id": ac.id,
                                  "colour": ac.graph_colour,
                                  "description": ac.short_description}

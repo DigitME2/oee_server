@@ -8,13 +8,10 @@
             <div id="adminUserColumn" class="card border-0" style="min-width: 12rem;">
                 <div class="card-header" style="height: 6rem;">
                     <h2 class="adminListHeader">Users</h2>
+                    <a id="create_new_user_btn" href="{{ url_for('admin.new_user') }}" class="">+ New User</a>
                 </div>
                 <div class="card-body overflow-auto">
                     <ul class="list-group">
-                        <li class="list-group-item">
-                            <a id="create_new_user_btn" href="{{ url_for('admin.new_user') }}">Create New</a>
-                        </li>
-
                         {% for user in users %}
                             <li class="list-group-item">
                                 <a id="edit_user_{{ user.id }}" href="{{ url_for('admin.change_password', user_id=user.id, action="reset_password") }}">
@@ -26,20 +23,16 @@
                 </div>
             </div>
 
-            <div id="adminScheduleColumn" class="card border-0" style="min-width: 12rem;">
+            <div id="adminTabletColumn" class="card border-0" style="min-width: 7rem;">
                 <div class="card-header" style="height: 6rem;">
-                    <h2 class="adminListHeader">Schedules</h2>
+                    <h2 class="adminListHeader">Tablets</h2>
                 </div>
                 <div class="card-body overflow-auto">
                     <ul class="list-group">
-                        <li class="list-group-item">
-                            <a id="create_new_schedule_btn" href="{{ url_for('admin.machine_schedule', new=true) }}">Create New</a>
-                        </li>
-
-                        {% for s in schedules %}
+                        {% for input_device in input_devices %}
                             <li class="list-group-item">
-                                <a id="edit_schedule_{{ s.id }}" href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
-                                    {{ s.name }}
+                                <a id="edit_input_device_{{ input_device.id }}" href="{{ url_for('admin.edit_input_device', id=input_device.id) }}">
+                                    {{ input_device.name }}
                                 </a>
                             </li>
                         {% endfor %}
@@ -47,16 +40,15 @@
                 </div>
             </div>
 
+
+
             <div id="adminMachineColumn" class="card border-0" style="min-width: 12rem;">
                 <div class="card-header" style="height: 6rem;">
                     <h2 class="adminListHeader">Machines</h2>
+                    <a id="create_new_machine_btn" href="{{ url_for('admin.edit_machine', new=true) }}" class="">+ New Machine</a>
                 </div>
                 <div class="card-body overflow-auto">
                     <ul class="list-group">
-                        <li class="list-group-item">
-                            <a id="create_new_machine_btn" href="{{ url_for('admin.edit_machine', new=true) }}">Create New</a>
-                        </li>
-
                         {% for m in machines %}
                             <li class="list-group-item">
                                 <a id="edit_machine_{{ m.id }}" href="{{ url_for('admin.edit_machine',  machine_id=m.id) }}">
@@ -68,16 +60,31 @@
                 </div>
             </div>
 
-            <div id="adminMachineGroupColumn" class="card border-0" style="min-width: 12rem;">
+            <div id="adminScheduleColumn" class="card border-0" style="min-width: 12rem;">
                 <div class="card-header" style="height: 6rem;">
-                    <h2 class="adminListHeader">Machine Groups</h2>
+                    <h2 class="adminListHeader">Schedules</h2>
+                    <a id="create_new_schedule_btn" href="{{ url_for('admin.machine_schedule', new=true) }}" class="">+ New Schedule</a>
                 </div>
                 <div class="card-body overflow-auto">
                     <ul class="list-group">
-                        <li class="list-group-item">
-                            <a id="create_new_group_btn" href="{{ url_for('admin.edit_machine_group', new=true) }}">Create New</a>
-                        </li>
+                        {% for s in schedules %}
+                            <li class="list-group-item">
+                                <a id="edit_schedule_{{ s.id }}" href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
+                                    {{ s.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
 
+            <div id="adminMachineGroupColumn" class="card border-0" style="min-width: 12rem;">
+                <div class="card-header" style="height: 6rem;">
+                    <h2 class="adminListHeader">Groups</h2>
+                    <a id="create_new_group_btn" href="{{ url_for('admin.edit_machine_group', new=true) }}">+ New Group</a>
+                </div>
+                <div class="card-body overflow-auto">
+                    <ul class="list-group">
                         {% for mg in machine_groups %}
                             <li class="list-group-item">
                                 <a id="edit_group_{{ mg.id }}" href="{{ url_for('admin.edit_machine_group', machine_group_id=mg.id) }}">
@@ -92,14 +99,11 @@
 
             <div id="adminActivityCodeColumn" class="card border-0" style="min-width: 12rem;">
                 <div class="card-header" style="height: 6rem;">
-                    <h2 class="adminListHeader">Activity Codes</h2>
+                    <h2 class="adminListHeader">Codes</h2>
+                    <a id="create_new_activity_code_btn" href="{{ url_for('admin.edit_activity_code', new=true) }}">+ New Code</a>
                 </div>
                 <div class="card-body overflow-auto">
                     <ul class="list-group">
-                        <li class="list-group-item">
-                            <a id="create_new_activity_code_btn" href="{{ url_for('admin.edit_activity_code', new=true) }}">Create New</a>
-                        </li>
-
                         {% for ac in activity_codes %}
                             <li class="list-group-item">
                                 <a id="edit_activity_code_{{ ac.id }}" href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">

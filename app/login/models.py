@@ -41,7 +41,7 @@ class UserSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     machine_id = db.Column(db.Integer, db.ForeignKey("machine.id"), nullable=False)
-    device_ip = db.Column(db.String)
+    input_device_id = db.Column(db.Integer, db.ForeignKey('input_device.id'))
     time_login = db.Column(db.DateTime)
     time_logout = db.Column(db.DateTime)
     active = db.Column(db.Boolean)
@@ -51,7 +51,7 @@ class UserSession(db.Model):
     def __repr__(self):
         return f"<UserSession " \
                f"user_id:{self.user_id} " \
-               f"device_ip:{self.device_ip} " \
+               f"device_id:{self.input_device_id} " \
                f"machine_id:{self.machine_id} " \
                f"(ID {self.id})> "
 

@@ -6,12 +6,12 @@ from flask import request, current_app, abort
 
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
-from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity, get_assigned_machine
-from app.default.models import Job, Activity, ActivityCode
+from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity
+from app.default.models import Job, Activity, ActivityCode, InputDevice
 from app.extensions import db
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions
-from app.login.models import User, UserSession
+from app.login.models import User
 from config import Config
 
 r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
@@ -21,23 +21,32 @@ r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses
 def android_check_state():
     """ The app calls this on opening, to see whether a user is logged in, or a job is active etc"""
 
-    # Get the user session based on the IP of the device accessing this page
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    # Get the user session based on the device accessing this page
+    uuid = request.args.get("device_uuid")
+    input_device = InputDevice.query.filter_by(uuid=uuid).first()
+    if not input_device:
+        new_input = InputDevice(uuid=uuid, name=uuid)
+        db.session.add(new_input)
+        db.session.flush()
+        new_input.name = "Tablet " + str(new_input.id)
+        db.session.commit()
+        input_device = InputDevice.query.filter_by(uuid=uuid).first()
+    user_session = input_device.get_active_user_session()
 
     # Get the machine assigned to this device
-    machine = get_assigned_machine(request.remote_addr)
+    machine = input_device.machine
 
     # If there is no user session, send to the login screen. Also send here if there is no assigned machine
     if user_session is None or machine is None:
         # Show an error to the user if no machine is assigned
         if machine is None:
-            machine_text = f"Error: No machine assigned to this client IP ({request.remote_addr})"
+            machine_text = f"No assigned machine. Pair via the admin interface then press back to refresh."
         else:
             machine_text = machine.name
         return json.dumps({"workflow_type": "default",
                            "state": "no_user",
                            "machine": machine_text,
-                           "ip": request.remote_addr})
+                           "device_name": input_device.name})
 
     current_app.logger.debug(f"Checking state for session {user_session}")
     current_app.logger.debug(f"Machine using {machine.workflow_type}")
@@ -62,6 +71,11 @@ def android_login():
 
     current_app.logger.debug("Login attempt to /android-login")
     response = {}
+
+    uuid = request.json["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=uuid).first()
+    if not input_device:
+        abort(400, message="Device not registered to server, try restarting")
 
     # Return failure if correct arguments not supplied
     if "user_id" not in request.get_json():
@@ -105,9 +119,9 @@ def android_login():
         end_user_sessions(user.id)
         current_app.logger.info(f"Logged in {user} (Android)")
         response["success"] = True
-        if not start_user_session(user.id, request.remote_addr):
+        if not start_user_session(user.id, input_device.id):
             response["success"] = False
-            response["reason"] = f"Error getting assigned machine ({request.remote_addr})"
+            response["reason"] = f"Error getting assigned machine (uuid={uuid})"
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
     else:
@@ -120,8 +134,9 @@ def android_login():
 @bp.route('/android-logout', methods=['POST'])
 def android_logout():
     """ Logs the user out of the system. """
-    # Get the current user session based on the IP of the device accessing this page
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    device_uuid = request.json["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    user_session = input_device.get_active_user_session()
     if user_session is None:
         return json.dumps({"success": False, "reason": "User is logged out"})
     # End any jobs  under the current session
@@ -130,7 +145,7 @@ def android_logout():
             job.end_time = datetime.now()
             job.active = None
     # End the current activity
-    current_activity_id = get_current_machine_activity_id(user_session.machine_id)
+    current_activity_id = get_current_machine_activity_id(input_device.machine_id)
     if current_activity_id:
         act = Activity.query.get(current_activity_id)
         act.time_end = datetime.now()
@@ -145,12 +160,19 @@ def android_logout():
 def android_start_job():
     if not request.is_json:
         return abort(400)
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    device_uuid = request.json["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    user_session = input_device.get_active_user_session()
+
     if not user_session:
         return abort(400)
 
-    machine = user_session.machine
+    machine = input_device.machine
     if user_session.user.has_job():
+        if not any(job.active for job in user_session.jobs) and any(job.active for job in machine.jobs):
+            # If the active session has no job, but the machine does.
+            # This should never happen, but it happened once. End the machine's session to fix it.
+            end_user_sessions(machine_id=machine.id)
         return abort(400)
 
     ideal_cycle_time_s = parse_cycle_time(input_type=machine.job_start_input_type, json_data=request.json)
@@ -195,7 +217,9 @@ def android_start_job():
 @bp.route('/android-update', methods=['POST'])
 def android_update_activity():
     now = datetime.now()
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    device_uuid = request.json["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    user_session = input_device.get_active_user_session()
     try:
         activity_code_id = request.json["activity_code_id"]
     except KeyError:
@@ -208,7 +232,7 @@ def android_update_activity():
         return abort(500)
 
     # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, time_end=now)
+    complete_last_activity(machine_id=input_device.machine_id, time_end=now)
 
     # Start a new activity
     # The current job is the only active job belonging to the user session
@@ -222,7 +246,7 @@ def android_update_activity():
     else:
         machine_state = Config.MACHINE_STATE_OFF
     # Create the new activity
-    new_activity = Activity(machine_id=user_session.machine_id,
+    new_activity = Activity(machine_id=input_device.machine_id,
                             machine_state=machine_state,
                             activity_code_id=activity_code.id,
                             user_id=user_session.user_id,
@@ -238,8 +262,9 @@ def android_update_activity():
 @bp.route('/android-end-job', methods=['POST'])
 def android_end_job():
     now = datetime.now()
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
-
+    device_uuid = request.json["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    user_session = input_device.get_active_user_session()
     try:
         quantity_produced = float(request.json["quantity_produced"])
         quantity_rejects = float(request.json["rejects"])
@@ -259,10 +284,10 @@ def android_end_job():
     db.session.commit()
 
     # Mark the most recent activity in the database as complete
-    complete_last_activity(machine_id=user_session.machine_id, time_end=now)
+    complete_last_activity(machine_id=input_device.machine_id, time_end=now)
 
     # Start a new activity
-    new_activity = Activity(machine_id=user_session.machine_id,
+    new_activity = Activity(machine_id=input_device.machine_id,
                             machine_state=Config.MACHINE_STATE_OFF,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             user_id=user_session.user_id,

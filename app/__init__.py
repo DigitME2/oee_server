@@ -86,7 +86,7 @@ def create_app(config_class=Config):
     @app.before_request
     def before_request():
         time = strftime('[%Y-%b-%d %H:%M]')
-        app.logger.debug(f'{time}, {request.remote_addr}, {request.method}, {request.scheme}, {request.full_path}')
+        app.logger.debug(f'{time}, {request.method}, {request.scheme}, {request.full_path}')
 
     # Allows templates to know whether the app is running in demo mode
     @app.context_processor

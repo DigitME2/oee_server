@@ -4,7 +4,7 @@ from datetime import datetime
 import redis
 from flask import request, current_app
 
-from app.default.models import Job
+from app.default.models import Job, InputDevice
 from app.extensions import db
 from app.login import bp
 from app.login.models import UserSession
@@ -16,7 +16,9 @@ r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses
 
 @bp.route('/android-update-quantity', methods=['POST'])
 def running_total_update_quantity():
-    user_session = UserSession.query.filter_by(device_ip=request.remote_addr, active=True).first()
+    device_uuid = request.json["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    user_session = input_device.get_active_user_session()
 
     try:
         quantity_produced = int(request.json["quantity_produced"])

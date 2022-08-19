@@ -26,16 +26,6 @@
                         {{ form.active.label(class_="mb-3") }}
                     </div>
                 </div>
-                <div class="form-group col-md-6">
-                    {{ form.device_ip.label }}
-                    {{ form.device_ip(size=32, autocomplete="off", class_="form-control") }}
-                    {% for error in form.device_ip.errors %}
-                        <span class="text-danger">[{{ error }}]</span>
-                    {% endfor %}
-                    <small id="ipHelp" class="form-text text-muted">
-                        The static IP Address of the tablet/device assigned to this equipment
-                    </small>
-                </div>
             </div>
 
             <div class="form-row my-4">

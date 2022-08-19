@@ -8,11 +8,12 @@ from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
-    ScheduleForm, MachineGroupForm
+    ScheduleForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
+from app.login.helpers import end_user_sessions
 from app.login.models import User
 from config import Config
 
@@ -27,6 +28,7 @@ def admin_home():
                            users=User.query.all(),
                            schedules=Schedule.query.all(),
                            machines=Machine.query.all(),
+                           input_devices=InputDevice.query.all(),
                            machine_groups=MachineGroup.query.all(),
                            activity_codes=ActivityCode.query.all(),
                            jobs=Job.query.all())
@@ -143,6 +145,43 @@ def machine_schedule():
                            form=form)
 
 
+@bp.route('/input-device', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_input_device():
+    input_device_id = request.args.get("id", None)
+    input_device = InputDevice.query.get_or_404(input_device_id)
+
+    form = InputDeviceForm()
+    form.machine.choices = [("0", "Unassigned")] + [(str(m.id), str(m.name)) for m in Machine.query.all()]
+
+    # Machine validator, prevent saving as a machine that is already assigned to another tablet (allow id=0)
+    assigned_machines = [str(d.machine_id) for d in InputDevice.query.all()
+                         if d.machine_id not in [input_device.machine_id, 0]]
+    form.machine.validators = [NoneOf(assigned_machines, message="Machine already assigned to another device"),
+                               DataRequired()]
+
+    if form.validate_on_submit():
+        # Save the data from the form to the database
+        input_device.name = form.name.data
+
+        if form.machine.data == "0":
+            input_device.machine_id = None
+        else:
+            input_device.machine_id = form.machine.data
+        # End the session if somebody's logged in, to stop weird stuff happening.
+        end_user_sessions(machine_id=input_device.machine_id)
+        db.session.commit()
+        return redirect(url_for('admin.admin_home'))
+
+    # Set the form data to show data from the database
+    form.name.data = input_device.name
+    form.machine.data = str(input_device.machine_id)
+
+    return render_template("admin/edit_input_device.html",
+                           form=form)
+
+
 @bp.route('/editmachine', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -152,17 +191,10 @@ def edit_machine():
     to be changed for existing machines."""
     form = MachineForm()
 
-    # Get a list of schedules to create form dropdown
-    schedules = []
-    for s in Schedule.query.all():
-        schedules.append((str(s.id), str(s.name)))  # The ID has to be a string to match the data returned from client
-    # Add the list of schedules to the form
-    form.schedule.choices = schedules
+    form.schedule.choices = [(str(s.id), str(s.name)) for s in Schedule.query.all()]
 
     # Create machine group dropdown
-    groups = [("0", str("No group"))]
-    for g in MachineGroup.query.all():
-        groups.append((str(g.id), str(g.name)))
+    groups = [("0", "No group")] + [(str(g.id), str(g.name)) for g in MachineGroup.query.all()]
     form.group.choices = groups
 
     form.workflow_type.choices = Config.WORKFLOW_TYPES
@@ -205,21 +237,15 @@ def edit_machine():
     form.job_start_activity.choices = activity_code_choices
 
     # Create validators for the form
-    # Create a list of existing names and IPs to prevent duplicates being entered
+    # Create a list of existing names to prevent duplicates being entered
     names = []
-    ips = []
     for m in Machine.query.all():
         names.append(str(m.name))
-        ips.append(str(m.device_ip))
-    # Don't prevent saving with its own current name/IP
+    # Don't prevent saving with its own current name
     if machine.name in names:
         names.remove(machine.name)
-    if machine.device_ip in ips:
-        ips.remove(machine.device_ip)
     # Don't allow duplicate machine names
     form.name.validators = [NoneOf(names, message="Name already exists"), DataRequired()]
-    # Don't allow duplicate device IPs
-    form.device_ip.validators = [NoneOf(ips, message="This device is already assigned to a machine")]
 
     if form.validate_on_submit():
         current_app.logger.info(f"{machine} edited by {current_user}")
@@ -247,11 +273,6 @@ def edit_machine():
             machine.group_id = None
         else:
             machine.group_id = form.group.data
-        # Save empty ip values as null to avoid unique constraint errors in the database
-        if form.device_ip.data == "":
-            machine.device_ip = None
-        else:
-            machine.device_ip = form.device_ip.data
         try:
             db.session.add(machine)
             db.session.commit()
@@ -280,7 +301,6 @@ def edit_machine():
 
     if not creating_new_machine:
         form.name.data = machine.name
-        form.device_ip.data = machine.device_ip
 
     return render_template("admin/edit_machine.html",
                            form=form,

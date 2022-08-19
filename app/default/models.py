@@ -24,19 +24,34 @@ class Machine(db.Model):
     autofill_job_start_input = db.Column(db.Boolean)
     autofill_job_start_amount = db.Column(db.Float)
     group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
-    device_ip = db.Column(db.String, unique=True)
     active = db.Column(db.Boolean, default=True)
-    user_sessions = db.relationship("UserSession", backref="machine")
-    activities = db.relationship('Activity', backref='machine')
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
     job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), default=Config.UPTIME_CODE_ID)
 
+    user_sessions = db.relationship("UserSession", backref="machine")
+    activities = db.relationship('Activity', backref='machine')
     scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
     jobs = db.relationship('Job', backref='machine')
+    input_device = db.relationship("InputDevice", back_populates="machine", uselist=False)
 
     def __repr__(self):
         return f"<Machine '{self.name}' (ID {self.id})"
+
+
+class InputDevice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String, unique=True, nullable=False)
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), unique=True)
+
+    machine = db.relationship("Machine", back_populates="input_device")
+    user_sessions = db.relationship("UserSession", backref="input_device")
+
+    def get_active_user_session(self):
+        for us in self.user_sessions:
+            if us.active:
+                return us
 
 
 class MachineGroup(db.Model):

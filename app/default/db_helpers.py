@@ -246,19 +246,6 @@ def get_user_activities(user_id, time_start: datetime, time_end: datetime):
     return activities
 
 
-def get_assigned_machine(device_ip):
-    """ Get the machine assigned to a device (using its ip)"""
-    assigned_machines = Machine.query.filter_by(device_ip=device_ip, active=True).all()
-    # If no or multiple machines are assigned, show an error message
-    if len(assigned_machines) == 0:
-        current_app.logger.info(f"No machine assigned to {device_ip}")
-        return None
-    elif len(assigned_machines) > 1:
-        current_app.logger.info(f"Multiple machines assigned to {device_ip}")
-    else:
-        return assigned_machines[0]
-
-
 def get_machines_last_job(machine_id):
     """ Get the last (completed) job a machine ran"""
     machine = Machine.query.get(machine_id)
