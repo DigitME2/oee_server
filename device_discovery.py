@@ -11,6 +11,7 @@ EXPECTED_RESPONSE = "DISCOVER_OEE_SERVER_RESPONSE"
 s = socket(AF_INET, SOCK_DGRAM)
 s.bind(('', BROADCAST_PORT))
 
+print("Listening for device broadcasts")
 while 1:
     data, addr = s.recvfrom(1024)  # Wait for a packet
     print("Received broadcast:", data.decode("utf-8"))
