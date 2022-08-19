@@ -3,6 +3,7 @@
 {% block content %}
     <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
     <div class="container mt-2">
+    <h2>Create New User</h2>
         <form action="" method="post">
             {{ form.hidden_tag() }}
             <p>
@@ -17,6 +18,9 @@
                 {% for error in form.password.errors %}
                     <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
+                <small id="passwordHelp" class="form-text text-muted">
+                    The android app can only accept numerical passwords
+                </small>
 
             <p>
                 <label for="confirm_password">Password:</label>

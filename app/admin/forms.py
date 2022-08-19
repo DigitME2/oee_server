@@ -7,9 +7,9 @@ from wtforms_components import TimeField
 
 
 class ChangePasswordForm(FlaskForm):
-    password = PasswordField('Password', validators=[DataRequired(),
-                                                     EqualTo('confirm_password', message="Passwords do not match")])
-    confirm_password = PasswordField('Confirm Password')
+    password = PasswordField('New Password', validators=[DataRequired(),
+                                                         EqualTo('confirm_password', message="Passwords do not match")])
+    confirm_password = PasswordField('Confirm New Password')
     submit = SubmitField('Change')
 
 
