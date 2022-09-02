@@ -394,8 +394,10 @@ def edit_activity_code():
             message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
         elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
             message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
+        elif activity_code_id == Config.NO_USER_CODE_ID:
+            message = f"Warning: This entry (ID {activity_code_id}) should always represent no user"
         else:
-            message = "Warning: Changes to these values will be reflected in " \
+            message = "Changes to these values will be reflected in " \
                       "past readings with this activity code.<br> \
                       If this code is no longer needed, deselect \"Active\" for this code " \
                       "and create another activity code instead."
