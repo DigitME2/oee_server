@@ -26,7 +26,6 @@ def get_machine_availability(machine_id, time_start: datetime, time_end: datetim
         logging.warning(f"Availability of >1 calculated for machine ID {machine_id} on {time_start.date()}")
     return availability
 
-
 def get_machine_runtime(machine_id, requested_start: datetime, requested_end: datetime):
     """ Takes a machine id and two times, and returns the amount of time the machine was running """
     # Get all the activities for the machine between the two given times, where the machine is up
