@@ -79,9 +79,18 @@ class Job(db.Model):
     notes = db.Column(db.String)
 
     activities = db.relationship('Activity', backref='job')
+    quantities = db.relationship('ProductionQuantity', backref='job')
 
     def __repr__(self):
         return f"<Job {self.wo_number} (ID {self.id})>"
+
+
+class ProductionQuantity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.DateTime)
+    quantity_produced = db.Column(db.Integer)
+    quantity_rejects = db.Column(db.Integer)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
 
 
 class Activity(db.Model):

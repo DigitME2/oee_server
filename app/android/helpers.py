@@ -1,7 +1,11 @@
 from datetime import datetime
 
+import pyodbc
+from sqlalchemy import create_engine, text
+
 from app.default.db_helpers import get_machines_last_job
 from app.default.models import Settings
+from config import Config
 
 
 def get_machines_last_wo_number(machine_id):
@@ -102,6 +106,23 @@ def parse_cycle_time(input_type: str, json_data) -> int:
         case _:
             raise TypeError("Could not parse cycle time")
     return cycle_time_seconds
+
+
+def get_valid_job_numbers() -> list:
+    job_numbers = []
+    engine = create_engine(Config.SECOND_DATABASE_ODBC_STRING)
+    with engine.connect() as conn:
+        conn = conn.execution_options(
+            isolation_level="SERIALIZABLE",
+            postgresql_readonly=True,
+            postgresql_deferrable=True
+        )
+        with conn.begin():
+            sql_query = text("SELECT code FROM activity_code;")
+            result = engine.execute(sql_query)
+            for row in result:
+                job_numbers.append(row[0])
+    return job_numbers
 
 
 REQUESTED_DATA_JOB_END = {"quantity_produced": {"title": "Quantity Produced",

@@ -4,7 +4,7 @@ from datetime import datetime
 import redis
 from flask import request, current_app
 
-from app.default.models import Job, InputDevice
+from app.default.models import Job, InputDevice, ProductionQuantity
 from app.extensions import db
 from app.login import bp
 from app.login.models import UserSession
@@ -29,7 +29,12 @@ def running_total_update_quantity():
                            "reason": "Server error parsing data"})
 
     # Update quantities for the current job
+    # todo test
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
+    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
+                                             quantity_rejects=quantity_rejects,
+                                             job_id=current_job.id)
+    db.session.add(production_quantity)
     current_job.quantity_produced += quantity_produced
     current_job.quantity_rejects += quantity_rejects
     db.session.commit()

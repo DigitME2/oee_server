@@ -50,6 +50,13 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
     SQLALCHEMY_ECHO = False
 
+    SECOND_DATABASE_ODBC_STRING = "postgresql://{user}:{password}@{address}:{port}/{database}".format(
+        user="oee",
+        password="password",
+        address="localhost",
+        port="5432",
+        database="oee")
+
     SECRET_KEY = os.environ.get('SECRET_KEY') or "ydS7o7s73kuQ"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
