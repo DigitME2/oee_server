@@ -80,7 +80,7 @@ class WOTable(Table):
 
 def get_work_order_table(start_date: date, end_date: date) -> str:
     start_time = datetime.combine(start_date, time(0, 0, 0, 0))
-    end_time = datetime.combine(end_date, time(0, 0, 0, 0))
+    end_time = datetime.combine(end_date + timedelta(days=1), time(0, 0, 0, 0))
     jobs = Job.query.filter(Job.start_time <= end_time).filter(Job.end_time >= start_time)
     items = []
 
@@ -145,7 +145,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
 
 def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
     start_time = datetime.combine(start_date, time(0, 0, 0, 0))
-    end_time = datetime.combine(end_date, time(0, 0, 0, 0))
+    end_time = datetime.combine(end_date + timedelta(days=1), time(0, 0, 0, 0))
     jobs = []
     for machine_id in machine_ids:
         machine_jobs = Job.query\
