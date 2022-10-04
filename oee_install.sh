@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Start the commmand in command line
+cd ~/
 sudo apt update
+cd ~/oee_server*
+sudo mv ../oee_server* ../oee_server
+pwd -P
+cd ..
 cd ~/oee_server/
 cp ~/oee_server/example-confs/config.py.example config.py
 # install npm package in /app/static
