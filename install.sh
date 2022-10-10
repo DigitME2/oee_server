@@ -12,7 +12,7 @@ npm --prefix ./app/static install ./app/static
 
 # Set up virtual environment
 echo "Creating python virtual environment..."
-virtualenv venv
+virtualenv --quiet venv
 ./venv/bin/pip install --quiet -r requirements.txt
 
 # install gunicorn
