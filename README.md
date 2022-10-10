@@ -6,6 +6,20 @@ This constitutes the central server, which can receive live OEE data from client
 
 The app is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine.
 
+## OEE Installation
+Download the oee_server-tar or zip file from git. 
+
+Extract the oee_server-file  into the home directory.
+
+open terminal line using "Ctrl+Alt+t".
+
+change into oee_server directory.
+
+Inside  the oee_server directory run "sh oee_install.sh"  to install oee_server
+
+
+
+Open the 
 
 ## Setup
 (Tested on Ubuntu 20.04)
