@@ -8,7 +8,11 @@ fi
 # Install requirements
 echo "Installing apt packages..."
 apt-get update -qqq
-apt-get install -qq -y npm redis virtualenv nginx > /dev/null
+apt-get install -qq -y git npm redis virtualenv nginx > /dev/null
+
+echo "Downloading from github..."
+git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --branch production --depth=1
+cd ~/oee_server
 
 # Copy default config
 cp ./example-confs/config.py.example config.py
@@ -50,5 +54,5 @@ nginx -t
 nginx -s reload
 ufw allow 'Nginx Full'
 
-read -p "Complete. Press any key to continue"
+read -p "Complete. Press enter to continue"
 

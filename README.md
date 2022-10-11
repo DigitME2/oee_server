@@ -7,7 +7,21 @@ This constitutes the central server, which can receive live OEE data from client
 The app is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine.
 
 ## Setup
-(Tested on Ubuntu 20.04)
+
+The software can be automatically set up running this command in a terminal in Ubuntu 22.04 (Press Ctrl + Alt + T to open a terminal).
+
+```
+sudo bash <(curl -sL https://raw.githubusercontent.com/DigitME2/oee_server/production/install.sh)
+```
+
+Enter your password if prompted.
+
+This will download the software and set it to run on startup. The software can be reached by opening a browser and entering "localhost" into the address bar. The default user is "admin" and the default password is "digitme2".
+This can also be accessed on another PC on the network by entering the host PC's IP address into the address bar of a browser.
+
+### Manual installation
+
+(Tested on Ubuntu 22.04)
 
 Create `config.py` in the root folder from `example-confs/config.py.example` and edit config options. Modify the secret key to a random string
 
