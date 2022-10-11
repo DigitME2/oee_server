@@ -1,10 +1,10 @@
 # OEE Monitoring Webapp
 
-This project was made to monitor OEE for machines
+This software was created to track Overall Equipment Effectiveness (OEE) using Android tablets and IOT devices.
 
-This constitutes the central server, which can receive live OEE data from client and is accessed through a flask webapp.
+This constitutes the central server, which can receive live OEE data from clients and is accessed through a web browser.
 
-The app is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine.
+This software is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine. [The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
 
 ## Setup
 
@@ -22,6 +22,8 @@ This can also be accessed on another PC on the network by entering the host PC's
 ### Manual installation
 
 (Tested on Ubuntu 22.04)
+
+Download the source code from this repository
 
 Create `config.py` in the root folder from `example-confs/config.py.example` and edit config options. Modify the secret key to a random string
 
@@ -52,11 +54,6 @@ To upgrade the database when updating to a new version, run
 ## Documentation
 
 Help files can be found in the app
-
-### Workflow Types
-
-Machines can be assigned different work flows to determine the flow of the display on the android tablet. 
-The default workflow has the user log in and go straight to the "start job" screen. Once this is entered, the user sees a screen that allows the current 
 
 ## Demo mode
 
