@@ -50,9 +50,9 @@ sudo systemctl start oee_server oee_discovery oee_celery oee_celery_beat
 # Set up Nginx
 echo "Setting up Nginx..."
 sudo unlink /etc/nginx/sites-enabled/default
-sudo cp ./example-confs/nginx-conf-example /etc/nginx/sites-available
-sudo sed -i 's&/home/user/oee_server&'$PWD'&g' /etc/nginx/sites-available/
-sudo ln -s /etc/nginx/sites-available/nginx-conf-example /etc/nginx/sites-enabled
+sudo cp ./example-confs/nginx-conf-example /etc/nginx/sites-available/oee-server
+sudo sed -i 's&/home/user/oee_server&'$PWD'&g' /etc/nginx/sites-available/oee-server
+sudo ln -s /etc/nginx/sites-available/oee-server /etc/nginx/sites-enabled
 sudo nginx -t
 sudo nginx -s reload
 sudo ufw allow 'Nginx Full'
