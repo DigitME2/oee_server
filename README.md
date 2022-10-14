@@ -11,7 +11,7 @@ This software is accompanied by an Android app, which connects to the server and
 The software can be automatically set up by running this command in a terminal in Ubuntu 22.04 (Press Ctrl + Alt + T to open a terminal).
 
 ```
-sudo bash <(curl -sL https://raw.githubusercontent.com/DigitME2/oee_server/production/install.sh)
+bash <(curl -sL https://raw.githubusercontent.com/DigitME2/oee_server/production/install.sh)
 ```
 
 Enter your password if prompted.

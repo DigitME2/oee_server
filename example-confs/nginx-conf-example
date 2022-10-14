@@ -3,7 +3,7 @@ server {
 	listen 80;
 	listen [::]:80;
 
-	root /home/user/oee_webapp/app/static;
+	root /home/user/oee_server/app/static;
 	
 	location / {
 		try_files $uri @flask;
