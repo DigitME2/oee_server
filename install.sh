@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-
-read -p "This script will install the DigitME2 OEE Server. Press enter to continue"
+# Use sudo here to prompt the password straight away
+sudo echo "This script will install the DigitME2 OEE Server."
+read -p "Press enter to continue."
 
 # Install requirements
 echo "Installing apt packages..."
