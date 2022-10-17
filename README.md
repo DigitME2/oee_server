@@ -19,6 +19,9 @@ Enter your password if prompted.
 This will download the software and set it to run on startup. The software can be reached by opening a browser and entering "localhost" into the address bar. The default user is "admin" and the default password is "digitme2".
 This can also be accessed on another PC on the network by entering the host PC's IP address into the address bar of a browser.
 
+If this process fails on Ubuntu Server, try installing packages manually with 
+`sudo apt-get install -y git npm redis virtualenv nginx`
+and running the installation script again.
 ### Manual installation
 
 (Tested on Ubuntu 22.04)
