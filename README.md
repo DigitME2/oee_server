@@ -1,14 +1,32 @@
 # OEE Monitoring Webapp
 
-This project was made to monitor OEE for machines
+This software was created to track Overall Equipment Effectiveness (OEE) using Android tablets and IOT devices.
 
-This constitutes the central server, which can receive live OEE data from client and is accessed through a flask webapp.
+This constitutes the central server, which can receive live OEE data from clients and is accessed through a web browser.
 
-The app is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine.
-
+This software is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine. [The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
 
 ## Setup
-(Tested on Ubuntu 20.04)
+
+The software can be automatically set up by running this command in a terminal in Ubuntu 22.04 (Press Ctrl + Alt + T to open a terminal).
+
+```
+bash <(curl -sL https://raw.githubusercontent.com/DigitME2/oee_server/production/install.sh)
+```
+
+Enter your password if prompted.
+
+This will download the software and set it to run on startup. The software can be reached by opening a browser and entering "localhost" into the address bar. The default user is "admin" and the default password is "digitme2".
+This can also be accessed on another PC on the network by entering the host PC's IP address into the address bar of a browser.
+
+If this process fails on Ubuntu Server, try installing packages manually with 
+`sudo apt-get install -y git npm redis virtualenv nginx`
+and running the installation script again.
+### Manual installation
+
+(Tested on Ubuntu 22.04)
+
+Download the source code from this repository
 
 Create `config.py` in the root folder from `example-confs/config.py.example` and edit config options. Modify the secret key to a random string
 
@@ -39,11 +57,6 @@ To upgrade the database when updating to a new version, run
 ## Documentation
 
 Help files can be found in the app
-
-### Workflow Types
-
-Machines can be assigned different work flows to determine the flow of the display on the android tablet. 
-The default workflow has the user log in and go straight to the "start job" screen. Once this is entered, the user sees a screen that allows the current 
 
 ## Demo mode
 

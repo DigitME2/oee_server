@@ -2,7 +2,6 @@
 *node_modules
 /.idea
 app/static/temp
-/logs
+logs
 config.py
 *.db
-/app/testing/logs/
