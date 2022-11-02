@@ -18,7 +18,7 @@ machine_activity_codes_association_table = db.Table('machine_activity_code_exclu
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
     workflow_type = db.Column(db.String)
     job_start_input_type = db.Column(db.String)
     autofill_job_start_input = db.Column(db.Boolean)
@@ -41,8 +41,8 @@ class Machine(db.Model):
 
 class InputDevice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    uuid = db.Column(db.String, unique=True, nullable=False)
-    name = db.Column(db.String, unique=True, nullable=False)
+    uuid = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), unique=True)
 
     machine = db.relationship("Machine", back_populates="input_device")
@@ -56,7 +56,7 @@ class InputDevice(db.Model):
 
 class MachineGroup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
     machines = db.relationship('Machine', backref='machine_group')
 
@@ -67,7 +67,7 @@ class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime)
-    wo_number = db.Column(db.String, nullable=False)
+    wo_number = db.Column(db.String(100), nullable=False)
     part_number = db.Column(db.String)
     ideal_cycle_time_s = db.Column(db.Integer)
     quantity_produced = db.Column(db.Integer, default=0)
@@ -119,7 +119,7 @@ def receive_after_update(mapper, connection, target: Activity):
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
     mon_start = db.Column(db.String)
     mon_end = db.Column(db.String)
@@ -160,8 +160,8 @@ class ScheduledActivity(db.Model):
 class ActivityCode(db.Model):
     """ Holds the codes to identify activities"""
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String, unique=True)
-    short_description = db.Column(db.String, nullable=False, unique=True)
+    code = db.Column(db.String(100), unique=True)
+    short_description = db.Column(db.String(100), nullable=False, unique=True)
     long_description = db.Column(db.String)
     graph_colour = db.Column(db.String)
     active = db.Column(db.Boolean, default=True)
