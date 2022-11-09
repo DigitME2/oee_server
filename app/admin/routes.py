@@ -66,6 +66,12 @@ def new_user():
     """ The screen to register a new user."""
 
     form = RegisterForm()
+    # Get a list of existing users for form validation
+    usernames = []
+    for user in User.query.all():
+        usernames.append(str(user.username))
+    form.username.validators = [NoneOf(usernames, message="User already exists"), DataRequired()]
+
     if form.validate_on_submit():
         # noinspection PyArgumentList
         u = User(username=form.username.data)
@@ -406,7 +412,14 @@ def edit_activity_code():
         message = "Create new activity code"
 
     form = ActivityCodeForm()
-
+    # Get a list of existing activity codes to use for form validation to prevent repeat codes
+    short_descriptions = []
+    for ac in ActivityCode.query.all():
+        short_descriptions.append(str(ac.short_description))
+    if activity_code:
+        # Don't prevent the form from entering the current code
+        short_descriptions.remove(activity_code.short_description)
+    form.short_description.validators = [NoneOf(short_descriptions, message="Code already exists"), DataRequired()]
     if form.validate_on_submit():
         if not activity_code:  # Create a new activity code
             # Set the ID manually (instead of autoincrement) due to issues with Postgresql
@@ -431,13 +444,6 @@ def edit_activity_code():
         form.short_description.data = activity_code.short_description
         form.long_description.data = activity_code.long_description
         form.graph_colour.data = activity_code.graph_colour
-
-    # Get a list of existing activity codes to use for form validation to prevent repeat codes
-    codes = []
-    for ac in ActivityCode.query.all():
-        if activity_code and activity_code.id != ac.id:  # Don't prevent the form from entering the current code
-            codes.append(str(ac.code))
-    form.code.validators = [NoneOf(codes, message="Code already exists"), DataRequired()]
 
     return render_template("admin/edit_activity_code.html",
                            form=form,
