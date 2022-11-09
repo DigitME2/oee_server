@@ -19,8 +19,8 @@ machine_activity_codes_association_table = db.Table('machine_activity_code_exclu
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    workflow_type = db.Column(db.String)
-    job_start_input_type = db.Column(db.String)
+    workflow_type = db.Column(db.String(100))
+    job_start_input_type = db.Column(db.String(100))
     autofill_job_start_input = db.Column(db.Boolean)
     autofill_job_start_amount = db.Column(db.Float)
     group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
@@ -43,7 +43,8 @@ class InputDevice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(100), unique=True, nullable=False)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), unique=True)
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'))
+    machine_id_allow_null = db.Index("machine_id_allow_null", mssql_where=db.text("machine_id IS NOT NULL"))
 
     machine = db.relationship("Machine", back_populates="input_device")
     user_sessions = db.relationship("UserSession", backref="input_device")
@@ -62,13 +63,11 @@ class MachineGroup(db.Model):
 
 
 class Job(db.Model):
-    # Each user_id is only allowed one job with active=true Check constraint prevents false values for the active column
-    __table_args__ = (db.UniqueConstraint('user_id', 'active'), db.CheckConstraint('active'))
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime)
     wo_number = db.Column(db.String(100), nullable=False)
-    part_number = db.Column(db.String)
+    part_number = db.Column(db.String(100))
     ideal_cycle_time_s = db.Column(db.Integer)
     quantity_produced = db.Column(db.Integer, default=0)
     quantity_rejects = db.Column(db.Integer, default=0)
@@ -76,7 +75,7 @@ class Job(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
     active = db.Column(db.Boolean)  # This should either be true or null
-    notes = db.Column(db.String)
+    notes = db.Column(db.String(100))
 
     activities = db.relationship('Activity', backref='job')
     quantities = db.relationship('ProductionQuantity', backref='job')
@@ -121,20 +120,20 @@ class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
 
-    mon_start = db.Column(db.String)
-    mon_end = db.Column(db.String)
-    tue_start = db.Column(db.String)
-    tue_end = db.Column(db.String)
-    wed_start = db.Column(db.String)
-    wed_end = db.Column(db.String)
-    thu_start = db.Column(db.String)
-    thu_end = db.Column(db.String)
-    fri_start = db.Column(db.String)
-    fri_end = db.Column(db.String)
-    sat_start = db.Column(db.String)
-    sat_end = db.Column(db.String)
-    sun_start = db.Column(db.String)
-    sun_end = db.Column(db.String)
+    mon_start = db.Column(db.String(100))
+    mon_end = db.Column(db.String(100))
+    tue_start = db.Column(db.String(100))
+    tue_end = db.Column(db.String(100))
+    wed_start = db.Column(db.String(100))
+    wed_end = db.Column(db.String(100))
+    thu_start = db.Column(db.String(100))
+    thu_end = db.Column(db.String(100))
+    fri_start = db.Column(db.String(100))
+    fri_end = db.Column(db.String(100))
+    sat_start = db.Column(db.String(100))
+    sat_end = db.Column(db.String(100))
+    sun_start = db.Column(db.String(100))
+    sun_end = db.Column(db.String(100))
 
     machines = db.relationship('Machine', backref='schedule')
 
@@ -160,10 +159,10 @@ class ScheduledActivity(db.Model):
 class ActivityCode(db.Model):
     """ Holds the codes to identify activities"""
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(100), unique=True)
+    code = db.Column(db.String(100))
     short_description = db.Column(db.String(100), nullable=False, unique=True)
-    long_description = db.Column(db.String)
-    graph_colour = db.Column(db.String)
+    long_description = db.Column(db.String(100))
+    graph_colour = db.Column(db.String(100))
     active = db.Column(db.Boolean, default=True)
 
     activities = db.relationship('Activity', backref='activity_code')
@@ -176,7 +175,7 @@ class Settings(db.Model):
     # Only allow one row in this table
     id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
     dashboard_update_interval_s = db.Column(db.Integer)
-    job_number_input_type = db.Column(db.String)
+    job_number_input_type = db.Column(db.String(100))
     allow_delayed_job_start = db.Column(db.Boolean)
     first_start = db.Column(db.DateTime)
 
