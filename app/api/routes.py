@@ -11,6 +11,7 @@ from app.api import bp
 from app.default.db_helpers import complete_last_activity, get_current_machine_activity_id
 from app.default.models import Machine, Activity
 from app.extensions import db
+from app.login.models import User
 from config import Config
 
 
@@ -22,6 +23,15 @@ class MachineStateChange(BaseModel):
 
 
 r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
+
+
+@bp.route('/api/users')
+def get_users():
+    users = []
+    for user in User.query.all():
+        users.append({"username": user.username, "user_id": user.id, "admin": user.admin})
+
+    return jsonify(users)
 
 
 @bp.route('/api/machine-state-change', methods=['POST'])
