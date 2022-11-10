@@ -31,7 +31,7 @@
                     <ul class="list-group">
                         {% for input_device in input_devices %}
                             <li class="list-group-item">
-                                <a id="edit_input_device_{{ input_device.id }}" href="{{ url_for('admin.edit_input_device', id=input_device.id) }}">
+                                <a id="editTablet-{{ input_device.uuid }}" href="{{ url_for('admin.edit_input_device', id=input_device.id) }}">
                                     {{ input_device.name }}
                                 </a>
                             </li>
