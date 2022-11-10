@@ -165,7 +165,7 @@ def android_start_job():
     user_session = input_device.get_active_user_session()
 
     if not user_session:
-        return abort(400)
+        return abort(401)
 
     machine = input_device.machine
     if user_session.user.has_job():
@@ -265,6 +265,8 @@ def android_end_job():
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
     user_session = input_device.get_active_user_session()
+    if user_session is None:
+        abort(401)
     try:
         quantity_produced = float(request.json["quantity_produced"])
         quantity_rejects = float(request.json["rejects"])
@@ -275,6 +277,8 @@ def android_end_job():
 
     # End the current job
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
+    if current_job is None:
+        abort(400, message="No active job")
     current_job.end_time = now
     current_job.active = None
 
