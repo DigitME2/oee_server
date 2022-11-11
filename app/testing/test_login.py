@@ -4,7 +4,7 @@ import unittest
 from flask import current_app
 
 from app.default.models import Machine
-from app.login.helpers import start_user_session, end_user_sessions
+from app.login.helpers import start_user_session, end_all_user_sessions
 from app.login.models import User
 from app import create_app
 from app.extensions import db
@@ -35,7 +35,7 @@ class TestLogin(BaseTest):
             db.session.add(m)
             db.session.commit()
             self.assertTrue(start_user_session(user_id=1, device_ip="0.0.0.0"))
-            end_user_sessions(user_id=1)
+            end_all_user_sessions(user_id=1)
 
 
 

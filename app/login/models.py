@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import login_manager
+from app.default.models import Activity
 from app.extensions import db
 
 logger = logging.getLogger('flask.app')
@@ -47,6 +49,15 @@ class UserSession(db.Model):
     active = db.Column(db.Boolean)
 
     jobs = db.relationship('Job', backref="user_session")
+
+    def end_session(self):
+        self.time_logout = datetime.now()
+        self.active = False
+        # End all jobs assigned to the session
+        for job in self.jobs:
+            job.end_time = datetime.now()
+            job.active = None
+        db.session.commit()
 
     def __repr__(self):
         return f"<UserSession " \

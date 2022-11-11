@@ -13,7 +13,7 @@ from app.admin.helpers import admin_required, fix_colour_code
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
-from app.login.helpers import end_user_sessions
+from app.login.helpers import end_all_user_sessions
 from app.login.models import User
 from config import Config
 
@@ -178,7 +178,7 @@ def edit_input_device():
         else:
             input_device.machine_id = form.machine.data
         # End the session if somebody's logged in, to stop weird stuff happening.
-        end_user_sessions(machine_id=input_device.machine_id)
+        end_all_user_sessions(machine_id=input_device.machine_id)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 

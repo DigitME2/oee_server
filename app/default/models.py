@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import redis
 
@@ -62,8 +63,6 @@ class MachineGroup(db.Model):
 
 
 class Job(db.Model):
-    # Each user_id is only allowed one job with active=true Check constraint prevents false values for the active column
-    __table_args__ = (db.UniqueConstraint('user_id', 'active'), db.CheckConstraint('active'))
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime)
@@ -75,10 +74,14 @@ class Job(db.Model):
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
-    active = db.Column(db.Boolean)  # This should either be true or null
+    active = db.Column(db.Boolean)
     notes = db.Column(db.String)
 
     activities = db.relationship('Activity', backref='job')
+
+    def end_job(self):
+        self.active = False
+        self.end_time = datetime.now()
 
     def __repr__(self):
         return f"<Job {self.wo_number} (ID {self.id})>"

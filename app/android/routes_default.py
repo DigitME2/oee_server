@@ -10,7 +10,7 @@ from app.default.db_helpers import get_current_machine_activity_id, complete_las
 from app.default.models import Job, Activity, ActivityCode, InputDevice, Settings
 from app.extensions import db
 from app.login import bp
-from app.login.helpers import start_user_session, end_user_sessions
+from app.login.helpers import start_user_session, end_all_user_sessions
 from app.login.models import User
 from config import Config
 
@@ -117,8 +117,8 @@ def android_login():
     # Check the password and log in if successful
     if user.check_password(request.get_json()["password"]):
         if not current_settings.allow_concurrent_user_jobs:
-            # Log out sessions on the same user
-            end_user_sessions(user.id)
+            # Log out sessions on the same user if concurrent sessions not allowed
+            end_all_user_sessions(user.id)
         current_app.logger.info(f"Logged in {user} (Android)")
         response["success"] = True
         if not start_user_session(user.id, input_device.id):
@@ -144,8 +144,7 @@ def android_logout():
     # End any jobs  under the current session
     for job in user_session.jobs:
         if job.active:
-            job.end_time = datetime.now()
-            job.active = None
+            job.end_job()
     # End the current activity
     current_activity_id = get_current_machine_activity_id(input_device.machine_id)
     if current_activity_id:
@@ -154,7 +153,7 @@ def android_logout():
         db.session.commit()
 
     current_app.logger.info(f"Logging out {user_session.user}")
-    end_user_sessions(user_session.user_id)
+    user_session.end_session()
     return json.dumps({"success": True})
 
 
@@ -169,12 +168,14 @@ def android_start_job():
     if not user_session:
         return abort(401)
 
+    allow_concurrent = Settings.query.get(1).allow_concurrent_user_jobs
     machine = input_device.machine
-    if user_session.user.has_job():
+
+    if not allow_concurrent and user_session.user.has_job():
         if not any(job.active for job in user_session.jobs) and any(job.active for job in machine.jobs):
             # If the active session has no job, but the machine does.
             # This should never happen, but it happened once. End the machine's session to fix it.
-            end_user_sessions(machine_id=machine.id)
+            end_all_user_sessions(machine_id=machine.id)
         return abort(400)
 
     ideal_cycle_time_s = parse_cycle_time(input_type=machine.job_start_input_type, json_data=request.json)
