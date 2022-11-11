@@ -92,4 +92,5 @@ class SettingsForm(FlaskForm):
     job_number_input_type = RadioField("Job Code Input type", choices=[("text", "Alphanumeric"),
                                                                        ("number", "Numbers only")])
     allow_delayed_job_start = BooleanField("Allow operator to enter adjusted start time during job start")
+    allow_concurrent_user_jobs = BooleanField("Allow operators to have multiple active jobs/logons at once")
     submit = SubmitField('Save')

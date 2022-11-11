@@ -46,6 +46,7 @@ def settings():
         current_settings.dashboard_update_interval_s = form.dashboard_update_interval.data
         current_settings.job_number_input_type = form.job_number_input_type.data
         current_settings.allow_delayed_job_start = form.allow_delayed_job_start.data
+        current_settings.allow_concurrent_user_jobs = form.allow_concurrent_user_jobs.data
         db.session.add(current_settings)
         db.session.commit()
         current_app.logger.info(f"Changed settings: {current_settings}")
@@ -55,6 +56,7 @@ def settings():
     form.dashboard_update_interval.data = current_settings.dashboard_update_interval_s
     form.job_number_input_type.data = current_settings.job_number_input_type
     form.allow_delayed_job_start.data = current_settings.allow_delayed_job_start
+    form.allow_concurrent_user_jobs.data = current_settings.allow_concurrent_user_jobs
     return render_template('admin/settings.html',
                            form=form)
 

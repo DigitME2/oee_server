@@ -7,7 +7,7 @@ from flask import request, current_app, abort
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity
-from app.default.models import Job, Activity, ActivityCode, InputDevice
+from app.default.models import Job, Activity, ActivityCode, InputDevice, Settings
 from app.extensions import db
 from app.login import bp
 from app.login.helpers import start_user_session, end_user_sessions
@@ -95,7 +95,8 @@ def android_login():
         response["reason"] = f"User {user_id} does not exist"
         return json.dumps(response), 200, {'ContentType': 'application/json'}
 
-    if user.has_job():
+    current_settings = Settings.query.get_or_404(1)
+    if user.has_job() and not current_settings.allow_concurrent_user_jobs:
         job = Job.query.filter_by(user_id=user_id, active=True).first()
         # If this is the second attempt, end the job and log in the user
         redis_key = f"login_attempted_user_{user_id}"
@@ -115,8 +116,9 @@ def android_login():
 
     # Check the password and log in if successful
     if user.check_password(request.get_json()["password"]):
-        # Log out sessions on the same user
-        end_user_sessions(user.id)
+        if not current_settings.allow_concurrent_user_jobs:
+            # Log out sessions on the same user
+            end_user_sessions(user.id)
         current_app.logger.info(f"Logged in {user} (Android)")
         response["success"] = True
         if not start_user_session(user.id, input_device.id):

@@ -170,6 +170,7 @@ class Settings(db.Model):
     job_number_input_type = db.Column(db.String)
     allow_delayed_job_start = db.Column(db.Boolean)
     first_start = db.Column(db.DateTime)
+    allow_concurrent_user_jobs = db.Column(db.Boolean)
 
 
 class DemoSettings(db.Model):
