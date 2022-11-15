@@ -5,11 +5,11 @@ from typing import Optional
 import redis
 import simple_websocket
 from flask import request, jsonify, abort, make_response, current_app
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 from app.api import bp
 from app.default.db_helpers import complete_last_activity, get_current_machine_activity_id
-from app.default.models import Machine, Activity
+from app.default.models import Activity, ActivityCode
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -30,8 +30,19 @@ def get_users():
     users = []
     for user in User.query.all():
         users.append({"username": user.username, "user_id": user.id, "admin": user.admin})
-
     return jsonify(users)
+
+
+@bp.route('/api/activity-codes')
+def get_activity_codes():
+    activity_codes = []
+    for ac in ActivityCode.query.all():
+        activity_codes.append({"short_description": ac.short_description,
+                               "id": ac.id,
+                               "graph_colour": ac.graph_colour,
+                               "code": ac.code,
+                               "long_description": ac.long_description})
+    return jsonify(activity_codes)
 
 
 @bp.route('/api/machine-state-change', methods=['POST'])
@@ -70,7 +81,7 @@ def edit_activity(activity_id):
         return response
 
     data = request.get_json()
-    # I was getting an issue with get_json() sometimes returning a string and sometimes dict so I did this
+    # I was getting an issue with get_json() sometimes returning a string and sometimes dict, so I did this
     if isinstance(data, str):
         data = json.loads(data)
 
