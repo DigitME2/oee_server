@@ -10,7 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.extensions import db, migrate, login_manager, celery_app
 from config import Config
 
-VERSION = "v7.1"
+VERSION = "v7.3"
 
 # Set up logging handlers
 if not os.path.exists('logs'):
