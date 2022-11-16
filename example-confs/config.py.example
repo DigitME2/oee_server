@@ -60,6 +60,17 @@ class Config(object):
     REDIS_PORT = "6379"
     CELERY_BROKER = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
+    # Allow job numbers to be checked against a database when being entered into the tablet. Prompts the user if wrong
+    USE_JOB_VALIDATION = True
+    SECOND_DATABASE_ODBC_STRING = "postgresql://{user}:{password}@{address}:{port}/{database}".format(
+        user="",
+        password="",
+        address="",
+        port="",
+        database="")
+    # If two columns are given here, jobs will be checked against the first column. The second column will be displayed
+    # to the user when a matching job number is entered
+    JOB_VALIDATION_SQL_STRING = "SELECT job_number, name FROM pending_jobs;"
     if not os.path.exists('logs'):
         os.mkdir('logs')
     FLASK_LOG_FILE = os.path.join('logs', 'oee_app.log')

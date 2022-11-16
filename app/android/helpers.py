@@ -1,7 +1,14 @@
+import logging
 from datetime import datetime
+
+from flask import current_app
+from sqlalchemy import create_engine, text
 
 from app.default.db_helpers import get_machines_last_job
 from app.default.models import Settings
+from config import Config
+
+logger = logging.getLogger('flask.app')
 
 
 def get_machines_last_wo_number(machine_id):
@@ -17,9 +24,11 @@ def get_job_start_data(input_type: str, input_autofill) -> dict:
     """ Returns a dict for the data requested at the start of a job,
     allowing the android device to build a start job form.
 
-    For custom validation, a "validation" entry can be added to each data dictionary. This should be a JSON list
-    containing the allowed values for the data e.g. "wo_number": {"title": "Job No", ... , "validation": "[1, 2, 3]"}
+    For custom validation, a "validation" entry can be added to each data dictionary. This should be a dictionary
+    containing the allowed values for the data as keys, with an explanation as values
+    e.g. "wo_number": {"title": "Job No", ... , "validation": {123: "order-1", 456: "order-2"}}
     Don't send an empty validation list or nothing will be allowed. Omit the validation entry if none required.
+    A "warning" key can be sent if retrieval fails, this will be shown to the user underneath the data entry.
     """
     current_settings = Settings.query.get_or_404(1)
     job_start_data = {"wo_number": {"title": "Job Number",
@@ -27,7 +36,12 @@ def get_job_start_data(input_type: str, input_autofill) -> dict:
                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
                                            "autofill": input_autofill}}
-    # job_start_data["wo_number"]["validation"] = custom_validation_list()
+    if Config.USE_JOB_VALIDATION:
+        try:
+            job_start_data["wo_number"]["validation"] = get_job_validation_dict()
+        except Exception as e:
+            job_start_data["wo_number"]["warning"] = "Could not get job validation data from database."
+            current_app.logger.exception("Failed to get job validation data")
     if current_settings.allow_delayed_job_start:
         job_start_data["start_time"] = {"title": "Start Time",
                                         "type": "time",
@@ -102,6 +116,22 @@ def parse_cycle_time(input_type: str, json_data) -> int:
         case _:
             raise TypeError("Could not parse cycle time")
     return cycle_time_seconds
+
+
+def get_job_validation_dict() -> dict:
+    job_numbers = {}
+    engine = create_engine(Config.SECOND_DATABASE_ODBC_STRING)
+    with engine.connect() as conn:
+        conn = conn.execution_options(isolation_level="SERIALIZABLE")
+        with conn.begin():
+            sql_query = text(Config.JOB_VALIDATION_SQL_STRING)
+            result = engine.execute(sql_query)
+            for row in result:
+                if len(row) == 2:
+                    job_numbers[row[0]] = row[1]
+                else:
+                    job_numbers[row[0]] = ""
+    return job_numbers
 
 
 REQUESTED_DATA_JOB_END = {"quantity_produced": {"title": "Quantity Produced",
