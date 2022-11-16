@@ -22,12 +22,13 @@ def start_user_session(user_id, device_id):
             current_app.logger.warning(
                 f"Tried to start a user session for user {user_id} while one is already open. Closing...")
             end_all_user_sessions(user_id)
-        if input_device.machine is None:
-            current_app.logger.info(f"No machine assigned to {device_id}")
-            return False
+
         # Close any sessions that exist on the current machine
         end_all_user_sessions(machine_id=input_device.machine.id)
 
+    if input_device.machine is None:
+        current_app.logger.info(f"No machine assigned to {device_id}")
+        return False
     # Create the new user session
     new_us = UserSession(user_id=user_id,
                          machine_id=input_device.machine.id,
