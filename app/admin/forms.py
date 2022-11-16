@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField, \
     FieldList, FloatField
-from wtforms.validators import DataRequired, EqualTo, IPAddress, Optional
+from wtforms.validators import DataRequired, EqualTo, Optional
 from wtforms.widgets import TextArea
 from wtforms_components import TimeField
 
@@ -15,7 +15,7 @@ class ChangePasswordForm(FlaskForm):
 
 class ActivityCodeForm(FlaskForm):
     active = BooleanField()
-    code = StringField(validators=[DataRequired()])
+    code = StringField()
     short_description = StringField(validators=[DataRequired()])
     long_description = StringField(widget=TextArea())
     graph_colour = StringField(validators=[DataRequired()])
