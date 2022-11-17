@@ -1,6 +1,8 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+import logging.config
+from pathlib import Path
 from time import strftime
 
 from flask import Flask, request
@@ -13,28 +15,15 @@ from config import Config
 VERSION = "v7.3"
 
 # Set up logging handlers
-if not os.path.exists('logs'):
-    os.mkdir('logs')
-file_handler = RotatingFileHandler(filename=Config.FLASK_LOG_FILE,
-                                   maxBytes=Config.ROTATING_LOG_FILE_MAX_BYTES,
-                                   backupCount=Config.ROTATING_LOG_FILE_COUNT)
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s: %(message)s'))
-stream_handler = logging.StreamHandler()
-
-stream_handler.setLevel(Config.STREAM_LOGGING_LEVEL)
-file_handler.setLevel(Config.FILE_LOGGING_LEVEL)
+Path('logs').mkdir(parents=True, exist_ok=True)
+logging.config.fileConfig(fname='logging.conf', disable_existing_loggers=True)
+get_logger = logging.getLogger("get")
+post_logger = logging.getLogger("post")
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config['LOGIN_DISABLED'] = False
-
-    # Set up logger
-    app.logger.setLevel(logging.DEBUG)
-    app.logger.removeHandler(default_handler)
-    app.logger.addHandler(stream_handler)
-    app.logger.addHandler(file_handler)
 
     # Add gunicorn logger
     gunicorn_logger = logging.getLogger('gunicorn.error')
@@ -83,10 +72,18 @@ def create_app(config_class=Config):
                 backfill_missed_simulations()
 
     # Function to log requests
-    @app.before_request
-    def before_request():
-        time = strftime('[%Y-%b-%d %H:%M]')
-        app.logger.debug(f'{time}, {request.method}, {request.scheme}, {request.full_path}')
+    @app.after_request
+    def request_logger(response):
+        if response.status_code in [200, 302, 304]:
+            app.logger.debug(f'{request.method} {request.full_path} {response.status_code}')
+        else:
+            app.logger.warning(f'{request.method} {request.full_path} {response.status_code}')
+        if request.method == "POST":
+            if request.is_json:
+                post_logger.info(f'{request.full_path} - {request.json}')
+            else:
+                post_logger.info(f'{request.full_path} - {request.data}')
+        return response
 
     # Allows templates to know whether the app is running in demo mode
     @app.context_processor
