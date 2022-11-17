@@ -65,8 +65,11 @@
                         <li class="nav-item  navbar-dark"><a id="nav_login_btn" class="nav-link"
                                                              href="{{ url_for('login.login') }}">Login</a></li>
                     {% else %}
-                        <li class="nav-item"><a id="nav_logout_btn" class="nav-link"
-                                                href="{{ url_for('login.logout') }}">Logout</a></li>
+                        <li class="nav-item">
+                            <form action="{{ url_for('login.logout') }}" method="post">
+                                <input type="submit" id="nav_logout_btn" class="btn btn-dark" value="Logout"/>
+                            </form>
+                        </li>
                     {% endif %}
                 </ul>
             </div>

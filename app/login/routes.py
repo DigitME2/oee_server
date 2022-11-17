@@ -47,7 +47,7 @@ def login():
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)
 
 
-@bp.route('/logout')
+@bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     """ Logs the user out of the system. """
