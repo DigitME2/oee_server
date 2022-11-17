@@ -141,7 +141,7 @@ def android_logout():
     user_session = input_device.get_active_user_session()
     if user_session is None:
         return json.dumps({"success": False, "reason": "User is logged out"})
-    # End any jobs  under the current session
+    # End any jobs under the current session
     for job in user_session.jobs:
         if job.active:
             job.end_job()
@@ -151,7 +151,14 @@ def android_logout():
         act = Activity.query.get(current_activity_id)
         act.time_end = datetime.now()
         db.session.commit()
-
+    # Start a new activity with no user
+    new_activity = Activity(machine_id=input_device.machine_id,
+                            time_start=datetime.now(),
+                            activity_code_id=Config.NO_USER_CODE_ID,
+                            machine_state=Config.MACHINE_STATE_OFF)
+    current_app.logger.debug(f"Starting {new_activity} on logout of {user_session.user}")
+    db.session.add(new_activity)
+    db.session.commit()
     current_app.logger.info(f"Logging out {user_session.user}")
     user_session.end_session()
     return json.dumps({"success": True})
