@@ -79,10 +79,7 @@ def create_app(config_class=Config):
         else:
             app.logger.warning(f'{request.method} {request.full_path} {response.status_code}')
         if request.method == "POST":
-            if request.is_json:
-                post_logger.info(f'{request.full_path} - {request.json}')
-            else:
-                post_logger.info(f'{request.full_path} - {request.data}')
+            post_logger.info(f'{request.full_path}')
         return response
 
     # Allows templates to know whether the app is running in demo mode
