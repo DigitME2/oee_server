@@ -36,7 +36,6 @@ def complete_last_activity(machine_id, time_end: datetime = None, activity_code_
 def get_current_machine_activity_id(target_machine_id):
     """ Get the current activity of a machine by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
-    # The line below is causing a sql.programmingerror and im not sure why
     activities = Activity.query.filter(Activity.machine_id == target_machine_id, Activity.time_end == None).all()
 
     if len(activities) == 0:
@@ -46,27 +45,15 @@ def get_current_machine_activity_id(target_machine_id):
         return activities[0].id
 
     else:
-        # If there is more than one activity without an end time, end them and return the most recent
-
-        # Get the current activity by grabbing the one with the most recent start time
+        # This shouldn't happen, but get the current activity by grabbing the one with the most recent start time
         current_activity = max(activities, key=lambda activity: activity.time_start)
-        activities.remove(current_activity)
-
         current_app.logger.warning("More than one open-ended activity when trying to get current activity:")
-        for act in activities:
-            if act.time_end is None:
-                current_app.logger.warning(f"Closing lost activity {act}")
-                act.time_end = act.time_start
-                db.session.add(act)
-                db.session.commit()
-
         return current_activity.id
 
 
 def get_current_machine_schedule_activity_id(target_machine_id):
     """ Get the current scheduled activity of a machine by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
-    # The line below is causing a sql.programmingerror and im not sure why
     activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id,
                                                 ScheduledActivity.time_end == None).all()
 
@@ -77,38 +64,6 @@ def get_current_machine_schedule_activity_id(target_machine_id):
     elif len(activities) == 1:
         current_app.logger.debug(f"Current scheduled activity for machine ID {target_machine_id} -> {activities[0]}")
         return activities[0].id
-
-
-def get_current_user_activity_id(target_user_id):
-    """ Get the current activity of a user by grabbing the most recent entry without an end time"""
-    # Get all activities without an end time
-    # The line below is causing a sql.programmingerror and im not sure why
-    activities = Activity.query.filter(Activity.user_id == target_user_id, Activity.time_end == None).all()
-
-    if len(activities) == 0:
-        current_app.logger.debug(f"No current activity on user ID {target_user_id}")
-        return None
-
-    elif len(activities) == 1:
-        current_app.logger.debug(f"Current activity for user ID {target_user_id} -> {activities[0]}")
-        return activities[0].id
-
-    else:
-        # If there is more than one activity without an end time, end them and return the most recent
-
-        # Get the current activity by grabbing the one with the most recent start time
-        current_activity = max(activities, key=lambda activity: activity.time_start)
-        activities.remove(current_activity)
-
-        current_app.logger.warning("More than one open-ended activity when trying to get current activity:")
-        for act in activities:
-            if act.time_end is None:
-                current_app.logger.warning(f"Closing lost activity {act}")
-                act.time_end = act.time_start
-                db.session.add(act)
-                db.session.commit()
-
-        return current_activity.id
 
 
 def flag_activities(activities: List[Activity], threshold):
@@ -235,14 +190,11 @@ def get_user_activities(user_id, time_start: datetime, time_end: datetime):
         .filter(Activity.time_end >= time_start) \
         .filter(Activity.time_start <= time_end).all()
 
-    # If required, add the current_activity (The above loop will not get it)
-    current_activity_id = get_current_user_activity_id(target_user_id=user_id)
-    if current_activity_id is not None:
-        current_act = Activity.query.get(current_activity_id)
-        # Don't add the current activity if it started after the requested end
-        if current_act.time_start <= time_end:
-            activities.append(current_act)
-
+    # Add any unfinished activities (The above call will not get them)
+    active_activities = Activity.query.filter(Activity.user_id == user_id, Activity.time_end == None).all()
+    for aa in active_activities:
+        if aa.time_start <= time_end:
+            activities.append(aa)
     return activities
 
 
@@ -287,53 +239,10 @@ def backfill_missed_schedules():
         create_all_scheduled_activities(create_date=d)
 
 
-def create_day_scheduled_activities(machine: Machine, shift_start, shift_end, create_date: date = None):
-    """ Create a day's scheduled activity for a single machine"""
-    if not create_date:
-        create_date = datetime.now().date()
-
-    current_app.logger.info(f"Creating Scheduled Activities for {create_date.strftime('%d-%m-%y')}")
-    last_midnight = datetime.combine(date=create_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    next_midnight = last_midnight + timedelta(days=1)
-
-    # Check to see if any scheduled activities already exist for today and skip if any exist
-    existing_activities = ScheduledActivity.query \
-        .filter(ScheduledActivity.machine_id == machine.id) \
-        .filter(ScheduledActivity.time_start >= last_midnight) \
-        .filter(ScheduledActivity.time_end <= next_midnight).all()
-    if len(existing_activities) > 0:
-        current_app.logger.info(f"Scheduled activities already exist on {create_date} for {machine} Skipping...")
-        return
-
-    if shift_start != last_midnight:  # Skip making this activity if it will be 0 length
-        before_shift = ScheduledActivity(machine_id=machine.id,
-                                         scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                         time_start=last_midnight,
-                                         time_end=shift_start)
-        db.session.add(before_shift)
-
-    if shift_start != shift_end:  # Skip making this activity if it will be 0 length
-        during_shift = ScheduledActivity(machine_id=machine.id,
-                                         scheduled_machine_state=Config.MACHINE_STATE_RUNNING,
-                                         time_start=shift_start,
-                                         time_end=shift_end)
-        db.session.add(during_shift)
-
-    if shift_end != next_midnight:  # Skip making this activity if it will be 0 length
-        after_shift = ScheduledActivity(machine_id=machine.id,
-                                        scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                        time_start=shift_end,
-                                        time_end=next_midnight)
-        db.session.add(after_shift)
-
-    db.session.commit()
-
-
 def create_all_scheduled_activities(create_date: date = None):
     """ Create all the scheduled activities on a date"""
     if not create_date:
         create_date = datetime.now().date()
-
     current_app.logger.info(f"Creating Scheduled Activities for {create_date.strftime('%d-%m-%y')}")
     last_midnight = datetime.combine(date=create_date, time=time(hour=0, minute=0, second=0, microsecond=0))
     next_midnight = last_midnight + timedelta(days=1)
@@ -387,7 +296,9 @@ def create_all_scheduled_activities(create_date: date = None):
 def get_activity_cropped_start_end(act: Activity,
                                    requested_start: datetime,
                                    requested_end: datetime) -> (datetime, datetime):
-    """ Crops the start and end of an activity if it overruns the requested start or end time."""
+    """ Crops the start and end of an activity if it overruns the requested start or end time.
+    e.g. if an activity is from 2pm -> 4pm and the requested start/end is 1pm -> 3pm, this function will return
+    2pm -> 3pm. """
     if act.time_start is not None and act.time_start > requested_start:
         start = act.time_start
     else:
