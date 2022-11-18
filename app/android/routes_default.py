@@ -7,7 +7,7 @@ from flask import request, current_app, abort
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default.db_helpers import get_current_machine_activity_id, complete_last_activity
-from app.default.models import Job, Activity, ActivityCode, InputDevice, Settings
+from app.default.models import Job, Activity, ActivityCode, InputDevice, Settings, ProductionQuantity
 from app.extensions import db
 from app.login import bp
 from app.login.helpers import start_user_session, end_all_user_sessions
@@ -136,6 +136,7 @@ def android_login():
 @bp.route('/android-logout', methods=['POST'])
 def android_logout():
     """ Logs the user out of the system. """
+    now = datetime.now()
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
     user_session = input_device.get_active_user_session()
@@ -149,11 +150,10 @@ def android_logout():
     current_activity_id = get_current_machine_activity_id(input_device.machine_id)
     if current_activity_id:
         act = Activity.query.get(current_activity_id)
-        act.time_end = datetime.now()
-        db.session.commit()
+        act.time_end = now
     # Start a new activity with no user
     new_activity = Activity(machine_id=input_device.machine_id,
-                            time_start=datetime.now(),
+                            time_start=now,
                             activity_code_id=Config.NO_USER_CODE_ID,
                             machine_state=Config.MACHINE_STATE_OFF)
     current_app.logger.debug(f"Starting {new_activity} on logout of {user_session.user}")
@@ -294,8 +294,11 @@ def android_end_job():
 
     current_job.quantity_produced += quantity_produced
     current_job.quantity_rejects += quantity_rejects
-
-    db.session.commit()
+    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
+                                             time=now,
+                                             quantity_rejects=quantity_rejects,
+                                             job_id=current_job.id)
+    db.session.add(production_quantity)
 
     # Mark the most recent activity in the database as complete
     complete_last_activity(machine_id=input_device.machine_id, time_end=now)
