@@ -160,7 +160,6 @@ def create_demo_machines():
         ip_end += 1
         machine = Machine(name=machine_name,
                           workflow_type="default",
-                          device_ip="127.0.0." + str(ip_end),
                           group_id=randrange(1, 3),
                           schedule_id=1,
                           job_start_input_type="cycle_time_seconds")

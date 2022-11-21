@@ -20,7 +20,7 @@ def create_new_demo_user(username, user_id, machine, simulation_datetime=None):
     db.session.commit()
     user_session = UserSession(user_id=user.id,
                                machine_id=machine.id,
-                               device_id=1,
+                               input_device_id=1,
                                time_login=simulation_datetime,
                                active=True)
     db.session.add(user_session)
