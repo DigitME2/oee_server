@@ -55,11 +55,8 @@ def setup_database():
             db.session.add(group1)
             db.session.commit()
 
-    if len(Machine.query.all()) == 0:
-        if Config.DEMO_MODE:
-            create_demo_machines()
-        else:
-            create_default_machine()
+    if len(Machine.query.all()) == 0 and Config.DEMO_MODE:
+        create_demo_machines()
 
     if len(Settings.query.all()) == 0:
         if Config.DEMO_MODE:
@@ -124,27 +121,6 @@ def create_demo_activity_codes():
     db.session.add(ac3)
     db.session.commit()
     current_app.logger.info("Created demo activity codes on first startup")
-
-
-def create_default_machine():
-    machine1 = Machine(name="Machine 1",
-                       group_id=1,
-                       schedule_id=1,
-                       workflow_type="default",
-                       job_start_input_type="cycle_time_seconds",
-                       autofill_job_start_amount=0)
-    db.session.add(machine1)
-    db.session.commit()
-    current_app.logger.info("Created default machine on first startup")
-
-    act = Activity(machine_id=machine1.id,
-                   time_start=datetime.now(),
-                   machine_state=Config.MACHINE_STATE_OFF,
-                   activity_code_id=Config.NO_USER_CODE_ID)
-    db.session.add(act)
-    db.session.commit()
-    current_app.logger.info("Created activity on first startup")
-    db.session.commit()
 
 
 def create_demo_machines():
