@@ -9,7 +9,8 @@ from pydantic import BaseModel
 
 from app.api import bp
 from app.default.db_helpers import complete_last_activity, get_current_machine_activity_id
-from app.default.models import Activity, ActivityCode
+from app.default.events import change_activity
+from app.default.models import Activity, ActivityCode, Machine
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -57,17 +58,14 @@ def change_machine_state():
             activity_code_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
     else:
         activity_code_id = post_data.activity_code_id
-    complete_last_activity(machine_id=post_data.machine_id)
-    act = Activity(machine_id=post_data.machine_id,
-                   activity_code_id=activity_code_id,
-                   machine_state=post_data.machine_state,
-                   time_start=datetime.now(),
-                   user_id=post_data.user_id)
-
-    db.session.add(act)
-    db.session.commit()
+    machine = Machine.query.get_or_404(post_data.machine_id)
+    change_activity(datetime.now(),
+                    machine=machine,
+                    new_activity_code_id=activity_code_id,
+                    user_id=post_data.user_id,
+                    job_id=machine.active_job_id)
     response = make_response("", 200)
-    current_app.logger.info(f"Activity set to {act.activity_code_id}")
+    current_app.logger.debug(f"Activity set to id {activity_code_id}")
     return response
 
 

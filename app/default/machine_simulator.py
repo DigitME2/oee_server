@@ -37,7 +37,7 @@ def end_job(job, machine, simulation_datetime=None):
     job.quantity_produced = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) *
                                 (random.randrange(80, 100) / 100))
     job.quantity_rejects = int(job.quantity_produced * (random.random() / 4))
-    job.active = None
+    job.active = False
     complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
     new_activity = Activity(machine_id=machine.id,
                             time_start=simulation_datetime,
@@ -63,7 +63,7 @@ def start_new_job(machine, user, simulation_datetime=None):
         db.session.commit()
     job = Job(start_time=simulation_datetime,
               user_id=user.id,
-              wo_number=str(random.randint(1, 100000)),
+              job_number=str(random.randint(1, 100000)),
               ideal_cycle_time_s=random.randint(1, 100),
               machine_id=machine.id,
               active=True,
@@ -117,12 +117,12 @@ def simulate_machines(simulation_datetime: datetime = None):
             start_new_job(machine, user)
         # Don't run jobs if the machine is not scheduled to be running
         if not machine_schedule_active(machine, dt=simulation_datetime):
-            if user.has_job():
+            if user_has_job(user):
                 current_job = Job.query.filter_by(user_id=user.id, active=True).first()
                 end_job(current_job, machine, simulation_datetime)
             else:
                 continue
-        if user.has_job():
+        if user_has_job(user):
             current_job = Job.query.filter_by(user_id=user.id, active=True).first()
             chance_to_end_job = 0.03
             if random.random() < chance_to_end_job:
@@ -160,6 +160,13 @@ def dt_range(start_dt, end_dt, frequency_seconds):
     while current_iteration <= end_dt:
         current_iteration = current_iteration + timedelta(seconds=frequency_seconds)
         yield current_iteration
+
+
+def user_has_job(user):
+    for job in user.jobs:
+        if job.active:
+            return True
+    return False
 
 
 names = [

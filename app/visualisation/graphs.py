@@ -463,7 +463,7 @@ def highlight_jobs_on_gantt_layout(activities, layout):
 
         # Create an annotation at the top of the highlight saying the job number
         a = Annotation()
-        a.text = f"<b>{j.wo_number}</b>"
+        a.text = f"<b>{j.job_number}</b>"
         a.font = {
             "size": 16
         }

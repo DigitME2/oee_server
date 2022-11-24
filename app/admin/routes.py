@@ -1,4 +1,5 @@
 from datetime import datetime, time
+from distutils.util import strtobool
 
 from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
@@ -177,8 +178,6 @@ def edit_input_device():
             input_device.machine_id = None
         else:
             input_device.machine_id = form.machine.data
-        # End the session if somebody's logged in, to stop weird stuff happening.
-        end_all_user_sessions(machine_id=input_device.machine_id)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
@@ -208,10 +207,7 @@ def edit_machine():
     form.workflow_type.choices = Config.WORKFLOW_TYPES
 
     # If new=true then the request is for a new machine to be created
-    if 'new' in request.args and request.args['new'] == "True":
-        creating_new_machine = True
-    else:
-        creating_new_machine = False
+    creating_new_machine = ('new' in request.args and strtobool(request.args['new']))
 
     if creating_new_machine:
         # Create a new machine
@@ -291,10 +287,16 @@ def edit_machine():
         if creating_new_machine:
             current_app.logger.info(f"{machine} created by {current_user}")
             first_act = Activity(time_start=datetime.now(),
+                                 machine_id=machine.id,
                                  machine_state=Config.MACHINE_STATE_OFF,
                                  activity_code_id=Config.NO_USER_CODE_ID)
             db.session.add(first_act)
+            db.session.flush()
+            db.session.refresh(first_act)
+            machine.current_activity_id = first_act.id
+            db.session.commit()
             current_app.logger.debug(f"{first_act} started on machine creation")
+
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page

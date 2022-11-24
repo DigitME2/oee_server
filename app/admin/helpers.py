@@ -29,4 +29,3 @@ def fix_colour_code(hex_code):
     else:
         current_app.logger.warning(f"Incorrect hex code received: {hex_code}. Replacing with #FFFFFF")
         return "#FFFFFF"
-

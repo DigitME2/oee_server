@@ -27,14 +27,15 @@ class Machine(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
     active = db.Column(db.Boolean, default=True)
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
+    active_job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
+    current_activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'))
     job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), default=Config.UPTIME_CODE_ID)
 
-    user_sessions = db.relationship("UserSession", backref="machine")
-    activities = db.relationship('Activity', backref='machine')
-    scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
-    jobs = db.relationship('Job', backref='machine')
-    input_device = db.relationship("InputDevice", back_populates="machine", uselist=False)
+    scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
+    activities = db.relationship('Activity', foreign_keys="[Activity.machine_id]", backref='machine')
+    current_activity = db.relationship('Activity', foreign_keys=[current_activity_id])
+    active_job = db.relationship('Job', foreign_keys=[active_job_id])
 
     def __repr__(self):
         return f"<Machine '{self.name}' (ID {self.id})"
@@ -45,15 +46,12 @@ class InputDevice(db.Model):
     uuid = db.Column(db.String(100), unique=True, nullable=False)
     name = db.Column(db.String(100), unique=True, nullable=False)
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'))
-    machine_id_allow_null = db.Index("machine_id_allow_null", mssql_where=db.text("machine_id IS NOT NULL"))
+    active_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    active_user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'))
 
-    machine = db.relationship("Machine", back_populates="input_device")
-    user_sessions = db.relationship("UserSession", backref="input_device")
-
-    def get_active_user_session(self):
-        for us in self.user_sessions:
-            if us.active:
-                return us
+    machine = db.relationship("Machine", uselist=False)
+    active_user_session = db.relationship(
+        "UserSession", foreign_keys=[active_user_session_id], uselist=False)
 
 
 class MachineGroup(db.Model):
@@ -67,26 +65,19 @@ class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime)
-    wo_number = db.Column(db.String(100), nullable=False)
+    job_number = db.Column(db.String(100), nullable=False)
     part_number = db.Column(db.String(100))
     ideal_cycle_time_s = db.Column(db.Integer)
     quantity_produced = db.Column(db.Integer, default=0)
     quantity_rejects = db.Column(db.Integer, default=0)
-    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'), nullable=False)
-    active = db.Column(db.Boolean)  # This should either be true or null
+    active = db.Column(db.Boolean)
     notes = db.Column(db.String(100))
 
     activities = db.relationship('Activity', backref='job')
     quantities = db.relationship('ProductionQuantity', backref='job')
 
-    def end_job(self):
-        self.active = False
-        self.end_time = datetime.now()
-
     def __repr__(self):
-        return f"<Job {self.wo_number} (ID {self.id})>"
+        return f"<Job {self.job_number} (ID {self.id})>"
 
 
 class ProductionQuantity(db.Model):
@@ -179,11 +170,11 @@ class ActivityCode(db.Model):
 class Settings(db.Model):
     # Only allow one row in this table
     id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
+    first_start = db.Column(db.DateTime)
     dashboard_update_interval_s = db.Column(db.Integer)
     job_number_input_type = db.Column(db.String(100))
-    allow_delayed_job_start = db.Column(db.Boolean)
-    first_start = db.Column(db.DateTime)
-    allow_concurrent_user_jobs = db.Column(db.Boolean)
+    allow_delayed_job_start = db.Column(db.Boolean, default=False)
+    allow_concurrent_user_jobs = db.Column(db.Boolean, default=True)
 
 
 class DemoSettings(db.Model):

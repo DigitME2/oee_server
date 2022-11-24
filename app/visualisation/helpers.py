@@ -32,7 +32,7 @@ def get_machine_status(machine_id):
         current_machine_activity = Activity.query.get(current_activity_id)
         activity_text = current_machine_activity.activity_code.short_description
         try:
-            job_text = current_machine_activity.job.wo_number
+            job_text = current_machine_activity.job.job_number
         except AttributeError:  # When there's no job
             job_text = "No job"
         duration = get_legible_duration(time_start=current_machine_activity.time_start,

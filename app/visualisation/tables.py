@@ -69,7 +69,7 @@ def get_machine_production_table(start_date: date, end_date: date):
 class WOTable(Table):
     table_id = "jobTable"
     classes = ["dataTable table table-striped table-bordered"]
-    wo_number = Col('WO Number')
+    job_number = Col('WO Number')
     part_number = Col('Part Number')
     start = Col('Start')
     end = Col('End')
@@ -84,18 +84,18 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
     jobs = Job.query.filter(Job.start_time <= end_time).filter(Job.end_time >= start_time)
     items = []
 
-    # Get every wo_number in the list of jobs
-    wo_numbers = []
+    # Get every job_number in the list of jobs
+    job_numbers = []
     for job in jobs:
-        if job.wo_number not in wo_numbers:
-            wo_numbers.append(job.wo_number)
+        if job.job_number not in job_numbers:
+            job_numbers.append(job.job_number)
 
     # Go through each work order number and add the jobs together to create the final work order numbers
-    for wo_number in wo_numbers:
+    for job_number in job_numbers:
         # Get all of the jobs with the current work order number
-        wo_jobs = Job.query.filter_by(wo_number=wo_number).all()
+        wo_jobs = Job.query.filter_by(job_number=job_number).all()
         work_order = {"job_id": str([j.id for j in jobs]),
-                      "wo_number": wo_number}
+                      "job_number": job_number}
 
         # If there is more than one part number, show them all in a list
         part_number = list(set(woj.part_number for woj in wo_jobs))
@@ -117,7 +117,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
             start_time = min([woj.start_time for woj in wo_jobs])
             work_order["start"] = start_time.strftime("%d-%m-%y %H:%M")
         except:
-            current_app.logger.warning(f"Error getting start time for wo {wo_number}")
+            current_app.logger.warning(f"Error getting start time for wo {job_number}")
             start_time = ""
 
         end_time = max([woj.end_time for woj in wo_jobs if woj.end_time is not None])
@@ -158,7 +158,7 @@ def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
     items = []
     for job in jobs:
         item = {"job_id": job.id,
-                "wo_number": job.wo_number,
+                "job_number": job.job_number,
                 "part_number": job.part_number,
                 "ideal_cycle_time_s": job.ideal_cycle_time_s,
                 "quantity_produced": job.quantity_produced,
@@ -199,7 +199,7 @@ class JobTable(Table):
     table_id = "jobTable"
     classes = ["dataTable table table-striped table-bordered"]
     job_id = Col("Job ID")
-    wo_number = Col('WO Number')
+    job_number = Col('WO Number')
     part_number = Col('Part Number')
     start = Col('Start')
     end = Col('End')

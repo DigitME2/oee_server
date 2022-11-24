@@ -6,6 +6,7 @@ from app.default.machine_simulator import simulate_machines
 from app.extensions import celery_app
 from config import Config
 
+#TODO End jobs that have obviously been left running overnight
 
 @celery_app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):

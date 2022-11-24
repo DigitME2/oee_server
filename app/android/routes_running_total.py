@@ -16,7 +16,7 @@ r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses
 def running_total_update_quantity():
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
-    user_session = input_device.get_active_user_session()
+    user_session = input_device.active_user_session
 
     try:
         quantity_produced = int(request.json["quantity_produced"])

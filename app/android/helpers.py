@@ -11,9 +11,9 @@ from config import Config
 logger = logging.getLogger('flask.app')
 
 
-def get_machines_last_wo_number(machine_id):
+def get_machines_last_job_number(machine_id):
     last_job = get_machines_last_job(machine_id)
-    return last_job.wo_number
+    return last_job.job_number
 
 
 def time_autofill():
@@ -26,21 +26,21 @@ def get_job_start_data(input_type: str, input_autofill) -> dict:
 
     For custom validation, a "validation" entry can be added to each data dictionary. This should be a dictionary
     containing the allowed values for the data as keys, with an explanation as values
-    e.g. "wo_number": {"title": "Job No", ... , "validation": {123: "order-1", 456: "order-2"}}
+    e.g. "job_number": {"title": "Job No", ... , "validation": {123: "order-1", 456: "order-2"}}
     Don't send an empty validation list or nothing will be allowed. Omit the validation entry if none required.
     A "warning" key can be sent if retrieval fails, this will be shown to the user underneath the data entry.
     """
     current_settings = Settings.query.get_or_404(1)
-    job_start_data = {"wo_number": {"title": "Job Number",
+    job_start_data = {"job_number": {"title": "Job Number",
                                     "type": current_settings.job_number_input_type,
                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
                                            "autofill": input_autofill}}
     if Config.USE_JOB_VALIDATION:
         try:
-            job_start_data["wo_number"]["validation"] = get_job_validation_dict()
+            job_start_data["job_number"]["validation"] = get_job_validation_dict()
         except Exception as e:
-            job_start_data["wo_number"]["warning"] = "Could not get job validation data from database."
+            job_start_data["job_number"]["warning"] = "Could not get job validation data from database."
             current_app.logger.exception("Failed to get job validation data")
     if current_settings.allow_delayed_job_start:
         job_start_data["start_time"] = {"title": "Start Time",

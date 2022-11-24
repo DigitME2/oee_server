@@ -21,13 +21,14 @@ class Workflow:
 
     def __init__(self, user_session: UserSession):
         self.user_session = user_session
-        self.machine = user_session.machine
-        if not any(job.active for job in self.user_session.jobs):
+        self.input_device = user_session.input_device
+        self.machine = self.input_device.machine
+        if not self.machine.active_job:
             self.state = "no_job"
         else:
             self.state = "active_job"
-            self.job = Job.query.filter_by(user_session_id=self.user_session.id, active=True).first()
-            self.current_activity = Activity.query.get(get_current_machine_activity_id(self.machine.id))
+            self.job = self.machine.active_job
+            self.current_activity = self.machine.current_activity
             self.activity_codes = self.get_activity_codes()
             self.current_activity_code = self.get_current_activity_code()
 
@@ -39,9 +40,9 @@ class Workflow:
         return response
 
     def no_job_response(self):
-        input_type = self.user_session.machine.job_start_input_type
-        input_autofill = self.user_session.machine.autofill_job_start_amount \
-            if self.user_session.machine.autofill_job_start_input else ""
+        input_type = self.machine.job_start_input_type
+        input_autofill = self.machine.autofill_job_start_amount \
+            if self.machine.autofill_job_start_input else ""
         return json.dumps({"workflow_type": self.workflow_type,
                            "state": self.state,
                            "machine_name": self.machine.name,
@@ -57,7 +58,7 @@ class Workflow:
         return json.dumps({"machine_id": self.machine.id,
                            "workflow_type": self.workflow_type,
                            "state": self.state,
-                           "wo_number": self.job.wo_number,
+                           "job_number": self.job.job_number,
                            "current_activity_code_id": self.current_activity_code.id,
                            "current_machine_state": self.current_activity.machine_state,
                            "activity_codes": activity_codes_dicts,
