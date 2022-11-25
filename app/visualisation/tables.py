@@ -6,7 +6,7 @@ from flask_table import Table, Col, create_table
 
 from app.data_analysis.oee.availability import get_activity_duration_dict, get_schedule_dict
 from app.data_analysis.oee.oee import get_daily_machine_oee
-from app.default.models import Job, ActivityCode, Machine, Settings
+from app.default.models import Job, ActivityCode, Machine
 from app.extensions import db
 from app.login.models import User
 from app.visualisation.helpers import get_daily_machine_production
@@ -154,7 +154,6 @@ def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
             .filter(Job.machine_id == machine_id).all()
         jobs.extend(machine_jobs)
 
-
     items = []
     for job in jobs:
         item = {"job_id": job.id,
@@ -179,7 +178,7 @@ def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
             if job.end_time is not None:
                 item["actual_run_time"] = (job.end_time - job.start_time).total_seconds()/60
             else:
-                item["actual_run_time"] = (datetime.now() - job.start_time).total_seconds()/60
+                item["actual_run_time"] = str((datetime.now() - job.start_time).total_seconds()/60)
         except:
             item["actual_run_time"] = ""
 

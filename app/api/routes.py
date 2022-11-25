@@ -8,7 +8,6 @@ from flask import request, jsonify, abort, make_response, current_app
 from pydantic import BaseModel
 
 from app.api import bp
-from app.default.db_helpers import complete_last_activity, get_current_machine_activity_id
 from app.default.events import change_activity
 from app.default.models import Activity, ActivityCode, Machine
 from app.extensions import db
@@ -104,10 +103,8 @@ def activity_updates():
     first_message = json.loads(first_message)
     machine_id = first_message["machine_id"]
     # Send the client the current activity code
-    last_activity_id = get_current_machine_activity_id(machine_id)
-    if last_activity_id is not None:
-        last_activity = db.session.query(Activity).get(last_activity_id)
-        ws.send(last_activity.activity_code_id)
+    machine = Machine.query.get_or_404(machine_id)
+    ws.send(machine.current_activity.activity_code_id)
     p.subscribe("machine" + str(machine_id) + "activity")
     current_app.logger.info(f"Machine ID {machine_id} websocket connected")
     try:

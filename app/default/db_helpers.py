@@ -13,26 +13,6 @@ from app.extensions import db
 from config import Config
 
 
-def complete_last_activity(machine_id, time_end: datetime = None, activity_code_id=None, commit=True):
-    """ Gets the most recent active activity for a machine and then ends it with the current time, or a provided time.
-    If an activity_code_id is provided, the activity will be updated with this code"""
-
-    if time_end is None:
-        time_end = datetime.now()
-    # Get the last activity
-    last_activity_id = get_current_machine_activity_id(machine_id)
-    if last_activity_id is None:
-        return
-    last_activity = db.session.query(Activity).get(last_activity_id)
-    last_activity.time_end = time_end
-    # If an activity code is provided, edit the last activity to have that code
-    if activity_code_id:
-        last_activity.activity_code_id = activity_code_id
-    if commit:
-        db.session.commit()
-    current_app.logger.debug(f"Ended {last_activity}")
-
-
 def get_current_machine_activity_id(target_machine_id):
     """ Get the current activity of a machine by grabbing the most recent entry without an end time"""
     # Get all activities without an end time
@@ -161,15 +141,8 @@ def get_machine_activities(machine_id, time_start: datetime, time_end: datetime)
         .filter(Activity.time_end >= time_start) \
         .filter(Activity.time_start <= time_end).all()
     # If required, add the current_activity (The above loop will not get it)
-    # and extend the end time to the end of the requested time
-
-    current_activity_id = get_current_machine_activity_id(target_machine_id=machine.id)
-    if current_activity_id is not None:
-        current_act = Activity.query.get(current_activity_id)
-        # Don't add the current activity if it started after the requested end of the graph
-        if current_act.time_start <= time_end:
-            activities.append(current_act)
-
+    if machine.current_activity.time_start <= time_end:
+        activities.append(machine.current_activity)
     return activities
 
 

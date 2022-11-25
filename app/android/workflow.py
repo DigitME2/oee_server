@@ -2,11 +2,10 @@ import json
 from datetime import datetime
 
 import redis
-from flask import current_app, request
+from flask import current_app
 
 from app.android.helpers import REQUESTED_DATA_JOB_END, get_job_start_data
-from app.default.db_helpers import get_current_machine_activity_id
-from app.default.models import Job, Activity, ActivityCode
+from app.default.models import ActivityCode
 from app.login.models import UserSession
 from config import Config
 

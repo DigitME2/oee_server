@@ -14,7 +14,6 @@ from app.admin.helpers import admin_required, fix_colour_code
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
-from app.login.helpers import end_all_user_sessions
 from app.login.models import User
 from config import Config
 

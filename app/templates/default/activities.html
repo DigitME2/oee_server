@@ -78,7 +78,7 @@
                 activity_code_id: newActivityCodeId
             }
             $.ajax({
-                url: '/activity/' + activityId,
+                url: '/api/activity/' + activityId,
                 type: 'PUT',
                 data: JSON.stringify(data),
                 contentType: "application/json",

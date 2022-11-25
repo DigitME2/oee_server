@@ -80,6 +80,7 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
     # Create the job
     job = Job(start_time=dt,
               job_number=job_number,
+              machine_id=machine.id,
               ideal_cycle_time_s=ideal_cycle_time_s,
               active=True)
     db.session.add(job)

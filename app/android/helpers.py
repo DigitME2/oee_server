@@ -1,23 +1,12 @@
 import logging
-from datetime import datetime
 
 from flask import current_app
 from sqlalchemy import create_engine, text
 
-from app.default.db_helpers import get_machines_last_job
 from app.default.models import Settings
 from config import Config
 
 logger = logging.getLogger('flask.app')
-
-
-def get_machines_last_job_number(machine_id):
-    last_job = get_machines_last_job(machine_id)
-    return last_job.job_number
-
-
-def time_autofill():
-    return datetime.now().strftime("HH:mm")
 
 
 def get_job_start_data(input_type: str, input_autofill) -> dict:

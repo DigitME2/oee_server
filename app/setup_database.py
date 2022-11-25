@@ -3,7 +3,7 @@ from random import randrange
 
 from flask import current_app
 
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, MachineGroup, DemoSettings, \
+from app.default.models import ActivityCode, Machine, Settings, Schedule, MachineGroup, DemoSettings, \
     SHIFT_STRFTIME_FORMAT
 from app.extensions import db
 from app.login.models import create_default_users

@@ -1,10 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
 
-from flask_login import current_user
-
-from app import login_manager, create_app
-from app.login.models import User
 from app.testing.base import BaseTest
 
 

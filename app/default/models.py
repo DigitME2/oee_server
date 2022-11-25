@@ -1,10 +1,9 @@
 import logging
-from datetime import datetime
 
 import redis
+from sqlalchemy import event
 
 from app.extensions import db
-from sqlalchemy import event
 from config import Config
 
 logger = logging.getLogger('flask.app')
@@ -20,16 +19,16 @@ machine_activity_codes_association_table = db.Table('machine_activity_code_exclu
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    workflow_type = db.Column(db.String(100))
-    job_start_input_type = db.Column(db.String(100))
-    autofill_job_start_input = db.Column(db.Boolean)
-    autofill_job_start_amount = db.Column(db.Float)
-    group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
-    active = db.Column(db.Boolean, default=True)
-    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
     active_job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     current_activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'))
+    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
     job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), default=Config.UPTIME_CODE_ID)
+    autofill_job_start_input = db.Column(db.Boolean)
+    autofill_job_start_amount = db.Column(db.Float)
+    workflow_type = db.Column(db.String(100))
+    job_start_input_type = db.Column(db.String(100))
+    group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
+    active = db.Column(db.Boolean, default=True)
 
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
     scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
@@ -70,6 +69,7 @@ class Job(db.Model):
     ideal_cycle_time_s = db.Column(db.Integer)
     quantity_produced = db.Column(db.Integer, default=0)
     quantity_rejects = db.Column(db.Integer, default=0)
+    machine_id = db.Column(db.Integer)
     active = db.Column(db.Boolean)
     notes = db.Column(db.String(100))
 
