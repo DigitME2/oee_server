@@ -48,7 +48,7 @@ def change_demo_activity(machine, job, user, simulation_datetime):
     else:
         # otherwise the activity is downtime
         new_activity_code_id = randrange(2, 7)
-c    events.change_activity(simulation_datetime,
+    events.change_activity(simulation_datetime,
                            machine,
                            new_activity_code_id=new_activity_code_id,
                            user_id=user.id,
