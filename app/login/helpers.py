@@ -20,7 +20,7 @@ def end_all_user_sessions(user_id=None):
         us.end_session()
         # End all jobs assigned to the session
         for job in us.jobs:
-            job.end_job()
+            job.end_demo_job()
         db.session.commit()  # Not committing here would sometimes cause sqlite to have too many operations
         # Set the activity to "no user"
         events.change_activity(datetime.now(),

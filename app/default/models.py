@@ -177,7 +177,3 @@ class Settings(db.Model):
     allow_concurrent_user_jobs = db.Column(db.Boolean, default=True)
 
 
-class DemoSettings(db.Model):
-    # Only allow one row in this table
-    id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
-    last_machine_simulation = db.Column(db.DateTime)

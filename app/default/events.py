@@ -58,8 +58,9 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     else:
         machine_state = 0
     # End the current activity
-    current_activity = machine.current_activity
-    current_activity.time_end = dt
+    if machine.current_activity:
+        current_activity = machine.current_activity
+        current_activity.time_end = dt
 
     # Start a new activity with no user
     new_activity = Activity(machine_id=machine.id,

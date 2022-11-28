@@ -2,7 +2,6 @@ import logging
 import math as maths
 from datetime import datetime, timedelta, date, time
 from operator import attrgetter
-from random import randrange
 from typing import List
 
 from flask import current_app
@@ -11,24 +10,6 @@ from sqlalchemy import func
 from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job
 from app.extensions import db
 from config import Config
-
-
-def get_current_machine_activity_id(target_machine_id):
-    """ Get the current activity of a machine by grabbing the most recent entry without an end time"""
-    # Get all activities without an end time
-    activities = Activity.query.filter(Activity.machine_id == target_machine_id, Activity.time_end == None).all()
-
-    if len(activities) == 0:
-        return None
-
-    elif len(activities) == 1:
-        return activities[0].id
-
-    else:
-        # This shouldn't happen, but get the current activity by grabbing the one with the most recent start time
-        current_activity = max(activities, key=lambda activity: activity.time_start)
-        current_app.logger.warning("More than one open-ended activity when trying to get current activity:")
-        return current_activity.id
 
 
 def get_current_machine_schedule_activity_id(target_machine_id):
@@ -88,32 +69,6 @@ def split_activity(activity_id, split_time=None):
     db.session.commit()
     current_app.logger.debug(f"Ended {old_activity}")
     current_app.logger.debug(f"Started {new_activity}")
-
-
-def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id, machine_id):
-    """ Creates fake activities for one machine between two times"""
-    virtual_time = time_start
-    activities = []
-    while virtual_time <= time_end:
-        uptime_activity = Activity(machine_id=machine_id,
-                                   time_start=virtual_time,
-                                   machine_state=Config.MACHINE_STATE_RUNNING,
-                                   activity_code_id=Config.UPTIME_CODE_ID,
-                                   job_id=job_id)
-        virtual_time += randrange(400, 3000)
-        uptime_activity.time_end = virtual_time
-        activities.append(uptime_activity)
-
-        downtime_activity = Activity(machine_id=machine_id,
-                                     time_start=virtual_time,
-                                     machine_state=Config.MACHINE_STATE_OFF,
-                                     activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                                     job_id=job_id)
-        virtual_time += randrange(60, 1000)
-        downtime_activity.time_end = virtual_time
-        activities.append(downtime_activity)
-
-    return activities
 
 
 def get_legible_duration(time_start: datetime, time_end: datetime):

@@ -1,12 +1,12 @@
 from datetime import datetime, time, timedelta
-from random import randrange
 
 from flask import current_app
 
-from app.default.models import ActivityCode, Machine, Settings, Schedule, MachineGroup, DemoSettings, \
-    SHIFT_STRFTIME_FORMAT
+from app.default.models import ActivityCode, Machine, Settings, Schedule, MachineGroup, SHIFT_STRFTIME_FORMAT
+from app.demo.models import DemoSettings
+from app.demo.db_setup import create_demo_activity_codes, create_demo_machines, create_demo_users, create_demo_groups
 from app.extensions import db
-from app.login.models import create_default_users
+from app.login.models import create_default_users, User
 from config import Config
 
 
@@ -14,7 +14,11 @@ def setup_database():
     """ Enter default values into the database on its first run"""
     db.create_all()
 
-    create_default_users()
+    if len(User.query.all()) == 0:
+        if Config.DEMO_MODE:
+            create_demo_users()
+        else:
+            create_default_users()
 
     if len(ActivityCode.query.all()) == 0:
         create_default_activity_codes()
@@ -43,12 +47,7 @@ def setup_database():
 
     if len(MachineGroup.query.all()) == 0:
         if Config.DEMO_MODE:
-            group1 = MachineGroup(name="Cutting")
-            group2 = MachineGroup(name="Milling")
-            current_app.logger.info("Created default machine groups on first startup")
-            db.session.add(group1)
-            db.session.add(group2)
-            db.session.commit()
+            create_demo_groups()
         else:
             group1 = MachineGroup(name="Group 1")
             current_app.logger.info("Created default machine group on first startup")
@@ -99,47 +98,3 @@ def create_default_activity_codes():
     db.session.add(uptime_code)
     db.session.commit()
     current_app.logger.info("Created default activity codes on first startup")
-
-
-def create_demo_activity_codes():
-    ac1 = ActivityCode(code="OB",
-                       short_description="Operator Break",
-                       long_description="Operator has taken a break",
-                       graph_colour="#dd9313")
-    db.session.add(ac1)
-
-    ac2 = ActivityCode(code="NM",
-                       short_description="No material",
-                       long_description="The machine is short of material",
-                       graph_colour="#d60092")
-    db.session.add(ac2)
-
-    ac3 = ActivityCode(code="SM",
-                       short_description="Scheduled Maintenance",
-                       long_description="",
-                       graph_colour="#00d6cf")
-    db.session.add(ac3)
-    db.session.commit()
-    current_app.logger.info("Created demo activity codes on first startup")
-
-
-def create_demo_machines():
-    ip_end = 0
-    for machine_name in ["Brother 1",
-                         "Brother 2",
-                         "Bridgeport 1",
-                         "Bridgeport 2",
-                         "Makino",
-                         "FANUC 1",
-                         "FANUC 2",
-                         "FANUC 3"]:
-        ip_end += 1
-        machine = Machine(name=machine_name,
-                          workflow_type="default",
-                          device_ip="127.0.0." + str(ip_end),
-                          group_id=randrange(1, 3),
-                          schedule_id=1,
-                          job_start_input_type="cycle_time_seconds")
-        db.session.add(machine)
-    db.session.commit()
-    current_app.logger.info("Created default machine on first startup")

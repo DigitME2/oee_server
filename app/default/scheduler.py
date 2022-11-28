@@ -19,13 +19,19 @@ def setup_periodic_tasks(sender, **kwargs):
 
 @celery_app.task()
 def daily_machine_schedule_task():
-    current_app.logger.debug("Running machine schedule celery task")
+    current_app.logger.info("Running machine schedule celery task")
     create_all_scheduled_activities()
     return True
 
 
 @celery_app.task()
+def daily_cleanup():
+    current_app.logger.info("Running daily cleanup")
+
+
+
+@celery_app.task()
 def simulate_machine_action_task():
-    from app.default.machine_simulator import simulate_machines
+    from app.demo.machine_simulator import simulate_machines
     current_app.logger.debug("Running machine simulation celery task")
     simulate_machines()

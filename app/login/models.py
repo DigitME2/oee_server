@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import login_manager
 from app.extensions import db
+from config import Config
 
 logger = logging.getLogger('flask.app')
 
