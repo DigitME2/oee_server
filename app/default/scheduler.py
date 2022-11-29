@@ -2,9 +2,10 @@ from celery.schedules import crontab
 from flask import current_app
 
 from app.default.db_helpers import create_all_scheduled_activities
-from app.default.machine_simulator import simulate_machines
 from app.extensions import celery_app
 from config import Config
+
+# TODO End jobs that have obviously been left running overnight
 
 
 @celery_app.on_after_finalize.connect
@@ -18,12 +19,19 @@ def setup_periodic_tasks(sender, **kwargs):
 
 @celery_app.task()
 def daily_machine_schedule_task():
-    current_app.logger.debug("Running machine schedule celery task")
+    current_app.logger.info("Running machine schedule celery task")
     create_all_scheduled_activities()
     return True
 
 
 @celery_app.task()
+def daily_cleanup():
+    current_app.logger.info("Running daily cleanup")
+
+
+
+@celery_app.task()
 def simulate_machine_action_task():
+    from app.demo.machine_simulator import simulate_machines
     current_app.logger.debug("Running machine simulation celery task")
     simulate_machines()

@@ -68,7 +68,7 @@ def create_app(config_class=Config):
             backfill_missed_schedules()
 
             if Config.DEMO_MODE:
-                from app.default.machine_simulator import backfill_missed_simulations
+                from app.demo.machine_simulator import backfill_missed_simulations
                 backfill_missed_simulations()
 
     # Function to log requests

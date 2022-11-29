@@ -7,9 +7,7 @@ from flask import request, current_app
 from app.default.models import Job, InputDevice, ProductionQuantity
 from app.extensions import db
 from app.login import bp
-from app.login.models import UserSession
 from config import Config
-
 
 r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
 
@@ -18,7 +16,7 @@ r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses
 def running_total_update_quantity():
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
-    user_session = input_device.get_active_user_session()
+    user_session = input_device.active_user_session
 
     try:
         quantity_produced = int(request.json["quantity_produced"])
@@ -29,9 +27,9 @@ def running_total_update_quantity():
                            "reason": "Server error parsing data"})
 
     # Update quantities for the current job
-    # todo test
     current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
     production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
+                                             time=datetime.now(),
                                              quantity_rejects=quantity_rejects,
                                              job_id=current_job.id)
     db.session.add(production_quantity)

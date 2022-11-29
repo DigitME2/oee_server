@@ -1,12 +1,9 @@
 import unittest
-import simple_websocket
-import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from flask_table import Table
+import simple_websocket
 
 from app.testing.base import BaseTest
-from app.visualisation.tables import get_oee_table
 
 
 class APITest(BaseTest):

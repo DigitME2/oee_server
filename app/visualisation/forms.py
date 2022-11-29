@@ -5,7 +5,7 @@ from wtforms import DateField, SubmitField, SelectField
 from wtforms.validators import DataRequired, NoneOf
 from wtforms_components import TimeField
 
-from app.visualisation.helpers import tomorrow, today, yesterday, a_month_ago, a_week_ago
+from app.visualisation.helpers import tomorrow, today, yesterday, a_week_ago
 
 TIME_FORMAT = "%H:%M"
 midnight = time(hour=0, minute=0, second=0, microsecond=0)

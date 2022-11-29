@@ -1,4 +1,5 @@
 from datetime import datetime, time
+from distutils.util import strtobool
 
 from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
@@ -13,7 +14,6 @@ from app.admin.helpers import admin_required, fix_colour_code
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
-from app.login.helpers import end_user_sessions
 from app.login.models import User
 from config import Config
 
@@ -46,6 +46,7 @@ def settings():
         current_settings.dashboard_update_interval_s = form.dashboard_update_interval.data
         current_settings.job_number_input_type = form.job_number_input_type.data
         current_settings.allow_delayed_job_start = form.allow_delayed_job_start.data
+        current_settings.allow_concurrent_user_jobs = form.allow_concurrent_user_jobs.data
         db.session.add(current_settings)
         db.session.commit()
         current_app.logger.info(f"Changed settings: {current_settings}")
@@ -55,6 +56,7 @@ def settings():
     form.dashboard_update_interval.data = current_settings.dashboard_update_interval_s
     form.job_number_input_type.data = current_settings.job_number_input_type
     form.allow_delayed_job_start.data = current_settings.allow_delayed_job_start
+    form.allow_concurrent_user_jobs.data = current_settings.allow_concurrent_user_jobs
     return render_template('admin/settings.html',
                            form=form)
 
@@ -175,8 +177,6 @@ def edit_input_device():
             input_device.machine_id = None
         else:
             input_device.machine_id = form.machine.data
-        # End the session if somebody's logged in, to stop weird stuff happening.
-        end_user_sessions(machine_id=input_device.machine_id)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
@@ -206,10 +206,7 @@ def edit_machine():
     form.workflow_type.choices = Config.WORKFLOW_TYPES
 
     # If new=true then the request is for a new machine to be created
-    if 'new' in request.args and request.args['new'] == "True":
-        creating_new_machine = True
-    else:
-        creating_new_machine = False
+    creating_new_machine = ('new' in request.args and strtobool(request.args['new']))
 
     if creating_new_machine:
         # Create a new machine
@@ -289,10 +286,16 @@ def edit_machine():
         if creating_new_machine:
             current_app.logger.info(f"{machine} created by {current_user}")
             first_act = Activity(time_start=datetime.now(),
+                                 machine_id=machine.id,
                                  machine_state=Config.MACHINE_STATE_OFF,
                                  activity_code_id=Config.NO_USER_CODE_ID)
             db.session.add(first_act)
+            db.session.flush()
+            db.session.refresh(first_act)
+            machine.current_activity_id = first_act.id
+            db.session.commit()
             current_app.logger.debug(f"{first_act} started on machine creation")
+
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page

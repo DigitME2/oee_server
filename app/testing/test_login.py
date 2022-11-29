@@ -1,14 +1,5 @@
-import re
-import unittest
-
-from flask import current_app
-
-from app.default.models import Machine
-from app.login.helpers import start_user_session, end_user_sessions
-from app.login.models import User
-from app import create_app
 from app.extensions import db
-from app.setup_database import setup_database
+from app.login.models import User
 from app.testing.base import BaseTest
 
 
@@ -28,19 +19,3 @@ class TestLogin(BaseTest):
             success_response = self.test_client.post('/login', data={username: username, password: password})
             fail_response = self.test_client.post('/login', data={username: username, password: "1234qwerasdf"})
             self.assertEqual(success_response.status_code, 200)
-
-    def test_user_sessions(self):
-        with self.app.app_context():
-            m = Machine(name="test", device_ip="0.0.0.0")
-            db.session.add(m)
-            db.session.commit()
-            self.assertTrue(start_user_session(user_id=1, device_ip="0.0.0.0"))
-            end_user_sessions(user_id=1)
-
-
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()
