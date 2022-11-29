@@ -98,3 +98,68 @@ def create_default_activity_codes():
     db.session.add(uptime_code)
     db.session.commit()
     current_app.logger.info("Created default activity codes on first startup")
+
+
+def create_demo_activity_codes():
+    ac1 = ActivityCode(code="OB",
+                       short_description="Operator Break",
+                       long_description="Operator has taken a break",
+                       graph_colour="#dd9313")
+    db.session.add(ac1)
+
+    ac2 = ActivityCode(code="NM",
+                       short_description="No material",
+                       long_description="The machine is short of material",
+                       graph_colour="#d60092")
+    db.session.add(ac2)
+
+    ac3 = ActivityCode(code="SM",
+                       short_description="Scheduled Maintenance",
+                       long_description="",
+                       graph_colour="#00d6cf")
+    db.session.add(ac3)
+    db.session.commit()
+    current_app.logger.info("Created demo activity codes on first startup")
+
+
+def create_default_machine():
+    machine1 = Machine(name="Machine 1",
+                       group_id=1,
+                       schedule_id=1,
+                       workflow_type="default",
+                       job_start_input_type="cycle_time_seconds",
+                       autofill_job_start_amount=0)
+    db.session.add(machine1)
+    db.session.commit()
+    current_app.logger.info("Created default machine on first startup")
+
+    act = Activity(machine_id=machine1.id,
+                   time_start=datetime.now(),
+                   machine_state=Config.MACHINE_STATE_OFF,
+                   activity_code_id=Config.NO_USER_CODE_ID)
+    db.session.add(act)
+    db.session.commit()
+    current_app.logger.info("Created activity on first startup")
+    db.session.commit()
+
+
+def create_demo_machines():
+    ip_end = 0
+    for machine_name in ["Brother 1",
+                         "Brother 2",
+                         "Bridgeport 1",
+                         "Bridgeport 2",
+                         "Makino",
+                         "FANUC 1",
+                         "FANUC 2",
+                         "FANUC 3"]:
+        ip_end += 1
+        machine = Machine(name=machine_name,
+                          workflow_type="default",
+                          device_ip="127.0.0." + str(ip_end),
+                          group_id=randrange(1, 3),
+                          schedule_id=1,
+                          job_start_input_type="cycle_time_seconds")
+        db.session.add(machine)
+    db.session.commit()
+    current_app.logger.info("Created default machine on first startup")
