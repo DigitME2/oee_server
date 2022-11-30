@@ -15,6 +15,11 @@ def default():
     return redirect(url_for('login.login'))
 
 
+@bp.route('/status')
+def status():
+    return render_template("default/status.html")
+
+
 @bp.route('/view_activities')
 @login_required
 def view_activities():
