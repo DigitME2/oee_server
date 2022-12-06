@@ -213,7 +213,7 @@ def android_end_job():
     current_job = input_device.machine.active_job
     if current_job is None:
         abort(400, message="No active job")
-    events.end_job(now, current_job, quantity_produced, quantity_rejects)
+    events.end_job(now, current_job, quantity_produced, quantity_rejects, user=user_session.user)
     input_device.machine.active_job_id = None
     db.session.commit()
     # Set the activity to downtime
