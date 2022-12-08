@@ -14,6 +14,7 @@ def android_log_in(dt, user, input_device) -> bool:
     if input_device.machine is None:
         current_app.logger.info(f"No machine assigned to {input_device}")
         return False
+    input_device.machine.active_user_id = user.id
     # Create the new user session
     new_us = UserSession(user_id=user.id,
                          input_device_id=input_device.id,
@@ -36,10 +37,11 @@ def android_log_in(dt, user, input_device) -> bool:
 
 def android_log_out(input_device: InputDevice, dt: datetime):
     current_app.logger.info(f"Logging out user_id:{input_device.active_user}")
+    input_device.machine.active_user_id = -1
 
     change_activity(dt,
                     input_device.machine,
-                    new_activity_code_id=Config.NO_USER_CODE_ID,
+                    new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                     user_id=-1,
                     job_id=input_device.machine.active_job_id)
 

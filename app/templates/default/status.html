@@ -2,8 +2,75 @@
 
 {% block content %}
     <div class="container mt-5">
-
+        <div class="row">
+            {% for machine in machines %}
+                <div class="col">
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ machine.name }}</h5>
+                            Current Status:
+                            <div class="dropdown">
+                                <button class="btn btn-dark dropdown-toggle" type="button"
+                                        id="ActivityCodeDropdown{{ machine.current_activity.id }}"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <a>{{ machine.current_activity.activity_code.short_description }}</a>
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    {% set i = 0 %}
+                                    {% for code in activity_codes %}
+                                        <button class="dropdown-item"
+                                                onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
+                                            {{ code.short_description }}
+                                        </button>
+                                        {% set i = i + 1 %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if machine.active_user %}
+                                Current User: {{ machine.active_user.username }}
+                                <button class="btn btn-dark"
+                                onclick="forceLogout({{ machine.input_device.id }})">
+                                    Force Logout
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        <div/>
     </div>
+
+
+
+    <script>
+        function postActivity(machineId, newActivityCodeId, userId) {
+            let data = {
+                machine_id: machineId,
+                user_id: userId,
+                activity_code_id: newActivityCodeId,
+            }
+            $.ajax({
+                url: '/api/machine-state-change',
+                type: 'POST',
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                success: function (result) {
+                    window.location.reload();
+                }
+            });
+        }
+
+        function forceLogout(inputDeviceId) {
+            $.ajax({
+                url: '/api/force-logout/' + inputDeviceId,
+                type: 'POST',
+                contentType: "application/json",
+                success: function (result) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
 
 {% endblock %}
 

@@ -229,12 +229,12 @@ def edit_machine():
         return abort(400, error_message)
 
     # Get downtime codes for exclusion checkboxes
-    non_excludable_codes = [Config.NO_USER_CODE_ID, Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
+    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
     optional_activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(non_excludable_codes)).all()
 
     # Create first activity dropdown
     activity_code_choices = []
-    for ac in ActivityCode.query.filter(ActivityCode.id != Config.NO_USER_CODE_ID).all():
+    for ac in ActivityCode.query.all():
         activity_code_choices.append((str(ac.id), str(ac.short_description)))
     form.group.choices = groups
     form.job_start_activity.choices = activity_code_choices
@@ -288,7 +288,7 @@ def edit_machine():
             first_act = Activity(time_start=datetime.now(),
                                  machine_id=machine.id,
                                  machine_state=Config.MACHINE_STATE_OFF,
-                                 activity_code_id=Config.NO_USER_CODE_ID)
+                                 activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
             db.session.add(first_act)
             db.session.flush()
             db.session.refresh(first_act)
@@ -403,8 +403,6 @@ def edit_activity_code():
             message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
         elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
             message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
-        elif activity_code_id == Config.NO_USER_CODE_ID:
-            message = f"Warning: This entry (ID {activity_code_id}) should always represent no user"
         else:
             message = "Changes to these values will be reflected in " \
                       "past readings with this activity code.<br> \

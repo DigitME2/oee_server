@@ -227,10 +227,6 @@ def get_user_activity_table(time_start: datetime, time_end: datetime):
     act_codes = ActivityCode.query.all()
     activity_code_descriptions = [code.short_description for code in act_codes]
 
-    # Remove the value for no user, so we don't show a value for "No User" in the user CSV
-    no_user_description = ActivityCode.query.get(Config.NO_USER_CODE_ID).short_description
-    activity_code_descriptions.remove(no_user_description)
-
     for activity_description in activity_code_descriptions:
         Tbl.add_column(activity_description, Col(activity_description))
 
@@ -240,7 +236,6 @@ def get_user_activity_table(time_start: datetime, time_end: datetime):
     users = User.query.all()
 
     items = []
-    no_user_description = ActivityCode.query.get(Config.NO_USER_CODE_ID).short_description
     for user in users:
         # Get a dict with the activities in
         user_dict = get_activity_duration_dict(requested_start=time_start,
@@ -250,8 +245,6 @@ def get_user_activity_table(time_start: datetime, time_end: datetime):
                                                units="minutes")
         user_dict = format_dictionary_durations(user_dict)
         user_dict["user"] = user.username
-
-        user_dict.pop(no_user_description)  # Don't show a value for "No User" in the user CSV
 
         items.append(user_dict)
 

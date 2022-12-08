@@ -10,7 +10,7 @@ def get_machine_status(machine_id):
     machine = Machine.query.get_or_404(machine_id)
     # Get the current user logged on to the machine
     machine_user_id = machine.current_activity.user_id
-    if machine_user_id >= 0:
+    if not machine_user_id or machine_user_id <= 0:
         machine_user_text = "No User"
     else:
         machine_user_text = User.query.get(machine_user_id).username

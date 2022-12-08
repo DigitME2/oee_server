@@ -8,8 +8,9 @@ from flask import request, jsonify, abort, make_response, current_app
 from pydantic import BaseModel
 
 from app.api import bp
+from app.default import events
 from app.default.events import change_activity
-from app.default.models import Activity, ActivityCode, Machine
+from app.default.models import Activity, ActivityCode, Machine, InputDevice
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -17,8 +18,8 @@ from config import Config
 
 class MachineStateChange(BaseModel):
     machine_id: int
-    machine_state: int
     user_id: Optional[int]
+    machine_state: Optional[int]
     activity_code_id: Optional[int]
 
 
@@ -49,8 +50,8 @@ def get_activity_codes():
 def change_machine_state():
     """ Ends a machine's activity and starts a new one """
     post_data = MachineStateChange(**request.get_json())
-    # Set the activity code id if it's not supplied
-    if not post_data.activity_code_id:
+    # If only the state is supplied (up/down), create the activity code id
+    if post_data.machine_state and not post_data.activity_code_id:
         if post_data.machine_state == Config.MACHINE_STATE_RUNNING:
             activity_code_id = Config.UPTIME_CODE_ID
         else:
@@ -115,3 +116,49 @@ def activity_updates():
     except simple_websocket.ConnectionClosed:
         pass
     return ''
+
+
+@bp.route('/api/input-device-updates', websocket=True)
+def input_device_updates():
+    """ Connected to by an input device to receive updates such as activity changes/ job start/ logout.
+    The first message sent by the client should be the input device's UUID. """
+    ws = simple_websocket.Server(request.environ)
+    p = r.pubsub()
+    # Wait for the client to send which machine to monitor
+    first_message = ws.receive()
+    first_message = json.loads(first_message)
+    uuid = first_message["device_uuid"]
+    input_device = InputDevice.query.filter_by(uuid=uuid).first()
+    # Send the client the current activity code
+    ws.send(input_device.machine.current_activity.activity_code_id)
+    machine_activity_channel = "machine" + str(1) + "activity"
+    input_device_channel = "input_device" + str(1)
+    p.subscribe(machine_activity_channel)
+    p.subscribe(input_device_channel)
+    current_app.logger.debug(f"Device {input_device.name} websocket connected")
+    try:
+        while True:
+            for response in p.listen():
+                if response["type"] == "message":
+                    if response["channel"] == machine_activity_channel:
+                        ws.send({"action": "activity_change",
+                                 "activity_code_id": response["data"]})
+                    elif response["channel"] == input_device_channel:
+                        if response["data"] == "logout":
+                            ws.send({"action": "logout"})
+    except simple_websocket.ConnectionClosed:
+        pass
+        current_app.logger.debug(f"Device {input_device.name} websocket disconnected")
+    return ''
+
+
+@bp.route('/api/force-logout/<input_device_id>', methods=["POST"])
+def force_android_logout(input_device_id):
+    """ Log out a user from an android tablet remotely. """
+    input_device = InputDevice.query.get_or_404(input_device_id)
+    events.android_log_out(input_device, datetime.now())
+    # Publish to Redis to inform clients
+    r.publish("input_device" + str(input_device_id), "logout")
+
+    return make_response("", 200)
+

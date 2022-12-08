@@ -6,8 +6,9 @@ from sqlalchemy import desc
 
 from app.default import bp
 from app.default.db_helpers import create_all_scheduled_activities
-from app.default.models import ActivityCode, Activity
+from app.default.models import ActivityCode, Activity, Machine, ProductionQuantity
 from app.login.models import User
+from app.visualisation.helpers import get_machine_status
 
 
 @bp.route('/')
@@ -16,8 +17,10 @@ def default():
 
 
 @bp.route('/status')
-def status():
-    return render_template("default/status.html")
+def status_page():
+    machines = Machine.query.all()
+    activity_codes = ActivityCode.query.all()
+    return render_template("default/status.html", activity_codes=activity_codes, machines=machines, current_user=current_user)
 
 
 @bp.route('/view_activities')

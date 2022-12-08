@@ -20,7 +20,8 @@ class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     active_job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
-    current_activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'))
+    active_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    current_activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
     job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), default=Config.UPTIME_CODE_ID)
     autofill_job_start_input = db.Column(db.Boolean)
@@ -35,6 +36,8 @@ class Machine(db.Model):
     activities = db.relationship('Activity', foreign_keys="[Activity.machine_id]", backref='machine')
     current_activity = db.relationship('Activity', foreign_keys=[current_activity_id])
     active_job = db.relationship('Job', foreign_keys=[active_job_id])
+    active_user = db.relationship('User', foreign_keys=[active_user_id])
+    input_device = db.relationship('InputDevice', uselist=False, back_populates="machine")
 
     def __repr__(self):
         return f"<Machine '{self.name}' (ID {self.id})"
@@ -48,7 +51,7 @@ class InputDevice(db.Model):
     active_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     active_user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'))
 
-    machine = db.relationship("Machine", uselist=False)
+    machine = db.relationship("Machine", uselist=False, back_populates="input_device")
     active_user_session = db.relationship(
         "UserSession", foreign_keys=[active_user_session_id], uselist=False)
 
@@ -86,6 +89,7 @@ class ProductionQuantity(db.Model):
     quantity_produced = db.Column(db.Integer)
     quantity_rejects = db.Column(db.Integer)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'))
 
 
 class Activity(db.Model):

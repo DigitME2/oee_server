@@ -65,8 +65,7 @@ class Workflow:
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
 
     def get_activity_codes(self):
-        codes_to_show = ActivityCode.query.filter(ActivityCode.active,
-                                                  ActivityCode.id != Config.NO_USER_CODE_ID).all()
+        codes_to_show = ActivityCode.query.filter(ActivityCode.active).all()
         # Exclude excluded codes for the particular machine
         for code in codes_to_show:
             if code in self.machine.excluded_activity_codes:

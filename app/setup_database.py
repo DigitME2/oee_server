@@ -3,8 +3,9 @@ from random import randrange
 
 from flask import current_app
 
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, MachineGroup, DemoSettings, \
+from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, MachineGroup, \
     SHIFT_STRFTIME_FORMAT
+from app.demo.models import DemoSettings
 from app.extensions import db
 from app.login.models import create_default_users
 from config import Config
@@ -81,13 +82,6 @@ def setup_database():
 
 
 def create_default_activity_codes():
-    no_user_code = ActivityCode(id=Config.NO_USER_CODE_ID,
-                                code="NU",
-                                short_description="No User",
-                                long_description="No user is logged onto the machine",
-                                graph_colour="#ffffff")
-    db.session.add(no_user_code)
-
     unexplained_code = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                     code="DO",
                                     short_description='Down',
@@ -130,18 +124,23 @@ def create_default_machine():
     machine1 = Machine(name="Machine 1",
                        group_id=1,
                        schedule_id=1,
+                       current_activity_id=0,
                        workflow_type="default",
                        job_start_input_type="cycle_time_seconds",
                        autofill_job_start_amount=0)
     db.session.add(machine1)
-    db.session.commit()
+    db.session.flush()
+    db.session.refresh(machine1)
     current_app.logger.info("Created default machine on first startup")
 
     act = Activity(machine_id=machine1.id,
                    time_start=datetime.now(),
                    machine_state=Config.MACHINE_STATE_OFF,
-                   activity_code_id=Config.NO_USER_CODE_ID)
+                   activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
     db.session.add(act)
+    db.session.flush()
+    db.session.refresh(act)
+    machine1.current_activity_id = act.id
     db.session.commit()
     current_app.logger.info("Created activity on first startup")
     db.session.commit()

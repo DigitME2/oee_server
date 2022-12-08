@@ -54,7 +54,7 @@ def create_demo_machines():
         first_act = Activity(time_start=act_start,
                              machine_id=machine.id,
                              machine_state=Config.MACHINE_STATE_OFF,
-                             activity_code_id=Config.NO_USER_CODE_ID)
+                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
         db.session.add(first_act)
         db.session.flush()
         db.session.refresh(first_act)

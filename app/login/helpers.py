@@ -25,6 +25,6 @@ def end_all_user_sessions(user_id=None):
         # Set the activity to "no user"
         events.change_activity(datetime.now(),
                                us.machine,
-                               new_activity_code_id=Config.NO_USER_CODE_ID,
+                               new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                user_id=user_id,
                                job_id=us.machine.active_job_id)

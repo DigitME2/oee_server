@@ -42,7 +42,7 @@ def end_job(job, machine, simulation_datetime=None):
     new_activity = Activity(machine_id=machine.id,
                             time_start=simulation_datetime,
                             machine_state=0,
-                            activity_code_id=Config.NO_USER_CODE_ID,
+                            activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             job_id=job.id)
     db.session.add(new_activity)
 
