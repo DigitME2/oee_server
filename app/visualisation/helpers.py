@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, time
 
-from app.default.db_helpers import get_legible_duration
+from app.default.db_helpers import get_legible_duration, get_machine_jobs
 from app.default.models import Machine, Job
 from app.login.models import User
 
@@ -51,11 +51,7 @@ def get_daily_machine_production(machine: Machine, d: datetime.date):
     start = datetime.combine(date=d, time=time(hour=0, minute=0, second=0, microsecond=0))
     end = start + timedelta(days=1)
     quantity = 0
-    jobs = Job.query \
-        .filter(Job.start_time <= end) \
-        .filter(Job.end_time >= start) \
-        .filter(Job.machine_id == machine.id).all()
-
+    jobs = get_machine_jobs(machine.id, start, end)
     for job in jobs:
         quantity += job.quantity_produced
 

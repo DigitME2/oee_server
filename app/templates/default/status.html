@@ -1,45 +1,81 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-    <div class="container mt-5">
-        <div class="row">
-            {% for machine in machines %}
-                <div class="col">
-                    <div class="card" style="width: 18rem;">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ machine.name }}</h5>
-                            Current Status:
-                            <div class="dropdown">
-                                <button class="btn btn-dark dropdown-toggle" type="button"
-                                        id="ActivityCodeDropdown{{ machine.current_activity.id }}"
-                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <a>{{ machine.current_activity.activity_code.short_description }}</a>
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    {% set i = 0 %}
-                                    {% for code in activity_codes %}
-                                        <button class="dropdown-item"
-                                                onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
-                                            {{ code.short_description }}
-                                        </button>
-                                        {% set i = i + 1 %}
-                                    {% endfor %}
-                                </div>
+    <div class="container-fluid">
+
+        {% for machine in machines %}
+            <div class="border border-3 my-5 pl-5 py-2
+                    {% if machine.current_activity.activity_code_id == uptime_code %}
+                 border-success
+                    {% else %}
+                 border-danger
+                    {% endif %}">
+                <div class="row">
+                    <h2>{{ machine.name }}</h2>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <h4>Status</h4>
+                        <div class="dropdown">
+                            <button class="btn btn-dark dropdown-toggle" type="button"
+                                    id="ActivityCodeDropdown{{ machine.current_activity.id }}"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <a>{{ machine.current_activity.activity_code.short_description }}</a>
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                {% set i = 0 %}
+                                {% for code in activity_codes %}
+                                    <button class="dropdown-item"
+                                            onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
+                                        {{ code.short_description }}
+                                    </button>
+                                    {% set i = i + 1 %}
+                                {% endfor %}
                             </div>
-                            {% if machine.active_user %}
-                                Current User: {{ machine.active_user.username }}
-                                <button class="btn btn-dark"
-                                onclick="forceLogout({{ machine.input_device.id }})">
-                                    Force Logout
-                                </button>
-                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h4>Current User: </h4>
+                        {% if machine.active_user %}
+                            {{ machine.active_user.username }}
+                            <button class="btn btn-dark"
+                                    onclick="forceLogout({{ machine.input_device.id }})">
+                                Force Logout
+                            </button>
+                        {% else %}
+                            <h4>None</h4>
+                        {% endif %}
+                    </div>
+
+                    <div class="col">
+                        <div class="card-text">
+                            <h4>Availability {{ availability_dict[machine.id] }}</h4>
+                        </div>
+                        <div class="card-text">
+                            {% for act_code in activity_codes %}
+                                {{ act_code.short_description }}:
+                                {{ activity_durations_dict[machine.id][act_code.id] }}<br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h4>Performance {{ performance_dict[machine.id] }}</h4>
+                        <div class="card-text">
+                            Produced Today: {{ production_dict[machine.id] }}<br>
+                            Target: {{ target_production_dict[machine.id] }}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h4>Quality {{ quality_dict[machine.id] }}</h4>
+
+                        <div class="card-text">
+                            Rejects Today: {{ rejects_dict[machine.id] }}
                         </div>
                     </div>
                 </div>
-            {% endfor %}
-        <div/>
+            </div>
+        {% endfor %}
     </div>
-
 
 
     <script>

@@ -1,17 +1,15 @@
 import logging
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
 
 from flask import current_app
 
-from app.default.models import Job
+from app.default.db_helpers import get_machine_jobs
+from app.default.models import Job, Machine
 
 
 def get_machine_quality(machine_id, time_start: datetime, time_end: datetime) -> float:
     """ Calculate the quality of machine output for calculating OEE"""
-    jobs = Job.query \
-        .filter(Job.end_time >= time_start) \
-        .filter(Job.start_time <= time_end) \
-        .filter(Job.machine_id == machine_id).all()
+    jobs = get_machine_jobs(machine_id, time_start, time_end)
     total_machine_quantity_produced = 0
     total_machine_rejects_produced = 0
     for job in jobs:
@@ -21,6 +19,7 @@ def get_machine_quality(machine_id, time_start: datetime, time_end: datetime) ->
             total_machine_quantity_produced += job.quantity_produced
         if job.quantity_rejects:
             total_machine_rejects_produced += job.quantity_rejects
+            total_machine_quantity_produced += job.quantity_produced
     try:
         quality = (total_machine_quantity_produced - total_machine_rejects_produced) / total_machine_quantity_produced
         if quality > 1:
@@ -31,3 +30,23 @@ def get_machine_quality(machine_id, time_start: datetime, time_end: datetime) ->
                                    f"while calculating OEE on {time_start}."
                                    f"Skipping quality calculation...")
         return 1
+
+
+def get_daily_quality_dict(requested_date: date = None, human_readable=False):
+    """ Return a dictionary with every machine's performance on the given date """
+    if not requested_date:
+        requested_date = datetime.now().date()
+    # Use 00:00 and 24:00 on the selected day
+    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
+    period_end = period_start + timedelta(days=1)
+    # If the end is in the future, change to now
+    if period_end > datetime.now():
+        period_end = datetime.now()
+    quality_dict = {}
+    for machine in Machine.query.all():
+        quality_dict[machine.id] = get_machine_quality(machine.id, period_start, period_end)
+    if human_readable:
+        for k, v in quality_dict.items():
+            v = v * 100
+            quality_dict[k] = f"{round(v, 1)}%"
+    return quality_dict

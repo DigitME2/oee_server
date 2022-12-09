@@ -7,7 +7,7 @@ from flask import request, current_app, abort
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default import events
-from app.default.models import Job, InputDevice, Settings, ProductionQuantity
+from app.default.models import Job, InputDevice, Settings
 from app.extensions import db
 from app.login import bp
 from app.login.helpers import end_all_user_sessions
@@ -177,6 +177,8 @@ def android_update_activity():
     now = datetime.now()
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    if not input_device.active_user_session:
+        return json.dumps({"success": False})
     try:
         activity_code_id = request.json["activity_code_id"]
     except KeyError:
@@ -222,12 +224,5 @@ def android_end_job():
                            new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                            user_id=user_session.user_id,
                            job_id=current_job.id)
-
-    # Record quantity
-    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
-                                             time=now,
-                                             quantity_rejects=quantity_rejects,
-                                             job_id=current_job.id)
-    db.session.add(production_quantity)
-    db.session.commit()
+    events.produced(now, quantity_produced, quantity_rejects, current_job.id, input_device.machine.id)
     return json.dumps({"success": True})

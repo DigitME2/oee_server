@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import current_app
 
 from app import db
-from app.default.models import InputDevice, Activity, Machine, Job
+from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity
 from app.login.models import UserSession
 from config import Config
 
@@ -104,4 +104,14 @@ def end_job(dt, job, quantity_produced, quantity_rejects):
     job.active = False
     job.quantity_produced += quantity_produced
     job.quantity_rejects += quantity_rejects
+    db.session.commit()
+
+
+def produced(dt, quantity_produced, quantity_rejects, job_id, machine_id):
+    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
+                                             time=dt,
+                                             quantity_rejects=quantity_rejects,
+                                             job_id=job_id,
+                                             machine_id=machine_id)
+    db.session.add(production_quantity)
     db.session.commit()

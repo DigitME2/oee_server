@@ -6,6 +6,7 @@ from flask_table import Table, Col, create_table
 
 from app.data_analysis.oee.availability import get_activity_duration_dict, get_schedule_dict
 from app.data_analysis.oee.oee import get_daily_machine_oee
+from app.default.db_helpers import get_machine_jobs
 from app.default.models import Job, ActivityCode, Machine
 from app.extensions import db
 from app.login.models import User
@@ -82,6 +83,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
     start_time = datetime.combine(start_date, time(0, 0, 0, 0))
     end_time = datetime.combine(end_date + timedelta(days=1), time(0, 0, 0, 0))
     jobs = Job.query.filter(Job.start_time <= end_time).filter(Job.end_time >= start_time)
+    # FIXME The above query doesn't get the current active job
     items = []
 
     # Get every job_number in the list of jobs
@@ -148,10 +150,7 @@ def get_job_table(start_date: date, end_date: date, machine_ids) -> str:
     end_time = datetime.combine(end_date + timedelta(days=1), time(0, 0, 0, 0))
     jobs = []
     for machine_id in machine_ids:
-        machine_jobs = Job.query\
-            .filter(Job.start_time <= end_time)\
-            .filter(Job.end_time >= start_time)\
-            .filter(Job.machine_id == machine_id).all()
+        machine_jobs = get_machine_jobs(machine_id, start_time, end_time)
         jobs.extend(machine_jobs)
 
     items = []

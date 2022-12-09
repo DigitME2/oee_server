@@ -2,12 +2,12 @@ import logging
 import math as maths
 from datetime import datetime, timedelta, date, time
 from operator import attrgetter
-from typing import List
+from typing import List, Tuple
 
 from flask import current_app
 from sqlalchemy import func
 
-from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job
+from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job, ProductionQuantity
 from app.extensions import db
 from config import Config
 
@@ -84,22 +84,43 @@ def get_legible_duration(time_start: datetime, time_end: datetime):
         return f"{hours} hours {leftover_minutes} minutes"
 
 
-def get_machine_activities(machine_id, time_start: datetime, time_end: datetime):
-    """ Returns the activities for a machine, between two times"""
+def get_machine_activities(machine_id, time_start: datetime, time_end: datetime, activity_code_id=None,
+                           machine_state=None):
+    """ Returns the activities for a machine, between two times. Activities can overrun the two times given"""
 
     machine = Machine.query.get(machine_id)
     if machine is None:
         current_app.logger.warn(f"Activities requested for non-existent Machine ID {machine_id}")
         return
-    activities = Activity.query \
+    activities_query = Activity.query \
         .filter(Activity.machine_id == machine.id) \
         .filter(Activity.time_end >= time_start) \
-        .filter(Activity.time_start <= time_end).all()
+        .filter(Activity.time_start <= time_end)
+    if activity_code_id:
+        activities_query = activities_query.filter(Activity.activity_code_id == activity_code_id)
+    if machine_state:
+        activities_query = activities_query.filter(Activity.machine_state == machine_state)
+    activities = activities_query.all()
     # If required, add the current_activity (The above loop will not get it)
     if machine.current_activity.time_start <= time_end:
-        activities.append(machine.current_activity)
+        # Only add the current activity if it matches the filters given to this function
+        if not activity_code_id or machine.current_activity.activity_code_id == activity_code_id:
+            if not machine_state or machine.current_activity.machine_state == machine_state:
+                activities.append(machine.current_activity)
     return activities
 
+
+def get_machine_jobs(machine_id, time_start: datetime, time_end: datetime):
+    """ Get the jobs of a machine between two times"""
+    jobs = Job.query \
+        .filter(Job.end_time >= time_start) \
+        .filter(Job.start_time <= time_end) \
+        .filter(Job.machine_id == machine_id).all()
+    machine = Machine.query.get(machine_id)
+    # If required, add the current job (The above query will not get it)
+    if machine.active_job and machine.active_job.start_time <= time_end:
+        jobs.append(machine.active_job)
+    return jobs
 
 def get_machine_scheduled_activities(machine_id, time_start: datetime, time_end: datetime):
     """ Returns scheduled activities for a machine between two times"""
@@ -255,7 +276,30 @@ def get_job_cropped_start_end_ratio(job: Job,
         end = min([requested_end, datetime.now()])
     else:
         end = job.end_time
-    job_length = (job.end_time - job.start_time).total_seconds()
+    job_length = (end - start).total_seconds()
     cropped_length = (end - start).total_seconds()
     ratio_of_length_used = cropped_length / job_length
     return start, end, ratio_of_length_used
+
+
+def get_daily_production_dict(requested_date: date = None) -> Tuple[dict, dict]:
+    if requested_date is None:
+        requested_date = datetime.now().date()
+    last_midnight = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
+    next_midnight = last_midnight + timedelta(days=1)
+    production_amounts = {}
+    reject_amounts = {}
+    machines = Machine.query.all()
+    for machine in machines:
+        quantity_produced = 0
+        quantity_rejects = 0
+        today_quantities = ProductionQuantity.query. \
+            filter(ProductionQuantity.machine_id == machine.id). \
+            filter(ProductionQuantity.time >= last_midnight). \
+            filter(ProductionQuantity.time <= next_midnight).all()
+        for q in today_quantities:
+            quantity_produced += q.quantity_produced
+            quantity_rejects += q.quantity_rejects
+        production_amounts[machine.id] = quantity_produced
+        reject_amounts[machine.id] = quantity_rejects
+    return production_amounts, reject_amounts

@@ -4,13 +4,13 @@ from distutils.util import strtobool
 from flask import render_template, url_for, redirect, request, abort, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
     ScheduleForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
+from app.default.db_helpers import create_all_scheduled_activities
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
@@ -276,14 +276,13 @@ def edit_machine():
             machine.group_id = None
         else:
             machine.group_id = form.group.data
-        try:
-            db.session.add(machine)
-            db.session.commit()
 
-        except IntegrityError as e:
-            return str(e)
         # If creating a new machine, save the ID and start an activity on the machine
         if creating_new_machine:
+            machine.current_activity_id = -1  # Temporary to prevent integrity while we create the activity
+            db.session.add(machine)
+            db.session.flush()
+            db.session.refresh(machine)
             current_app.logger.info(f"{machine} created by {current_user}")
             first_act = Activity(time_start=datetime.now(),
                                  machine_id=machine.id,
@@ -295,7 +294,9 @@ def edit_machine():
             machine.current_activity_id = first_act.id
             db.session.commit()
             current_app.logger.debug(f"{first_act} started on machine creation")
-
+            create_all_scheduled_activities(create_date=datetime.now().date())
+        else:
+            db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page

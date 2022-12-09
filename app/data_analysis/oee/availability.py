@@ -1,15 +1,16 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 
+import humanize as humanize
 from flask import current_app
 
 from app.default.db_helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end
-from app.default.models import Activity, ActivityCode, ScheduledActivity
+from app.default.models import Activity, ActivityCode, ScheduledActivity, Machine
 from config import Config
 
 
 def get_machine_availability(machine_id, time_start: datetime, time_end: datetime):
-    """ Takes a machine id and two times, and returns the machine's availability for calculating OEE"""
+    """ Takes a machine id and two times, and returns the machine's availability (0-1) for calculating OEE"""
     runtime = get_machine_runtime(machine_id, time_start, time_end)
     schedule_dict = get_schedule_dict(machine_id, time_start, time_end, units="seconds")
     scheduled_uptime = schedule_dict["Scheduled Run Time"]
@@ -27,15 +28,31 @@ def get_machine_availability(machine_id, time_start: datetime, time_end: datetim
     return availability
 
 
+def get_daily_machine_availability_dict(requested_date: date = None, human_readable=False):
+    """ Return a dictionary with every machine's availability on the given date """
+    if not requested_date:
+        requested_date = datetime.now().date()
+    # Use 00:00 and 24:00 on the selected day
+    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
+    period_end = period_start + timedelta(days=1)
+    # If the end is in the future, change to now
+    if period_end > datetime.now():
+        period_end = datetime.now()
+    availability_dict = {}
+    for machine in Machine.query.all():
+        availability_dict[machine.id] = get_machine_availability(machine.id, period_start, period_end)
+    if human_readable:
+        for k, v in availability_dict.items():
+            v = v * 100
+            availability_dict[k] = f"{round(v, 1)}%"
+    return availability_dict
+
+
 def get_machine_runtime(machine_id, requested_start: datetime, requested_end: datetime):
     """ Takes a machine id and two times, and returns the amount of time the machine was running """
     # Get all the activities for the machine between the two given times, where the machine is up
-    activities = Activity.query \
-        .filter(Activity.machine_id == machine_id) \
-        .filter(Activity.machine_state == Config.MACHINE_STATE_RUNNING) \
-        .filter(Activity.time_end >= requested_start) \
-        .filter(Activity.time_start <= requested_end).all()
-
+    activities = get_machine_activities(machine_id, time_start=requested_start, time_end=requested_end,
+                                        machine_state=Config.MACHINE_STATE_RUNNING)
     run_time = 0
     for act in activities:
         start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
@@ -44,7 +61,7 @@ def get_machine_runtime(machine_id, requested_start: datetime, requested_end: da
 
 
 def get_activity_duration_dict(requested_start: datetime, requested_end: datetime, machine_id=None, user_id=None,
-                               use_description_as_key=False, units="seconds"):
+                               use_description_as_key=False, units="seconds", human_readable=False):
     """ Returns a dict containing the total duration of each activity_code between two times in the format:
     activity_code_id: duration(seconds) e.g. 1: 600
     If the use_description_as_key is passed, the activity_code_id is replaced with its description e.g. uptime: 600"""
@@ -83,11 +100,32 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
         key = act.activity_code.short_description if use_description_as_key else act.activity_code_id
         activities_dict[key] += (end - start).total_seconds()
 
+    if human_readable:
+        for k, v in activities_dict.items():
+            v = humanize.precisedelta(timedelta(seconds=v), minimum_unit="minutes", format="%0.1f")
+            activities_dict[k] = v
     # Convert to minutes if requested
-    if units == "minutes":
+    elif units == "minutes":
         for n in activities_dict:
             activities_dict[n] = activities_dict[n] / 60
     return activities_dict
+
+
+def get_daily_activity_duration_dict(requested_date: date = None, human_readable=False):
+    """ Return a dictionary with every machine's activity dict on the given date """
+    if not requested_date:
+        requested_date = datetime.now().date()
+    # Use 00:00 and 24:00 on the selected day
+    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
+    period_end = period_start + timedelta(days=1)
+    # If the end is in the future, change to now
+    if period_end > datetime.now():
+        period_end = datetime.now()
+    activity_duration_dict = {}
+    for machine in Machine.query.all():
+        activity_duration_dict[machine.id] = get_activity_duration_dict(period_start, period_end, machine_id=machine.id,
+                                                                        units="minutes", human_readable=human_readable)
+    return activity_duration_dict
 
 
 def get_schedule_dict(machine_id, time_start: datetime, time_end: datetime, units="seconds"):
