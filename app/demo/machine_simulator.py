@@ -17,10 +17,11 @@ def end_demo_job(job, simulation_datetime):
     current_app.logger.debug(f"ending job")
     job.end_time = simulation_datetime
     # Calculate a fake amount produced based on ideal amount produced multiplied by 80-100%
-    quantity_produced = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) *
-                            (random.randrange(80, 100) / 100))
-    quantity_rejects = int(job.quantity_produced * (random.random() / 4))
-    events.end_job(simulation_datetime, job=job, quantity_produced=quantity_produced, quantity_rejects=quantity_rejects)
+    total_quantity = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) *
+                         (random.randrange(80, 100) / 100))
+    quantity_rejects = int(total_quantity * (random.random() / 4))
+    quantity_good = total_quantity - quantity_rejects
+    events.end_job(simulation_datetime, job=job, quantity_good=quantity_good, quantity_rejects=quantity_rejects)
 
 
 def start_demo_job(machine, user, simulation_datetime):

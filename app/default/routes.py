@@ -1,18 +1,17 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime
 
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy import desc
 
-from app.data_analysis.oee.availability import get_machine_availability, get_daily_machine_availability_dict, \
-    get_activity_duration_dict, get_daily_activity_duration_dict
+from app.data_analysis.oee.availability import get_daily_machine_availability_dict, \
+    get_daily_activity_duration_dict
 from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
 from app.default.db_helpers import create_all_scheduled_activities, get_daily_production_dict
-from app.default.models import ActivityCode, Activity, Machine, ProductionQuantity
+from app.default.models import ActivityCode, Activity, Machine
 from app.login.models import User
-from app.visualisation.helpers import get_machine_status
 from config import Config
 
 

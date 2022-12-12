@@ -70,7 +70,7 @@ class Job(db.Model):
     job_number = db.Column(db.String(100), nullable=False)
     part_number = db.Column(db.String(100))
     ideal_cycle_time_s = db.Column(db.Integer)
-    quantity_produced = db.Column(db.Integer, default=0)
+    quantity_good = db.Column(db.Integer, default=0)
     quantity_rejects = db.Column(db.Integer, default=0)
     machine_id = db.Column(db.Integer)
     active = db.Column(db.Boolean)
@@ -86,7 +86,7 @@ class Job(db.Model):
 class ProductionQuantity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     time = db.Column(db.DateTime)
-    quantity_produced = db.Column(db.Integer)
+    quantity_good = db.Column(db.Integer)
     quantity_rejects = db.Column(db.Integer)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'))

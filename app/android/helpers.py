@@ -21,8 +21,8 @@ def get_job_start_data(input_type: str, input_autofill) -> dict:
     """
     current_settings = Settings.query.get_or_404(1)
     job_start_data = {"job_number": {"title": "Job Number",
-                                    "type": current_settings.job_number_input_type,
-                                    "autofill": ""},
+                                     "type": current_settings.job_number_input_type,
+                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
                                            "autofill": input_autofill}}
     if Config.USE_JOB_VALIDATION:
@@ -123,9 +123,9 @@ def get_job_validation_dict() -> dict:
     return job_numbers
 
 
-REQUESTED_DATA_JOB_END = {"quantity_produced": {"title": "Quantity Produced",
-                                                "type": "number",
-                                                "autofill": ""},
-                          "rejects": {"title": "Rejects",
+REQUESTED_DATA_JOB_END = {"good_quantity": {"title": "Good Qty",
+                                            "type": "number",
+                                            "autofill": ""},
+                          "rejects": {"title": "Rejects Qty",
                                       "type": "number",
                                       "autofill": ""}}

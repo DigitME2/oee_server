@@ -49,17 +49,17 @@ def apply_default_layout(layout):
     return layout
 
 
-def create_machine_gantt(machine_id,
+def create_machine_gantt(machine,
                          graph_start: datetime,
                          graph_end: datetime,
                          hide_jobless=False,
                          highlight_jobs=False):
     """ Create a gantt chart of the usage of a single machine, between the two times provided"""
 
-    if machine_id is None:
+    if machine is None:
         return "This machine does not exist"
 
-    activities = get_machine_activities(machine_id=machine_id, time_start=graph_start, time_end=graph_end)
+    activities = get_machine_activities(machine=machine, time_start=graph_start, time_end=graph_end)
     # Sort the activities so that uptime is always the first.
     # This is a workaround to make the graph always show uptime on the bottom
     activities.sort(key=sort_activities, reverse=True)
@@ -70,7 +70,6 @@ def create_machine_gantt(machine_id,
     if len(df) == 0:
         return "No machine activity"
 
-    machine = Machine.query.get(machine_id)
     graph_title = f"{machine.name}"
 
     # Create the colours dictionary using codes' colours from the database
@@ -101,22 +100,18 @@ def create_machine_gantt(machine_id,
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_multiple_machines_gantt(graph_start: datetime, graph_end: datetime, machine_ids):
+def create_multiple_machines_gantt(graph_start: datetime, graph_end: datetime, machines):
     """ Creates a gantt plot of activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
     activities = []
-    machine_ids.sort()
-    for machine_id in machine_ids:
-        machine_activities = get_machine_activities(machine_id=machine_id, time_start=graph_start,
+    machines.sort(key=lambda m: m.id)
+    for machine in machines:
+        machine_activities = get_machine_activities(machine=machine, time_start=graph_start,
                                                     time_end=graph_end)
-        # If a machine has no activities, add a fake one so it still shows on the graph
-        if len(machine_activities) == 0:
-            activities.append(Activity(time_start=graph_start, time_end=graph_start))
-        else:
-            activities.extend(machine_activities)
+        activities.extend(machine_activities)
 
     df = get_activities_df(activities=activities,
                            group_by="machine_name",
@@ -145,16 +140,16 @@ def create_multiple_machines_gantt(graph_start: datetime, graph_end: datetime, m
     return plot(fig, output_type="div", include_plotlyjs=True, config=config)
 
 
-def create_dashboard_gantt(graph_start: datetime, graph_end: datetime, machine_ids, title, include_plotlyjs=True):
+def create_dashboard_gantt(graph_start: datetime, graph_end: datetime, machines, title, include_plotlyjs=True):
     """ Creates a gantt plot of activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
     activities = []
-    machine_ids.sort()
-    for machine_id in machine_ids:
-        activities.extend(get_machine_activities(machine_id=machine_id,
+    machines.sort(key=lambda m: m.id)
+    for machine in machines:
+        activities.extend(get_machine_activities(machine=machine,
                                                  time_start=graph_start,
                                                  time_end=graph_end))
 
@@ -185,8 +180,8 @@ def create_dashboard_gantt(graph_start: datetime, graph_end: datetime, machine_i
 
     # Lower the height when there are only a few machines, to stop the bar being stretched vertically
     # Minor bug: If there are machines without activities, they'll still count here but wont show on the graph
-    if len(machine_ids) < 4:
-        layout.height = 200 * len(machine_ids)
+    if len(machines) < 4:
+        layout.height = 200 * len(machines)
     else:
         layout.height = None
     layout.width = None
@@ -202,8 +197,8 @@ def create_dashboard_gantt(graph_start: datetime, graph_end: datetime, machine_i
 
     new_tick_texts = []
     # Replace the labels on the y axis to show the current user and job
-    for machine_id in machine_ids:
-        status_dict = get_machine_status(machine_id)
+    for machine in machines:
+        status_dict = get_machine_status(machine)
         desired_text = f"{status_dict['machine_name']}<br>" \
                        f"{status_dict['machine_user']}<br>" \
                        f"{status_dict['machine_job']}<br>" \
@@ -227,17 +222,17 @@ def create_dashboard_gantt(graph_start: datetime, graph_end: datetime, machine_i
                 config={"displayModeBar": False, "showLink": False})
 
 
-def create_schedules_gantt(graph_start: datetime, graph_end: datetime, machine_ids: list):
+def create_schedules_gantt(graph_start: datetime, graph_end: datetime, machines: list[Machine]):
     """ Creates a gantt plot of scheduled activities for all machines in the database between given times
     graph_start = the start time of the graph
     graph_end = the end time of the graph
     machine_ids = a list of ids to include in the graph"""
 
     scheduled_activities: List[ScheduledActivity] = []
-    if len(machine_ids) > 1:
-        machine_ids.sort()
-    for machine_id in machine_ids:
-        scheduled_activities.extend(get_machine_scheduled_activities(machine_id=machine_id, time_start=graph_start,
+    if len(machines) > 1:
+        machines.sort(key=lambda m: m.id)
+    for machine in machines:
+        scheduled_activities.extend(get_machine_scheduled_activities(machine_id=machine.id, time_start=graph_start,
                                                                      time_end=graph_end))
         # If a machine has no activities, add a fake one so it still shows on the graph
         if len(scheduled_activities) == 0:
@@ -300,7 +295,7 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
                 include_plotlyjs=True)
 
 
-def create_oee_line(graph_start_date: date, graph_end_date: date, machine_ids):
+def create_oee_line(graph_start_date: date, graph_end_date: date, machines):
     """ Takes two times and creates a line graph of the OEE for each machine between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
     d = Settings.query.get(1).first_start.date()
@@ -308,12 +303,11 @@ def create_oee_line(graph_start_date: date, graph_end_date: date, machine_ids):
     if len(dates) == 0:
         return 0
     fig = go.Figure()
-    machine_ids.sort()
-    for machine_id in machine_ids:
-        machine = Machine.query.get(machine_id)
+    machines.sort(key=lambda m: m.id)
+    for machine in machines:
         machine_oee_figures = []
         for d in dates:
-            machine_oee_figures.append(get_daily_machine_oee(machine_id=machine_id, date=d))
+            machine_oee_figures.append(get_daily_machine_oee(machine_id=ma, date=d))
         fig.add_trace(go.Scatter(x=dates, y=machine_oee_figures, name=machine.name, mode='lines+markers'))
 
     layout = Layout()
@@ -329,12 +323,12 @@ def create_oee_line(graph_start_date: date, graph_end_date: date, machine_ids):
                 config={"showLink": False})
 
 
-def create_downtime_bar(machine_ids, graph_start: datetime, graph_end: datetime, hide_no_user=True):
+def create_downtime_bar(machines, graph_start: datetime, graph_end: datetime):
     total_activities_dict = None
-    for machine_id in machine_ids:
+    for machine in machines:
         activities_dict = get_activity_duration_dict(requested_start=graph_start,
                                                      requested_end=graph_end,
-                                                     machine_id=machine_id,
+                                                     machine=machine,
                                                      use_description_as_key=True,
                                                      units="minutes")
 
@@ -345,9 +339,6 @@ def create_downtime_bar(machine_ids, graph_start: datetime, graph_end: datetime,
             for n in total_activities_dict:
                 total_activities_dict[n] += activities_dict[n]
 
-    # Remove the "no user" code if requested:
-    if hide_no_user:
-        del total_activities_dict["No User"]
     activity_code_names = list(total_activities_dict.keys())
     activity_code_durations = list(total_activities_dict.values())
     fig = go.Figure([go.Bar(x=activity_code_names, y=activity_code_durations)])

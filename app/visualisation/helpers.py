@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta, time
 
-from app.default.db_helpers import get_legible_duration, get_machine_jobs
+from app.default.db_helpers import get_legible_duration, get_jobs
 from app.default.models import Machine, Job
 from app.login.models import User
 
 
-def get_machine_status(machine_id):
+def get_machine_status(machine: Machine):
     """ Returns a dictionary holding information for the status a machine"""
-    machine = Machine.query.get_or_404(machine_id)
     # Get the current user logged on to the machine
     machine_user_id = machine.current_activity.user_id
     if not machine_user_id or machine_user_id <= 0:
@@ -28,20 +27,20 @@ def get_machine_status(machine_id):
             "duration": duration}
 
 
-def parse_requested_machine_list(requested_machines) -> list:
-    """Parse the machines selected in a dropdown list and return a list of the machine ids"""
+def parse_requested_machine_list(requested_machines) -> list[Machine]:
+    """Parse the machines selected in a dropdown list and return a list of the machines"""
     if requested_machines == "all":
-        return list(machine.id for machine in Machine.query.all())
+        return Machine.query.all()
 
     # If the machines argument begins with g_ it means a group of machines has been selected
     elif requested_machines[0:2] == "g_":
         group_id = requested_machines[2:]
-        return list(machine.id for machine in Machine.query.filter_by(group_id=group_id))
+        return Machine.query.filter_by(group_id=group_id).all()
 
     # If the argument begins with m_ it represents just one machine
     elif requested_machines[0:2] == "m_":
-        return list(requested_machines[2:])
-
+        machine_id = int(requested_machines[2:])
+        return list(Machine.query.get_or_404(machine_id))
     else:
         return []
 
@@ -51,9 +50,9 @@ def get_daily_machine_production(machine: Machine, d: datetime.date):
     start = datetime.combine(date=d, time=time(hour=0, minute=0, second=0, microsecond=0))
     end = start + timedelta(days=1)
     quantity = 0
-    jobs = get_machine_jobs(machine.id, start, end)
+    jobs = get_jobs(start, end, machine=machine)
     for job in jobs:
-        quantity += job.quantity_produced
+        quantity += job.quantity_good
 
     return quantity
 

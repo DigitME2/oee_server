@@ -3,6 +3,7 @@ from random import randrange
 
 from flask import current_app
 
+from app.default.db_helpers import create_all_scheduled_activities
 from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, MachineGroup, \
     SHIFT_STRFTIME_FORMAT
 from app.demo.models import DemoSettings
@@ -79,6 +80,8 @@ def setup_database():
             db.session.add(settings)
             db.session.commit()
             current_app.logger.info("Created default settings on first startup")
+
+    create_all_scheduled_activities(create_date=datetime.now().date())
 
 
 def create_default_activity_codes():

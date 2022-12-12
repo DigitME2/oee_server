@@ -126,7 +126,8 @@ class RunningTotalWorkflow(Workflow):
             response["last_update"] = r.get(f"job_{self.job.id}_last_update")
         else:
             response["last_update"] = self.job.start_time.timestamp()
-        response["current_quantity"] = self.job.quantity_produced
+        #todo clarify total or good
+        response["current_quantity"] = self.job.quantity_good
         response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
 
         current_app.logger.debug(f"last update timestamp = {response['last_update']}")

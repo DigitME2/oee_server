@@ -99,16 +99,16 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
                     job_id=machine.active_job_id)
 
 
-def end_job(dt, job, quantity_produced, quantity_rejects):
+def end_job(dt, job, quantity_good, quantity_rejects):
     job.end_time = dt
     job.active = False
-    job.quantity_produced += quantity_produced
+    job.quantity_good += quantity_good
     job.quantity_rejects += quantity_rejects
     db.session.commit()
 
 
-def produced(dt, quantity_produced, quantity_rejects, job_id, machine_id):
-    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
+def produced(dt, quantity_good, quantity_rejects, job_id, machine_id):
+    production_quantity = ProductionQuantity(quantity_good=quantity_good,
                                              time=dt,
                                              quantity_rejects=quantity_rejects,
                                              job_id=job_id,

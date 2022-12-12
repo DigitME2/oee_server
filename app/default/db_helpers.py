@@ -84,13 +84,12 @@ def get_legible_duration(time_start: datetime, time_end: datetime):
         return f"{hours} hours {leftover_minutes} minutes"
 
 
-def get_machine_activities(machine_id, time_start: datetime, time_end: datetime, activity_code_id=None,
+def get_machine_activities(machine: Machine, time_start: datetime, time_end: datetime, activity_code_id=None,
                            machine_state=None):
     """ Returns the activities for a machine, between two times. Activities can overrun the two times given"""
 
-    machine = Machine.query.get(machine_id)
     if machine is None:
-        current_app.logger.warn(f"Activities requested for non-existent Machine ID {machine_id}")
+        current_app.logger.warn(f"Activities requested for non-existent Machine ID {machine}")
         return
     activities_query = Activity.query \
         .filter(Activity.machine_id == machine.id) \
@@ -110,13 +109,12 @@ def get_machine_activities(machine_id, time_start: datetime, time_end: datetime,
     return activities
 
 
-def get_machine_jobs(machine_id, time_start: datetime, time_end: datetime):
-    """ Get the jobs of a machine between two times"""
-    jobs = Job.query \
-        .filter(Job.end_time >= time_start) \
-        .filter(Job.start_time <= time_end) \
-        .filter(Job.machine_id == machine_id).all()
-    machine = Machine.query.get(machine_id)
+def get_jobs(time_start: datetime, time_end: datetime, machine: Machine = None):
+    """ Get the jobs between two times and apply filters if required"""
+    jobs_query = Job.query.filter(Job.end_time >= time_start).filter(Job.start_time <= time_end)
+    if machine:
+        jobs_query = jobs_query.filter(Job.machine_id == machine.id)
+    jobs = jobs_query.all()
     # If required, add the current job (The above query will not get it)
     if machine.active_job and machine.active_job.start_time <= time_end:
         jobs.append(machine.active_job)
@@ -287,19 +285,19 @@ def get_daily_production_dict(requested_date: date = None) -> Tuple[dict, dict]:
         requested_date = datetime.now().date()
     last_midnight = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
     next_midnight = last_midnight + timedelta(days=1)
-    production_amounts = {}
+    good_amounts = {}
     reject_amounts = {}
     machines = Machine.query.all()
     for machine in machines:
-        quantity_produced = 0
+        quantity_good = 0
         quantity_rejects = 0
         today_quantities = ProductionQuantity.query. \
             filter(ProductionQuantity.machine_id == machine.id). \
             filter(ProductionQuantity.time >= last_midnight). \
             filter(ProductionQuantity.time <= next_midnight).all()
         for q in today_quantities:
-            quantity_produced += q.quantity_produced
+            quantity_good += q.quantity_good
             quantity_rejects += q.quantity_rejects
-        production_amounts[machine.id] = quantity_produced
+        good_amounts[machine.id] = quantity_good
         reject_amounts[machine.id] = quantity_rejects
-    return production_amounts, reject_amounts
+    return good_amounts, reject_amounts

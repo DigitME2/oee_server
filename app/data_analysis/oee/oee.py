@@ -11,7 +11,7 @@ from app.default.models import MachineGroup
 from app.extensions import db
 
 
-def calculate_machine_oee(machine_id, time_start: datetime, time_end: datetime):
+def calculate_machine_oee(machine, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
     Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
 
@@ -19,32 +19,32 @@ def calculate_machine_oee(machine_id, time_start: datetime, time_end: datetime):
         current_app.logger.warn(f"Machine oee requested for future date {time_end.strftime(('%Y-%m-%d'))}")
         raise OEECalculationException("Machine OEE requested for future date")
 
-    current_app.logger.info(f"Calculating OEE for machine {machine_id} between {time_start} and {time_end}")
-    availability = get_machine_availability(machine_id, time_start, time_end)
+    current_app.logger.info(f"Calculating OEE for machine {machine.name} between {time_start} and {time_end}")
+    availability = get_machine_availability(machine, time_start, time_end)
     current_app.logger.debug(f"Availability: {availability}")
-    performance = get_machine_performance(machine_id, time_start, time_end)
+    performance = get_machine_performance(machine, time_start, time_end)
     current_app.logger.debug(f"Performance: {performance}")
-    quality = get_machine_quality(machine_id, time_start, time_end)
+    quality = get_machine_quality(machine, time_start, time_end)
     current_app.logger.debug(f"Quality: {quality}")
     oee = availability * performance * quality * 100
     current_app.logger.debug(f"OEE Percent: {oee}")
     return oee
 
 
-def get_daily_machine_oee(machine_id, date):
+def get_daily_machine_oee(machine, date):
     """ Takes a machine id and a dates, then gets the oee for the day and saves the figure to database """
-    daily_machine_oee = DailyOEE.query.filter_by(machine_id=machine_id, date=date).first()
+    daily_machine_oee = DailyOEE.query.filter_by(machine_id=machine.id, date=date).first()
     # If the OEE figure is missing, call the function to calculate the missing values and save in database
     if daily_machine_oee is None:
         start = datetime.combine(date=date, time=time(hour=0, minute=0, second=0, microsecond=0))
         end = start + timedelta(days=1)
         try:
-            oee = calculate_machine_oee(machine_id, time_start=start, time_end=end)
+            oee = calculate_machine_oee(machine, time_start=start, time_end=end)
         except OEECalculationException as e:
-            current_app.logger.warn(f"Failed to calculate OEE for machine id {machine_id} on {date}")
+            current_app.logger.warn(f"Failed to calculate OEE for machine id {machine.id} on {date}")
             current_app.logger.warn(e)
             return 0
-        daily_machine_oee = DailyOEE(machine_id=machine_id, date=date, oee=oee)
+        daily_machine_oee = DailyOEE(machine_id=machine.id, date=date, oee=oee)
         db.session.add(daily_machine_oee)
         db.session.commit()
 
