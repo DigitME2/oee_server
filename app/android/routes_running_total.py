@@ -20,8 +20,9 @@ def running_total_update_quantity():
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
     user_session = input_device.active_user_session
 
+# todo clarify between quantity good and total
     try:
-        quantity_produced = int(request.json["quantity_produced"])
+        quantity_good = int(request.json["quantity_good"])
         quantity_rejects = int(request.json["rejects"])
     except KeyError:
         current_app.logger.error(f"Received incorrect data from {user_session} while updating quantity")
@@ -30,15 +31,15 @@ def running_total_update_quantity():
 
     # Update quantities for the current job
     current_job = input_device.machine.active_job
-    current_job.quantity_produced += quantity_produced
+    current_job.quantity_good += quantity_good
     current_job.quantity_rejects += quantity_rejects
     db.session.commit()
 
-    events.produced(now, quantity_produced, quantity_rejects, current_job.id, input_device.machine.id)
+    events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
 
     r.set(f"job_{current_job.id}_last_update", now.timestamp(), ex=86400)
 
     return json.dumps({"success": True,
-                       "quantity_produced": current_job.quantity_produced,
+                       "quantity_good": current_job.quantity_good,
                        "quantity_rejects": current_job.quantity_rejects,
                        "last_update": now.timestamp()})
