@@ -3,9 +3,9 @@ from datetime import datetime, timedelta, date, time
 
 import humanize as humanize
 from flask import current_app
-from sqlalchemy import or_
 
-from app.default.db_helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end
+from app.default.db_helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end, \
+    get_machine_scheduled_activities
 from app.default.models import Activity, ActivityCode, ScheduledActivity, Machine
 from app.login.models import User
 from config import Config
@@ -55,6 +55,18 @@ def get_machine_runtime(machine: Machine, requested_start: datetime, requested_e
     # Get all the activities for the machine between the two given times, where the machine is up
     activities = get_machine_activities(machine, time_start=requested_start, time_end=requested_end,
                                         machine_state=Config.MACHINE_STATE_RUNNING)
+    run_time = 0
+    for act in activities:
+        start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
+        run_time += (end - start).total_seconds()
+    return run_time
+
+
+def get_scheduled_machine_runtime(machine: Machine, requested_start: datetime, requested_end: datetime):
+    """ Takes a machine id and two times, and returns the amount of time the machine was scheduled to run"""
+    # Get all the activities for the machine between the two given times, where the machine is up
+    activities = get_machine_scheduled_activities(machine.id, time_start=requested_start, time_end=requested_end,
+                                                  machine_state=Config.MACHINE_STATE_RUNNING)
     run_time = 0
     for act in activities:
         start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
@@ -130,16 +142,38 @@ def get_daily_activity_duration_dict(requested_date: date = None, human_readable
     return activity_duration_dict
 
 
+def get_daily_scheduled_runtime_dicts(requested_date: date = None, human_readable=False):
+    """ Return a dictionary of schedule dicts returned by get_schedule_dict for every machine for a date"""
+    if not requested_date:
+        requested_date = datetime.now().date()
+    # Use 00:00 and 24:00 on the selected day
+    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
+    period_end = period_start + timedelta(days=1)
+    # If the end is in the future, change to now
+    if period_end > datetime.now():
+        period_end = datetime.now()
+    runtime_dict = {}
+    for machine in Machine.query.all():
+        scheduled_runtime = get_scheduled_machine_runtime(machine, period_start, period_end)
+        if human_readable:
+            runtime_dict[machine.id] = humanize.precisedelta(
+                timedelta(seconds=scheduled_runtime), minimum_unit="minutes", format="%0.1f"
+            )
+        else:
+            runtime_dict[machine.id] = scheduled_runtime
+    return runtime_dict
+
+
 def get_schedule_dict(machine, time_start: datetime, time_end: datetime, units="seconds"):
     """ Takes a machine id and two times, and returns a dict with:
     scheduled_run_time
     scheduled_down_time
     unscheduled_time"""
-    # TODO Have a look at this function it's not creating the right results.
     # Get all the scheduled activities
     activities = ScheduledActivity.query \
         .filter(ScheduledActivity.machine_id == machine.id) \
-        .filter(or_(ScheduledActivity.time_end >= time_start, ScheduledActivity.time_start <= time_end)).all()
+        .filter(ScheduledActivity.time_end >= time_start) \
+        .filter(ScheduledActivity.time_start <= time_end).all()
     total_time = time_end - time_start
     scheduled_run_time = timedelta()
     scheduled_down_time = timedelta()

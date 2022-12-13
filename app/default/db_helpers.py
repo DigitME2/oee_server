@@ -120,12 +120,16 @@ def get_jobs(time_start: datetime, time_end: datetime, machine: Machine = None):
         jobs.append(machine.active_job)
     return jobs
 
-def get_machine_scheduled_activities(machine_id, time_start: datetime, time_end: datetime):
+
+def get_machine_scheduled_activities(machine_id, time_start: datetime, time_end: datetime, machine_state=None):
     """ Returns scheduled activities for a machine between two times"""
-    activities = ScheduledActivity.query \
+    activities_query = ScheduledActivity.query \
         .filter(ScheduledActivity.machine_id == machine_id) \
         .filter(ScheduledActivity.time_end >= time_start) \
-        .filter(ScheduledActivity.time_start <= time_end).all()
+        .filter(ScheduledActivity.time_start <= time_end)
+    if machine_state:
+        activities_query = activities_query.filter(ScheduledActivity.scheduled_machine_state == machine_state)
+    activities = activities_query.all()
     return activities
 
 

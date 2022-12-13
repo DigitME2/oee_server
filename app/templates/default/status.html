@@ -35,6 +35,10 @@
                         </div>
                     </div>
                     <div class="col">
+                        <h4>Job</h4>
+                        {{ machine.active_job.job_number }}
+                    </div>
+                    <div class="col">
                         <h4>Current User: </h4>
                         {% if machine.active_user %}
                             {{ machine.active_user.username }}
@@ -52,10 +56,15 @@
                             <h4>Availability {{ availability_dict[machine.id] }}</h4>
                         </div>
                         <div class="card-text">
+                        Uptime: {{ activity_durations_dict[machine.id][uptime_code] }} <br>
+                        Scheduled runtime: {{ schedule_dict[machine.id] }}<br>
                             {% for act_code in activity_codes %}
-                                {{ act_code.short_description }}:
-                                {{ activity_durations_dict[machine.id][act_code.id] }}<br>
+                                {% if act_code.id != uptime_code %}
+                                    {{ act_code.short_description }}:
+                                    {{ activity_durations_dict[machine.id][act_code.id] }}<br>
+                                {% endif %}
                             {% endfor %}
+
                         </div>
                     </div>
                     <div class="col">
