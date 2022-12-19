@@ -10,6 +10,9 @@ from app.default.models import Activity, ActivityCode, ScheduledActivity, Machin
 from app.login.models import User
 from config import Config
 
+# TODO When a machine runs during scheduled downtime, we get bad data. Need to change the scheduled downtime
+#  into overtime or "unscheduled uptime" and count this as scheduled run time in the the availability calculation
+
 
 def get_machine_availability(machine: Machine, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's availability (0-1) for calculating OEE"""

@@ -1,0 +1,98 @@
+{% macro set_job_modal(machine_id, form) %}
+    <div class="modal fade" id="setJobModal{{ machine_id }}" tabindex="-1" role="dialog"
+         aria-labelledby="setJobModal{{ machine_id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="setJobModal{{ machine_id }}Label">Set job
+                        for {{ machine_name }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="setJobForm{{ machine_id }}" action="{{ url_for("api.start_job") }}"
+                      method="post" class="form-group">
+                    <div class="modal-body">
+                        <input type="hidden" name="machine_id" value="{{ machine_id }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.job_number.label }}
+                        {{ form.job_number(class_="form-control") }}
+                        {{ form.ideal_cycle_time.label }}
+                        {{ form.ideal_cycle_time(class_="form-control") }}
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="setJob({{ machine_id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function setJob(machineId) {
+            let formData = new FormData(document.getElementById("setJobForm" + machineId))
+            $.ajax({
+                url: '/api/start-job',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+{% endmacro %}
+
+{% macro end_job_modal(job, form) %}
+    <div class="modal fade" id="endJobModal{{ job.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="endJobModal{{ job.id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="endJobModal{{ job.id }}Label">End job {{ job.job_number }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="endJobForm{{ job.id }}" action="{{ url_for("api.start_job") }}"
+                      method="post" class="form-group">
+                    <div class="modal-body">
+                        <input type="hidden" name="job_id" value="{{ job.id }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.good_quantity.label }}
+                        {{ form.good_quantity(class_="form-control") }}
+                        {{ form.rejects.label }}
+                        {{ form.rejects(class_="form-control") }}
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="endJob({{ job.id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function endJob(jobId) {
+            let formData = new FormData(document.getElementById("endJobForm" + jobId))
+            $.ajax({
+                url: '/api/end-job',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+{% endmacro %}

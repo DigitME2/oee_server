@@ -5,12 +5,13 @@ from typing import Optional
 import redis
 import simple_websocket
 from flask import request, jsonify, abort, make_response, current_app
+from flask_login import current_user
 from pydantic import BaseModel
 
 from app.api import bp
 from app.default import events
-from app.default.events import change_activity
-from app.default.models import Activity, ActivityCode, Machine, InputDevice
+from app.default.forms import StartJobForm, EndJobForm
+from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -59,11 +60,11 @@ def change_machine_state():
     else:
         activity_code_id = post_data.activity_code_id
     machine = Machine.query.get_or_404(post_data.machine_id)
-    change_activity(datetime.now(),
-                    machine=machine,
-                    new_activity_code_id=activity_code_id,
-                    user_id=post_data.user_id,
-                    job_id=machine.active_job_id)
+    events.change_activity(datetime.now(),
+                           machine=machine,
+                           new_activity_code_id=activity_code_id,
+                           user_id=post_data.user_id,
+                           job_id=machine.active_job_id)
     response = make_response("", 200)
     current_app.logger.debug(f"Activity set to id {activity_code_id}")
     return response
@@ -162,3 +163,42 @@ def force_android_logout(input_device_id):
 
     return make_response("", 200)
 
+
+@bp.route('/api/start-job', methods=["POST"])
+def start_job():
+    """ Start a job on a machine. """
+    now = datetime.now()
+    start_job_form = StartJobForm()
+    if start_job_form.validate_on_submit():
+        machine_id = request.form.get("machine_id")
+        machine = Machine.query.get(machine_id)
+        events.start_job(now,
+                         machine=machine,
+                         user_id=current_user.id,
+                         job_number=start_job_form.job_number.data,
+                         ideal_cycle_time_s=start_job_form.ideal_cycle_time.data)
+    return make_response("", 200)
+
+
+@bp.route('/api/end-job', methods=["POST"])
+def end_job():
+    """ End a job"""
+    now = datetime.now()
+    end_job_form = EndJobForm()
+    if end_job_form.validate_on_submit():
+        job_id = request.form.get("job_id")
+        job = Job.query.get_or_404(job_id)
+        # Remove it as active_job from its machine
+        machine = Machine.query.filter(Machine.active_job_id == job.id).first()
+        machine.active_job_id = None
+        db.session.commit()
+        events.produced(now,
+                        quantity_good=end_job_form.good_quantity.data,
+                        quantity_rejects=end_job_form.rejects.data,
+                        job_id=job.id,
+                        machine_id=machine.id)
+        events.end_job(now,
+                       job=job,
+                       quantity_good=end_job_form.good_quantity.data,
+                       quantity_rejects=end_job_form.rejects.data)
+    return make_response("", 200)

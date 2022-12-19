@@ -10,6 +10,8 @@ from app.data_analysis.oee.performance import get_daily_performance_dict, get_da
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
 from app.default.db_helpers import create_all_scheduled_activities, get_daily_production_dict
+from app.default.events import start_job
+from app.default.forms import StartJobForm, EndJobForm
 from app.default.models import ActivityCode, Activity, Machine
 from app.login.models import User
 from config import Config
@@ -20,10 +22,12 @@ def default():
     return redirect(url_for('login.login'))
 
 
-@bp.route('/status')
+@bp.route('/status', methods=["GET", "POST"])
 def status_page():
     """ Show today's details for all machines"""
     machines = Machine.query.all()
+    start_job_form = StartJobForm()
+    end_job_form = EndJobForm()
     # All activity codes
     activity_codes = ActivityCode.query.all()
     # jobs_dict =
@@ -44,6 +48,8 @@ def status_page():
     return render_template("default/status.html",
                            activity_codes=activity_codes,
                            machines=machines,
+                           start_job_form=start_job_form,
+                           end_job_form=end_job_form,
                            current_user=current_user,
                            availability_dict=availability_dict,
                            schedule_dict=schedule_dict,

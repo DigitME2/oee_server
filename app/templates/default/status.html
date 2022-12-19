@@ -1,8 +1,8 @@
 {% extends "default/base.html" %}
+{% import "default/job_modals.html" as job_modals %}
 
 {% block content %}
     <div class="container-fluid">
-
         {% for machine in machines %}
             <div class="border border-3 my-5 pl-5 py-2
                     {% if machine.current_activity.activity_code_id == uptime_code %}
@@ -36,7 +36,23 @@
                     </div>
                     <div class="col">
                         <h4>Job</h4>
-                        {{ machine.active_job.job_number }}
+                        {% if machine.active_job %}
+                            {{ machine.active_job.job_number }}
+                            <!-- Open end job modal -->
+                            <button type="button" class="btn btn-dark" data-toggle="modal"
+                                    data-target="#endJobModal{{ machine.active_job.id }}">
+                                End
+                            </button>
+                            {{ job_modals.end_job_modal(machine.active_job, end_job_form) }}
+                        {% else %}
+                            <!-- Open set job modal -->
+                            <button type="button" class="btn btn-dark" data-toggle="modal"
+                                    data-target="#setJobModal{{ machine.id }}">
+                                Set Job
+                            </button>
+                            {{ job_modals.set_job_modal(machine.id, start_job_form) }}
+
+                        {% endif %}
                     </div>
                     <div class="col">
                         <h4>Current User: </h4>
@@ -56,15 +72,14 @@
                             <h4>Availability {{ availability_dict[machine.id] }}</h4>
                         </div>
                         <div class="card-text">
-                        Uptime: {{ activity_durations_dict[machine.id][uptime_code] }} <br>
-                        Scheduled runtime: {{ schedule_dict[machine.id] }}<br>
+                            Uptime: {{ activity_durations_dict[machine.id][uptime_code] }}<br>
+                            Scheduled: {{ schedule_dict[machine.id] }}<br>
                             {% for act_code in activity_codes %}
                                 {% if act_code.id != uptime_code %}
                                     {{ act_code.short_description }}:
                                     {{ activity_durations_dict[machine.id][act_code.id] }}<br>
                                 {% endif %}
                             {% endfor %}
-
                         </div>
                     </div>
                     <div class="col">
@@ -88,7 +103,10 @@
 
 
     <script>
-        function postActivity(machineId, newActivityCodeId, userId) {
+
+
+
+    function postActivity(machineId, newActivityCodeId, userId) {
             let data = {
                 machine_id: machineId,
                 user_id: userId,
