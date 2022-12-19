@@ -17,7 +17,7 @@ def get_machine_performance(machine: Machine, time_start: datetime, time_end: da
         if not job.ideal_cycle_time_s:
             continue
         job_start, job_end, ratio_of_job_in_time_range = get_job_cropped_start_end_ratio(job, time_start, time_end)
-        ideal_machine_runtime_s += job.ideal_cycle_time_s * (job.quantity_good * ratio_of_job_in_time_range)
+        ideal_machine_runtime_s += job.ideal_cycle_time_s * (job.get_total_quantity_good() * ratio_of_job_in_time_range)
         machine_uptime_during_jobs_s += get_machine_runtime(machine, job_start, job_end)
     if machine_uptime_during_jobs_s == 0:
         return 0

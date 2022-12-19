@@ -204,7 +204,7 @@ def android_end_job():
     if user_session is None:
         abort(401)
     try:
-        quantity_good = float(request.json["good_quantity"])
+        quantity_good = float(request.json["quantity_good"])
         quantity_rejects = float(request.json["rejects"])
     except KeyError:
         current_app.logger.error(f"Received incorrect data from {user_session} while ending job")
@@ -215,7 +215,7 @@ def android_end_job():
     current_job = input_device.machine.active_job
     if current_job is None:
         abort(400, message="No active job")
-    events.end_job(now, current_job, quantity_good, quantity_rejects)
+    events.end_job(now, current_job)
     input_device.machine.active_job_id = None
     db.session.commit()
     # Set the activity to downtime

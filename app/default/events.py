@@ -1,4 +1,5 @@
 from datetime import datetime
+from operator import attrgetter
 
 from flask import current_app
 
@@ -99,17 +100,27 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
                     job_id=machine.active_job_id)
 
 
-def end_job(dt, job, quantity_good, quantity_rejects):
+def end_job(dt, job):
     job.end_time = dt
     job.active = False
-    job.quantity_good += quantity_good
-    job.quantity_rejects += quantity_rejects
     db.session.commit()
 
 
-def produced(dt, quantity_good, quantity_rejects, job_id, machine_id):
-    production_quantity = ProductionQuantity(quantity_good=quantity_good,
-                                             time=dt,
+def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time_start=None):
+    """ Record a production quantity. time_start and time_end mark the period of time in which the parts were created
+    If time_start is not given, it is inferred from either the last ProductionQuantity or the start of the job"""
+    if not time_start:
+        job_production_quantities = ProductionQuantity.query.filter(ProductionQuantity.job_id == job_id).all()
+        if len(job_production_quantities) > 0:
+            last_pq = max(job_production_quantities, key=attrgetter('time_end'))
+            time_start = last_pq.time_end
+        else:
+            job = Job.query.get(job_id)
+            time_start = job.start_time
+
+    production_quantity = ProductionQuantity(time_start=time_start,
+                                             time_end=time_end,
+                                             quantity_good=quantity_good,
                                              quantity_rejects=quantity_rejects,
                                              job_id=job_id,
                                              machine_id=machine_id)

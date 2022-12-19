@@ -21,7 +21,7 @@ def end_demo_job(job, simulation_datetime):
                          (random.randrange(80, 100) / 100))
     quantity_rejects = int(total_quantity * (random.random() / 4))
     quantity_good = total_quantity - quantity_rejects
-    events.end_job(simulation_datetime, job=job, quantity_good=quantity_good, quantity_rejects=quantity_rejects)
+    events.end_job(simulation_datetime, job=job)
 
 
 def start_demo_job(machine, user, simulation_datetime):

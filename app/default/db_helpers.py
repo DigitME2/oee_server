@@ -297,8 +297,8 @@ def get_daily_production_dict(requested_date: date = None) -> Tuple[dict, dict]:
         quantity_rejects = 0
         today_quantities = ProductionQuantity.query. \
             filter(ProductionQuantity.machine_id == machine.id). \
-            filter(ProductionQuantity.time >= last_midnight). \
-            filter(ProductionQuantity.time <= next_midnight).all()
+            filter(ProductionQuantity.time_start >= last_midnight). \
+            filter(ProductionQuantity.time_end <= next_midnight).all()
         for q in today_quantities:
             quantity_good += q.quantity_good
             quantity_rejects += q.quantity_rejects

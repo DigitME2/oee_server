@@ -159,7 +159,7 @@ def get_job_table(start_date: date, end_date: date, machines) -> str:
                 "job_number": job.job_number,
                 "part_number": job.part_number,
                 "ideal_cycle_time_s": job.ideal_cycle_time_s,
-                "quantity_good": job.quantity_good,
+                "quantity_good": job.get_total_quantity_good(),
                 "rejects": job.quantity_rejects}
         try:
             item["operator"] = str(job.user.username)

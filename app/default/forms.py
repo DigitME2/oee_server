@@ -13,6 +13,6 @@ class StartJobForm(FlaskForm):
 
 class EndJobForm(FlaskForm):
     machine_id = HiddenField()
-    good_quantity = IntegerField("Good Quantity")
+    quantity_good = IntegerField("Good Quantity")
     rejects = IntegerField("Rejects")
     submit = SubmitField("End")

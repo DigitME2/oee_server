@@ -20,7 +20,6 @@ def running_total_update_quantity():
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
     user_session = input_device.active_user_session
 
-# todo clarify between quantity good and total
     try:
         quantity_good = int(request.json["quantity_good"])
         quantity_rejects = int(request.json["rejects"])
@@ -29,17 +28,12 @@ def running_total_update_quantity():
         return json.dumps({"success": False,
                            "reason": "Server error parsing data"})
 
-    # Update quantities for the current job
     current_job = input_device.machine.active_job
-    current_job.quantity_good += quantity_good
-    current_job.quantity_rejects += quantity_rejects
-    db.session.commit()
-
     events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
 
-    r.set(f"job_{current_job.id}_last_update", now.timestamp(), ex=86400)
+    r.set(f"job_{input_device.machine.active_job_id}_last_update", now.timestamp(), ex=86400)
 
     return json.dumps({"success": True,
-                       "quantity_good": current_job.quantity_good,
-                       "quantity_rejects": current_job.quantity_rejects,
+                       "quantity_produced": current_job.get_total_quantity_good(),
+                       "quantity_rejects": current_job.get_total_reject_quantity(),
                        "last_update": now.timestamp()})

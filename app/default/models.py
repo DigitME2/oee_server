@@ -70,8 +70,6 @@ class Job(db.Model):
     job_number = db.Column(db.String(100), nullable=False)
     part_number = db.Column(db.String(100))
     ideal_cycle_time_s = db.Column(db.Integer)
-    quantity_good = db.Column(db.Integer, default=0)
-    quantity_rejects = db.Column(db.Integer, default=0)
     machine_id = db.Column(db.Integer)
     active = db.Column(db.Boolean)
     notes = db.Column(db.String(100))
@@ -82,10 +80,23 @@ class Job(db.Model):
     def __repr__(self):
         return f"<Job {self.job_number} (ID {self.id})>"
 
+    def get_total_quantity_good(self):
+        total_good_qty = 0
+        for q in self.quantities:
+            total_good_qty += q.quantity_good
+        return total_good_qty
+
+    def get_total_reject_quantity(self):
+        total_reject_qty = 0
+        for q in self.quantities:
+            total_reject_qty += q.quantity_rejects
+        return total_reject_qty
+
 
 class ProductionQuantity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    time = db.Column(db.DateTime)
+    time_start = db.Column(db.DateTime, nullable=False)
+    time_end = db.Column(db.DateTime, nullable=False)
     quantity_good = db.Column(db.Integer)
     quantity_rejects = db.Column(db.Integer)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))

@@ -34,9 +34,6 @@ def end_job(job, machine, simulation_datetime=None):
         simulation_datetime = datetime.now()
     job.end_time = simulation_datetime
     # Calculate a fake amount produced based on ideal amount produced multiplied by 80-100%
-    job.quantity_good = int(((job.end_time - job.start_time).seconds / job.ideal_cycle_time_s) *
-                            (random.randrange(80, 100) / 100))
-    job.quantity_rejects = int(job.quantity_good * (random.random() / 4))
     job.active = None
     complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
     new_activity = Activity(machine_id=machine.id,

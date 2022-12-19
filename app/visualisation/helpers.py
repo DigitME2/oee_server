@@ -52,7 +52,7 @@ def get_daily_machine_production(machine: Machine, d: datetime.date):
     quantity = 0
     jobs = get_jobs(start, end, machine=machine)
     for job in jobs:
-        quantity += job.quantity_good
+        quantity += job.get_total_quantity_good()
 
     return quantity
 

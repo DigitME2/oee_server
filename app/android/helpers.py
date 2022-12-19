@@ -123,7 +123,7 @@ def get_job_validation_dict() -> dict:
     return job_numbers
 
 
-REQUESTED_DATA_JOB_END = {"good_quantity": {"title": "Good Qty",
+REQUESTED_DATA_JOB_END = {"quantity_good": {"title": "Good Qty",
                                             "type": "number",
                                             "autofill": ""},
                           "rejects": {"title": "Rejects Qty",

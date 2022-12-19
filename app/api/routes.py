@@ -193,12 +193,9 @@ def end_job():
         machine.active_job_id = None
         db.session.commit()
         events.produced(now,
-                        quantity_good=end_job_form.good_quantity.data,
+                        quantity_good=end_job_form.quantity_good.data,
                         quantity_rejects=end_job_form.rejects.data,
                         job_id=job.id,
                         machine_id=machine.id)
-        events.end_job(now,
-                       job=job,
-                       quantity_good=end_job_form.good_quantity.data,
-                       quantity_rejects=end_job_form.rejects.data)
+        events.end_job(now, job=job)
     return make_response("", 200)

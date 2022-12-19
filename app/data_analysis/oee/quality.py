@@ -13,13 +13,12 @@ def get_machine_quality(machine: Machine, time_start: datetime, time_end: dateti
     total_machine_quantity_produced = 0
     total_machine_rejects_produced = 0
     for job in jobs:
-        # I've already considered what happens if this job ran outside of the requested start/end and it would be ok,
+        # I've already considered what happens if this job ran outside the requested start/end, and it would be ok,
         # All we can do is assume the job has same performance all the way through, so the ratio would still be the same
-        if job.quantity_good:
-            total_machine_quantity_produced += job.quantity_good
-        if job.quantity_rejects:
-            total_machine_rejects_produced += job.quantity_rejects
-            total_machine_quantity_produced += job.quantity_rejects
+        rejects_qty = job.get_total_reject_quantity()
+        good_qty = job.get_total_quantity_good()
+        total_machine_quantity_produced += (good_qty + rejects_qty)
+        total_machine_rejects_produced += rejects_qty
     try:
         quality = (total_machine_quantity_produced - total_machine_rejects_produced) / total_machine_quantity_produced
         if quality > 1:
