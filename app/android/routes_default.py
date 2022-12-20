@@ -7,7 +7,8 @@ from flask import request, current_app, abort
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default import events
-from app.default.models import Job, InputDevice, Settings
+from app.default.db_helpers import add_new_input_device
+from app.default.models import Job, InputDevice, Settings, Machine
 from app.extensions import db
 from app.login import bp
 from app.login.helpers import end_all_user_sessions
@@ -26,12 +27,7 @@ def android_check_state():
     input_device = InputDevice.query.filter_by(uuid=uuid).first()
     if not input_device:
         # Add the new device if it doesn't exist in the database
-        new_input = InputDevice(uuid=uuid, name=uuid)
-        db.session.add(new_input)
-        db.session.flush()
-        new_input.name = "Tablet " + str(new_input.id)
-        db.session.commit()
-        input_device = InputDevice.query.filter_by(uuid=uuid).first()
+        input_device = add_new_input_device(uuid)
     user_session = input_device.active_user_session
 
     # Get the machine assigned to this device

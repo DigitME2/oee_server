@@ -7,7 +7,7 @@ from typing import List, Tuple
 from flask import current_app
 from sqlalchemy import func
 
-from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job, ProductionQuantity
+from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job, ProductionQuantity, InputDevice
 from app.extensions import db
 from config import Config
 
@@ -305,3 +305,20 @@ def get_daily_production_dict(requested_date: date = None) -> Tuple[dict, dict]:
         good_amounts[machine.id] = quantity_good
         reject_amounts[machine.id] = quantity_rejects
     return good_amounts, reject_amounts
+
+
+def add_new_input_device(uuid):
+    """ Add a new input device from its UUID, and auto assign a machine """
+    machines = Machine.query.all()
+    unassigned_machines = [m for m in machines if m.input_device is None]
+    if len(unassigned_machines) > 0:
+        auto_assigned_machine_id = unassigned_machines[0].id
+    else:
+        auto_assigned_machine_id = None
+
+    new_input = InputDevice(uuid=uuid, name=uuid, machine_id=auto_assigned_machine_id)
+    db.session.add(new_input)
+    db.session.flush()
+    new_input.name = "Tablet " + str(new_input.id)
+    db.session.commit()
+    return new_input
