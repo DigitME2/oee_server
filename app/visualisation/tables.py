@@ -4,7 +4,7 @@ import pandas as pd
 from flask import current_app
 from flask_table import Table, Col, create_table
 
-from app.data_analysis.oee.availability import get_activity_duration_dict, get_schedule_dict
+from app.data_analysis.oee.availability import get_activity_duration_dict
 from app.data_analysis.oee.oee import get_daily_machine_oee
 from app.default.db_helpers import get_jobs
 from app.default.models import Job, ActivityCode, Machine
@@ -266,10 +266,6 @@ def get_machine_activity_table(time_start: datetime, time_end: datetime):
     for activity_description in activity_code_descriptions:
         Tbl.add_column(activity_description, Col(activity_description))
 
-    # Add the names of scheduled/unscheduled hours as columns
-    schedule_dict = get_schedule_dict(1, time_start, time_end)  # Get the dict for any machine, just to parse the keys and create columns
-    for key in schedule_dict:
-        Tbl.add_column(key, Col(key))
 
     # Add the class to the table so it's picked up by datatables
     Tbl.classes = ["dataTable table table-striped table-bordered"]
@@ -285,11 +281,6 @@ def get_machine_activity_table(time_start: datetime, time_end: datetime):
                                                   use_description_as_key=True,
                                                   units="minutes")
 
-        # Get a dictionary containing the schedule for the machine
-        machine_dict.update(get_schedule_dict(time_start=time_start,
-                                              time_end=time_end,
-                                              machine=machine,
-                                              units="minutes"))
         # Format the times in the dictionary (Do this before adding the machine names)
         machine_dict = format_dictionary_durations(machine_dict)
 

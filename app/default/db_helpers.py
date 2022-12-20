@@ -1,30 +1,14 @@
-import logging
 import math as maths
 from datetime import datetime, timedelta, date, time
-from operator import attrgetter
 from typing import List, Tuple
 
 from flask import current_app
-from sqlalchemy import func
 
-from app.default.models import Activity, Machine, ScheduledActivity, Settings, Job, ProductionQuantity, InputDevice
+from app.default.models import Activity, Machine, Job, ProductionQuantity, InputDevice
 from app.extensions import db
 from config import Config
 
-
-def get_current_machine_schedule_activity_id(target_machine_id):
-    """ Get the current scheduled activity of a machine by grabbing the most recent entry without an end time"""
-    # Get all activities without an end time
-    activities = ScheduledActivity.query.filter(ScheduledActivity.machine_id == target_machine_id,
-                                                ScheduledActivity.time_end == None).all()
-
-    if len(activities) == 0:
-        current_app.logger.debug(f"No current scheduled activity on machine ID {target_machine_id}")
-        return None
-
-    elif len(activities) == 1:
-        current_app.logger.debug(f"Current scheduled activity for machine ID {target_machine_id} -> {activities[0]}")
-        return activities[0].id
+DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 def flag_activities(activities: List[Activity], threshold):
@@ -121,18 +105,6 @@ def get_jobs(time_start: datetime, time_end: datetime, machine: Machine = None):
     return jobs
 
 
-def get_machine_scheduled_activities(machine_id, time_start: datetime, time_end: datetime, machine_state=None):
-    """ Returns scheduled activities for a machine between two times"""
-    activities_query = ScheduledActivity.query \
-        .filter(ScheduledActivity.machine_id == machine_id) \
-        .filter(ScheduledActivity.time_end >= time_start) \
-        .filter(ScheduledActivity.time_start <= time_end)
-    if machine_state:
-        activities_query = activities_query.filter(ScheduledActivity.scheduled_machine_state == machine_state)
-    activities = activities_query.all()
-    return activities
-
-
 def get_user_activities(user_id, time_start: datetime, time_end: datetime):
     """ Returns the activities for a user, between two times"""
 
@@ -147,101 +119,6 @@ def get_user_activities(user_id, time_start: datetime, time_end: datetime):
         if aa.time_start <= time_end:
             activities.append(aa)
     return activities
-
-
-def get_machines_last_job(machine_id):
-    """ Get the last (completed) job a machine ran"""
-    machine = Machine.query.get(machine_id)
-    jobs = [j for j in machine.jobs if j.end_time is not None]
-    if len(jobs) == 0:
-        return None
-    most_recent_job = max(jobs, key=attrgetter('end_time'))
-    return most_recent_job
-
-
-def machine_schedule_active(machine, dt: datetime = None):
-    """ Return true if the machine is scheduled to be running at a specific time (or now, if not specified)"""
-    if not machine.schedule:
-        logging.warning(f"No schedule for machine {machine.id}")
-        return False
-    if not dt:
-        dt = datetime.now()
-    # Get the shift for this day of the week
-    shift = machine.schedule.get_shifts().get(dt.weekday())
-    shift_start = datetime.combine(dt, datetime.strptime(shift[0], "%H%M").timetz())
-    shift_end = datetime.combine(dt, datetime.strptime(shift[1], "%H%M").timetz())
-    if shift_start < dt < shift_end:
-        return True
-    else:
-        return False
-
-
-def backfill_missed_schedules():
-    last_schedule_time = db.session.query(func.max(ScheduledActivity.time_start)).first()[0]
-    if last_schedule_time is not None:
-        start_date = last_schedule_time.date()
-    else:
-        start_date = Settings.query.get(1).first_start.date()
-    no_of_days_to_backfill = (datetime.now().date() - start_date).days
-    if no_of_days_to_backfill <= 0:
-        return
-    dates = [datetime.now().date() - timedelta(days=x) for x in range(0, no_of_days_to_backfill + 1)]
-    for d in dates:
-        create_all_scheduled_activities(create_date=d)
-
-
-def create_all_scheduled_activities(create_date: date = None):
-    """ Create all the scheduled activities on a date"""
-    if not create_date:
-        create_date = datetime.now().date()
-    current_app.logger.info(f"Creating Scheduled Activities for {create_date.strftime('%d-%m-%y')}")
-    last_midnight = datetime.combine(date=create_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    next_midnight = last_midnight + timedelta(days=1)
-
-    for machine in Machine.query.all():
-        if not machine.schedule:
-            logging.warning(f"No schedule for machine {machine.id}")
-            continue
-
-        # Check to see if any scheduled activities already exist for today and skip if any exist
-        existing_activities = ScheduledActivity.query \
-            .filter(ScheduledActivity.machine_id == machine.id) \
-            .filter(ScheduledActivity.time_start >= last_midnight) \
-            .filter(ScheduledActivity.time_end <= next_midnight).all()
-        if len(existing_activities) > 0:
-            current_app.logger.info(f"Scheduled activities already exist today for {machine} Skipping...")
-            continue
-
-        # Get the shift for this day of the week
-        weekday = create_date.weekday()
-        shift = machine.schedule.get_shifts().get(weekday)
-
-        # Create datetime objects with today's date and the times from the schedule table
-        shift_start = datetime.combine(create_date, datetime.strptime(shift[0], "%H%M").timetz())
-        shift_end = datetime.combine(create_date, datetime.strptime(shift[1], "%H%M").timetz())
-
-        if shift_start != last_midnight:  # Skip making this activity if it will be 0 length
-            before_shift = ScheduledActivity(machine_id=machine.id,
-                                             scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                             time_start=last_midnight,
-                                             time_end=shift_start)
-            db.session.add(before_shift)
-
-        if shift_start != shift_end:  # Skip making this activity if it will be 0 length
-            during_shift = ScheduledActivity(machine_id=machine.id,
-                                             scheduled_machine_state=Config.MACHINE_STATE_RUNNING,
-                                             time_start=shift_start,
-                                             time_end=shift_end)
-            db.session.add(during_shift)
-
-        if shift_end != next_midnight:  # Skip making this activity if it will be 0 length
-            after_shift = ScheduledActivity(machine_id=machine.id,
-                                            scheduled_machine_state=Config.MACHINE_STATE_OFF,
-                                            time_start=shift_end,
-                                            time_end=next_midnight)
-            db.session.add(after_shift)
-
-        db.session.commit()
 
 
 def get_activity_cropped_start_end(act: Activity,

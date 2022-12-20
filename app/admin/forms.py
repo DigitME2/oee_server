@@ -22,9 +22,13 @@ class ActivityCodeForm(FlaskForm):
     submit = SubmitField('Save')
 
 
-class ScheduleForm(FlaskForm):
+class ShiftForm(FlaskForm):
+
+    # TODO This needs refactoring in a major way, I think we need to have the same field repeating for each "period"
+    #  We need to know how to handle a day with no shift. Midnight to midnight won't work
+
     error_message = "Enter 00:00 if no shift on this day"
-    name = StringField(label="Schedule Name", validators=[DataRequired(message=error_message)])
+    name = StringField(label="Shift Name", validators=[DataRequired(message=error_message)])
     mon_start = TimeField(validators=[DataRequired(message=error_message)])
     mon_end = TimeField(validators=[DataRequired(message=error_message)])
     tue_start = TimeField(validators=[DataRequired(message=error_message)])
@@ -56,10 +60,10 @@ class MachineForm(FlaskForm):
     name = StringField(validators=[DataRequired()])
     group = SelectField("Machine Group")
     workflow_type = SelectField("Workflow Type")
-    schedule = SelectField("Schedule")
-    job_start_input_type = SelectField("Job Start Input Type", choices=job_start_input_type_choices)
+    shift_pattern = SelectField("Shift Pattern")
+    job_start_input_type = SelectField("Cycle Time Input Type", choices=job_start_input_type_choices)
     autofill_input_bool = BooleanField("Enable Autofill", validators=[Optional()])
-    autofill_input_amount = FloatField("Job Start Input Autofill")
+    autofill_input_amount = FloatField("Cycle Time Input Autofill")
     activity_codes_checkboxes = FieldList(BooleanField())
     job_start_activity = SelectField("First Activity on Job Start")
     submit = SubmitField('Save')

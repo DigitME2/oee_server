@@ -3,9 +3,9 @@ from random import randrange
 
 from flask import current_app
 
-from app.default.db_helpers import create_all_scheduled_activities
-from app.default.models import Activity, ActivityCode, Machine, Settings, Schedule, MachineGroup, \
-    SHIFT_STRFTIME_FORMAT
+from app.default.db_helpers import DAYS
+from app.default.models import Activity, ActivityCode, Machine, Settings, Shift, MachineGroup, \
+    SHIFT_STRFTIME_FORMAT, ShiftPeriod
 from app.demo.models import DemoSettings
 from app.extensions import db
 from app.login.models import create_default_users
@@ -23,23 +23,21 @@ def setup_database():
         if Config.DEMO_MODE:
             create_demo_activity_codes()
 
-    if len(Schedule.query.all()) == 0:
-        schedule1 = Schedule(name="Default",
-                             mon_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             mon_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
-                             tue_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             tue_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
-                             wed_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             wed_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
-                             thu_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             thu_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
-                             fri_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             fri_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
-                             sat_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             sat_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT),
-                             sun_start=time(hour=6).strftime(SHIFT_STRFTIME_FORMAT),
-                             sun_end=time(hour=22).strftime(SHIFT_STRFTIME_FORMAT))
-        db.session.add(schedule1)
+    if len(Shift.query.all()) == 0:
+        shift = Shift(name="Default")
+        db.session.add(shift)
+        db.session.flush()
+        db.session.refresh(shift)
+        for day in DAYS:
+            midnight = time(0, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
+            shift_start = time(9, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
+            shift_end = time(18, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
+            period_1 = ShiftPeriod(shift_id=shift.id, day=day, start=midnight, end=shift_start)
+            db.session.add(period_1)
+            period_2 = ShiftPeriod(shift_id=shift.id, day=day, start=shift_start, end=shift_end)
+            db.session.add(period_2)
+            period_3 = ShiftPeriod(shift_id=shift.id, day=day, start=shift_end, end=midnight)
+            db.session.add(period_3)
         db.session.commit()
         current_app.logger.info("Created default schedule on first startup")
 
@@ -80,8 +78,6 @@ def setup_database():
             db.session.add(settings)
             db.session.commit()
             current_app.logger.info("Created default settings on first startup")
-
-    create_all_scheduled_activities(create_date=datetime.now().date())
 
 
 def create_default_activity_codes():
@@ -126,7 +122,7 @@ def create_demo_activity_codes():
 def create_default_machine():
     machine1 = Machine(name="Machine 1",
                        group_id=1,
-                       schedule_id=1,
+                       shift_id=1,
                        current_activity_id=0,
                        workflow_type="default",
                        job_start_input_type="cycle_time_seconds",
@@ -163,7 +159,7 @@ def create_demo_machines():
         machine = Machine(name=machine_name,
                           workflow_type="default",
                           group_id=randrange(1, 3),
-                          schedule_id=1,
+                          shift_id=1,
                           job_start_input_type="cycle_time_seconds")
         db.session.add(machine)
     db.session.commit()

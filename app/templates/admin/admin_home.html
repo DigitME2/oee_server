@@ -62,14 +62,14 @@
 
             <div id="adminScheduleColumn" class="card border-0" style="min-width: 12rem;">
                 <div class="card-header" style="height: 6rem;">
-                    <h2 class="adminListHeader">Schedules</h2>
-                    <a id="create_new_schedule_btn" href="{{ url_for('admin.machine_schedule', new=true) }}" class="">+ New Schedule</a>
+                    <h2 class="adminListHeader">Shifts</h2>
+                    <a id="create_new_shift_btn" href="{{ url_for('admin.edit_shift', new=true) }}" class="">+ New Shift</a>
                 </div>
                 <div class="card-body overflow-auto">
                     <ul class="list-group">
-                        {% for s in schedules %}
+                        {% for s in shifts %}
                             <li class="list-group-item">
-                                <a id="edit_schedule_{{ s.id }}" href="{{ url_for('admin.machine_schedule', schedule_id=s.id) }}">
+                                <a id="edit_shift_{{ s.id }}" href="{{ url_for('admin.edit_shift', shift_id=s.id) }}">
                                     {{ s.name }}
                                 </a>
                             </li>

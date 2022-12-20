@@ -44,7 +44,7 @@ def create_demo_machines():
         machine = Machine(name=machine_name,
                           workflow_type="default",
                           group_id=randrange(1, 3),
-                          schedule_id=1,
+                          shift_id=1,
                           job_start_input_type="cycle_time_seconds")
         db.session.add(machine)
         db.session.flush()

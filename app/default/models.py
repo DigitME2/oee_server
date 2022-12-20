@@ -22,7 +22,8 @@ class Machine(db.Model):
     active_job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     active_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     current_activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
-    schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'))
+    schedule_state = db.Column(db.Integer)
+    shift_id = db.Column(db.Integer, db.ForeignKey('shift.id'))
     job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), default=Config.UPTIME_CODE_ID)
     autofill_job_start_input = db.Column(db.Boolean)
     autofill_job_start_amount = db.Column(db.Float)
@@ -32,12 +33,12 @@ class Machine(db.Model):
     active = db.Column(db.Boolean, default=True)
 
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
-    scheduled_activities = db.relationship('ScheduledActivity', backref='machine')
     activities = db.relationship('Activity', foreign_keys="[Activity.machine_id]", backref='machine')
     current_activity = db.relationship('Activity', foreign_keys=[current_activity_id])
     active_job = db.relationship('Job', foreign_keys=[active_job_id])
     active_user = db.relationship('User', foreign_keys=[active_user_id])
     input_device = db.relationship('InputDevice', uselist=False, back_populates="machine")
+    shift = db.relationship('Shift')
 
     def __repr__(self):
         return f"<Machine '{self.name}' (ID {self.id})"
@@ -100,7 +101,7 @@ class ProductionQuantity(db.Model):
     quantity_good = db.Column(db.Integer)
     quantity_rejects = db.Column(db.Integer)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
-    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'))
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
 
 
 class Activity(db.Model):
@@ -127,44 +128,19 @@ def receive_after_update(mapper, connection, target: Activity):
         r.publish("machine" + str(target.machine_id) + "activity", target.activity_code_id)
 
 
-class Schedule(db.Model):
+class Shift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
 
-    mon_start = db.Column(db.String(100))
-    mon_end = db.Column(db.String(100))
-    tue_start = db.Column(db.String(100))
-    tue_end = db.Column(db.String(100))
-    wed_start = db.Column(db.String(100))
-    wed_end = db.Column(db.String(100))
-    thu_start = db.Column(db.String(100))
-    thu_end = db.Column(db.String(100))
-    fri_start = db.Column(db.String(100))
-    fri_end = db.Column(db.String(100))
-    sat_start = db.Column(db.String(100))
-    sat_end = db.Column(db.String(100))
-    sun_start = db.Column(db.String(100))
-    sun_end = db.Column(db.String(100))
-
-    machines = db.relationship('Machine', backref='schedule')
-
-    def get_shifts(self):
-        """" Return a dictionary of tuples mapping the day of the week to the shift pattern"""
-        return {0: (self.mon_start, self.mon_end),
-                1: (self.tue_start, self.tue_end),
-                2: (self.wed_start, self.wed_end),
-                3: (self.thu_start, self.thu_end),
-                4: (self.fri_start, self.fri_end),
-                5: (self.sat_start, self.sat_end),
-                6: (self.sun_start, self.sun_end)}
+    machines = db.relationship('Machine', back_populates='shift')
 
 
-class ScheduledActivity(db.Model):
+class ShiftPeriod(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
-    scheduled_machine_state = db.Column(db.Integer, nullable=False)
-    time_start = db.Column(db.DateTime, nullable=False)
-    time_end = db.Column(db.DateTime)
+    shift_id = db.Column(db.Integer, db.ForeignKey("shift.id"))
+    day = db.Column(db.String(100))
+    start = db.Column(db.String(100))
+    end = db.Column(db.String(100))
 
 
 class ActivityCode(db.Model):

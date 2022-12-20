@@ -1,15 +1,10 @@
 import logging
-import os
-from logging.handlers import RotatingFileHandler
 import logging.config
 from pathlib import Path
-from time import strftime
 
 from flask import Flask, request
-from flask.logging import default_handler
-from werkzeug.middleware.proxy_fix import ProxyFix
 
-from app.extensions import db, migrate, login_manager, celery_app
+from app.extensions import db, migrate, login_manager, scheduler
 from config import Config
 
 VERSION = "v7.3"
@@ -35,8 +30,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
-    celery_app.conf.update(app.config)
+    scheduler.init_app(app)
 
     from app.admin import bp as admin_bp
     from app.api import bp as api_bp
@@ -64,12 +58,14 @@ def create_app(config_class=Config):
             if not Config.TESTING:
                 setup_database()
 
-            from app.default.db_helpers import backfill_missed_schedules
-            backfill_missed_schedules()
+            # Set up APScheduler
+            from app.default import schedule_tasks
+            scheduler.start()
 
             if Config.DEMO_MODE:
                 from app.demo.machine_simulator import backfill_missed_simulations
                 backfill_missed_simulations()
+
 
     # Function to log requests
     @app.after_request

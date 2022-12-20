@@ -125,13 +125,3 @@ class RawDatabaseTableForm(FlaskForm):
     graph_name = "Raw Database Table"
     key = SelectField(label="Table name", validators=[DataRequired()],
                       choices=[("users", "Users"), ("machines", "Machines")])
-
-
-class SchedulesGanttForm(BaseTimeAndDatesForm):
-    form_template = "key_date_time"
-    graph_name = "Machine Schedule Gantt Chart"
-    description = "A Gantt chart showing the scheduled activity of a single machine or multiple machines. " \
-                  "Time is plotted on the x-axis."
-
-    key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")],
-                      id="gantt_machines")

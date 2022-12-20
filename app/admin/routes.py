@@ -1,32 +1,33 @@
 from datetime import datetime, time
 from distutils.util import strtobool
 
-from flask import render_template, url_for, redirect, request, abort, current_app
+from flask import render_template, url_for, redirect, request, abort, current_app, flash
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
-    ScheduleForm, MachineGroupForm, InputDeviceForm
+    ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.db_helpers import create_all_scheduled_activities
-from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
+from app.default.db_helpers import DAYS
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, ShiftPeriod, \
+    Shift
 from app.default.models import SHIFT_STRFTIME_FORMAT
 from app.extensions import db
 from app.login.models import User
 from config import Config
 
 
-@bp.route('/adminhome', methods=['GET'])
+@bp.route('/admin-home', methods=['GET'])
 @login_required
 @admin_required
 def admin_home():
     """ The default page for a logged-in user"""
     # Create default database entries
-    return render_template('admin/adminhome.html',
+    return render_template('admin/admin_home.html',
                            users=User.query.all(),
-                           schedules=Schedule.query.all(),
+                           shifts=Shift.query.all(),
                            machines=Machine.query.all(),
                            input_devices=InputDevice.query.all(),
                            machine_groups=MachineGroup.query.all(),
@@ -61,7 +62,7 @@ def settings():
                            form=form)
 
 
-@bp.route('/newuser', methods=['GET', 'POST'])
+@bp.route('/new-user', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def new_user():
@@ -83,12 +84,12 @@ def new_user():
         current_app.logger.info(f"Created new user: {u}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "New User"
-    return render_template("admin/newuser.html", title="Register",
+    return render_template("admin/new_user.html", title="Register",
                            nav_bar_title=nav_bar_title,
                            form=form)
 
 
-@bp.route('/changepassword', methods=['GET', 'POST'])
+@bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def change_password():
@@ -104,52 +105,61 @@ def change_password():
         current_app.logger.info(f"Changed password for {user}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "Change password for " + str(user.username)
-    return render_template("admin/changepassword.html",
+    return render_template("admin/change_password.html",
                            nav_bar_title=nav_bar_title,
                            user=user,
                            form=form)
 
 
-@bp.route('/schedule', methods=['GET', 'POST'])
+@bp.route('/edit-shift', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def machine_schedule():
-    form = ScheduleForm()
+def edit_shift():
+    form = ShiftForm()
 
-    schedule_id = request.args.get("schedule_id", None)
+    shift_id = request.args.get("shift_id", None)
 
-    if schedule_id is None or 'new' in request.args and request.args['new'] == "True":
-        # Create a new schedule
-        schedule = Schedule(name="")
-        db.session.add(schedule)
+    if shift_id is None or 'new' in request.args and request.args['new'] == "True":
+        # Create a new shift
+        shift = Shift(name="")
+        db.session.add(shift)
+        db.session.flush()
+        db.session.refresh(shift)
     else:
-        schedule = Schedule.query.get_or_404(schedule_id)
+        shift = Shift.query.get_or_404(shift_id)
 
     if form.validate_on_submit():
         # Save the data from the form to the database
-        schedule.name = form.name.data
-        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-            start = getattr(form, day + "_start").data.strftime(SHIFT_STRFTIME_FORMAT)
-            end = getattr(form, day + "_end").data.strftime(SHIFT_STRFTIME_FORMAT)
-            if end < start:
+        shift.name = form.name.data
+        for day in DAYS:
+            midnight = time(0, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
+            shift_start = getattr(form, day + "_start").data.strftime(SHIFT_STRFTIME_FORMAT)
+            shift_end = getattr(form, day + "_end").data.strftime(SHIFT_STRFTIME_FORMAT)
+            if shift_end < shift_start:
                 db.session.rollback()
+                flash(f"Shift end before shift start for {day}")
                 return abort(400)
-            setattr(schedule, day + "_start", start)
-            setattr(schedule, day + "_end", end)
+            period_1 = ShiftPeriod(shift_id=shift.id, day=day, start=midnight, end=shift_start)
+            period_2 = ShiftPeriod(shift_id=shift.id, day=day, start=shift_start, end=shift_end)
+            period_3 = ShiftPeriod(shift_id=shift.id, day=day, start=shift_end, end=midnight)
+            db.session.add(period_1)
+            db.session.add(period_2)
+            db.session.add(period_3)
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
     # Set the form data to show data from the database
-    form.name.data = schedule.name
+    form.name.data = shift.name
     blank_time = time().strftime(SHIFT_STRFTIME_FORMAT)  # Replace empty times with 00:00
     for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+        # FIXME
         start_form = getattr(form, day + "_start")
-        start_form.data = datetime.strptime(getattr(schedule, day + "_start", blank_time) or blank_time,
+        start_form.data = datetime.strptime(getattr(shift, day + "_start", blank_time) or blank_time,
                                             SHIFT_STRFTIME_FORMAT)
         end_form = getattr(form, day + "_end")
-        end_form.data = datetime.strptime(getattr(schedule, day + "_end", blank_time) or blank_time,
+        end_form.data = datetime.strptime(getattr(shift, day + "_end", blank_time) or blank_time,
                                           SHIFT_STRFTIME_FORMAT)
-    return render_template("admin/schedule.html",
+    return render_template("admin/shift.html",
                            form=form)
 
 
@@ -188,7 +198,7 @@ def edit_input_device():
                            form=form)
 
 
-@bp.route('/editmachine', methods=['GET', 'POST'])
+@bp.route('/edit-machine', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_machine():
@@ -197,7 +207,7 @@ def edit_machine():
     to be changed for existing machines."""
     form = MachineForm()
 
-    form.schedule.choices = [(str(s.id), str(s.name)) for s in Schedule.query.all()]
+    form.shift_pattern.choices = [(str(s.id), str(s.name)) for s in Shift.query.all()]
 
     # Create machine group dropdown
     groups = [("0", "No group")] + [(str(g.id), str(g.name)) for g in MachineGroup.query.all()]
@@ -259,7 +269,7 @@ def edit_machine():
         machine.job_start_input_type = form.job_start_input_type.data
         machine.autofill_job_start_input = form.autofill_input_bool.data
         machine.autofill_job_start_amount = form.autofill_input_amount.data
-        machine.schedule_id = form.schedule.data
+        machine.shift_id = form.shift_pattern.data
         machine.job_start_activity_id = form.job_start_activity.data
 
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
@@ -294,14 +304,13 @@ def edit_machine():
             machine.current_activity_id = first_act.id
             db.session.commit()
             current_app.logger.debug(f"{first_act} started on machine creation")
-            create_all_scheduled_activities(create_date=datetime.now().date())
         else:
             db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page
     form.active.data = machine.active
-    form.schedule.data = str(machine.schedule_id)
+    form.shift_pattern.data = str(machine.shift_id)
     form.group.data = str(machine.group_id)
     form.workflow_type.data = str(machine.workflow_type)
     form.job_start_input_type.data = str(machine.job_start_input_type)
@@ -318,7 +327,7 @@ def edit_machine():
                            activity_codes=optional_activity_codes)
 
 
-@bp.route('/editmachinegroup', methods=['GET', 'POST'])
+@bp.route('/edit-machine-group', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_machine_group():
@@ -384,7 +393,7 @@ def edit_machine_group():
                            group_machines=machine_group.machines)
 
 
-@bp.route('/editactivitycode', methods=['GET', 'POST'])
+@bp.route('/edit-activity-code', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_activity_code():
@@ -428,7 +437,6 @@ def edit_activity_code():
             # These issues occur because we manually assigned the IDs of the first 3 activity codes
             activity_code_id = db.session.query(func.max(ActivityCode.id)).first()[0] + 1
             activity_code = ActivityCode(id=activity_code_id, active=True)
-        message = "Create new activity code"
         activity_code.code = form.code.data
         activity_code.active = form.active.data
         activity_code.short_description = form.short_description.data

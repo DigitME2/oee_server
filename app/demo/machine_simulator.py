@@ -4,9 +4,10 @@ from random import randrange
 
 from flask import current_app
 
+from app import db
 from app.default import events
 from app.default.db_helpers import machine_schedule_active
-from app.default.models import Machine, Activity
+from app.default.models import Machine, Activity, Job
 from app.demo.models import DemoSettings
 from app.extensions import db
 from app.login.models import User, UserSession
@@ -138,3 +139,85 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
         activities.append(downtime_activity)
 
     return activities
+
+
+def create_new_demo_user(username, user_id, machine, simulation_datetime=None):
+    if not simulation_datetime:
+        simulation_datetime = datetime.now()
+    user = User(id=user_id, username=username)
+    user.set_password(str(user_id))
+    db.session.add(user)
+    db.session.commit()
+    user_session = UserSession(user_id=user.id,
+                               machine_id=machine.id,
+                               input_device_id=1,
+                               time_login=simulation_datetime,
+                               active=True)
+    db.session.add(user_session)
+    db.session.commit()
+    return user
+
+
+def end_job(job, machine, simulation_datetime=None):
+    current_app.logger.debug(f"ending job")
+    if not simulation_datetime:
+        simulation_datetime = datetime.now()
+    job.end_time = simulation_datetime
+    # Calculate a fake amount produced based on ideal amount produced multiplied by 80-100%
+    job.active = None
+    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
+    new_activity = Activity(machine_id=machine.id,
+                            time_start=simulation_datetime,
+                            machine_state=0,
+                            activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                            job_id=job.id)
+    db.session.add(new_activity)
+
+
+def start_new_job(machine, user, simulation_datetime=None):
+    # Run for the current time if no datetime given
+    if not simulation_datetime:
+        simulation_datetime = datetime.now()
+    current_app.logger.debug(f"Starting new job")
+    session = UserSession.query.filter_by(user_id=user.id, active=True).first()
+    if session is None:
+        session = UserSession(user_id=user.id,
+                              machine_id=machine.id,
+                              device_id=1,
+                              time_login=simulation_datetime,
+                              active=True)
+        db.session.add(session)
+        db.session.commit()
+    job = Job(start_time=simulation_datetime,
+              user_id=user.id,
+              wo_number=str(random.randint(1, 100000)),
+              ideal_cycle_time_s=random.randint(1, 100),
+              machine_id=machine.id,
+              active=True,
+              user_session_id=session.id)
+    db.session.add(job)
+
+
+def change_activity(machine, job, user, simulation_datetime=None):
+    current_app.logger.debug(f"changing activity")
+    # Run for the current time if no datetime given
+    if not simulation_datetime:
+        simulation_datetime = datetime.now()
+    complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
+    chance_the_activity_is_uptime = 0.8
+    if random.random() < chance_the_activity_is_uptime:
+        new_activity = Activity(machine_id=machine.id,
+                                time_start=simulation_datetime,
+                                machine_state=1,
+                                activity_code_id=Config.UPTIME_CODE_ID,
+                                job_id=job.id,
+                                user_id=user.id)
+    else:
+        # otherwise the activity is downtime
+        new_activity = Activity(machine_id=machine.id,
+                                time_start=simulation_datetime,
+                                machine_state=0,
+                                activity_code_id=randrange(2, 7),
+                                job_id=job.id,
+                                user_id=user.id)
+    db.session.add(new_activity)

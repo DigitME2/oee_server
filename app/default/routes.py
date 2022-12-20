@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from flask import render_template, redirect, url_for, request, jsonify
+from flask import render_template, redirect, url_for, request
 from flask_login import current_user, login_required
 from sqlalchemy import desc
 
@@ -9,8 +7,7 @@ from app.data_analysis.oee.availability import get_daily_machine_availability_di
 from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
-from app.default.db_helpers import create_all_scheduled_activities, get_daily_production_dict
-from app.default.events import start_job
+from app.default.db_helpers import get_daily_production_dict
 from app.default.forms import StartJobForm, EndJobForm
 from app.default.models import ActivityCode, Activity, Machine
 from app.login.models import User
@@ -85,14 +82,3 @@ def view_activities():
                            users=users,
                            activities=activities,
                            activity_codes=activity_codes)
-
-
-@bp.route('/run_schedule', methods=['POST'])
-def create_scheduled_activities_route():
-    if "date" in request.args:
-        dt = datetime.strptime(request.args['date'], '%d-%m-%y').date()
-    else:
-        dt = datetime.now().date()
-
-    create_all_scheduled_activities(create_date=dt)
-    return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
