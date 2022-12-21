@@ -4,10 +4,11 @@ from datetime import datetime, timedelta, date, time
 import humanize as humanize
 from flask import current_app
 
-from app.default.db_helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end
+from app.default.helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end
 from app.default.models import Activity, ActivityCode, Machine
 from app.login.models import User
 from config import Config
+
 
 # TODO When a machine runs during scheduled downtime, we get bad data. Need to change the scheduled downtime
 #  into overtime or "unscheduled uptime" and count this as scheduled run time in the the availability calculation
@@ -15,22 +16,33 @@ from config import Config
 
 def get_machine_availability(machine: Machine, time_start: datetime, time_end: datetime):
     """ Takes a machine id and two times, and returns the machine's availability (0-1) for calculating OEE"""
-    ...
-    # runtime = get_machine_runtime(machine, time_start, time_end)
-    # schedule_dict = get_schedule_dict(machine, time_start, time_end, units="seconds")
-    # scheduled_uptime = schedule_dict["Scheduled Run Time"]
-    # scheduled_downtime = schedule_dict["Scheduled Down Time"]
-    # if scheduled_uptime and scheduled_downtime == 0:
-    #     current_app.logger(f"OEE Calculation for machine {machine.name} performed between {time_start} and {time_end} "
-    #                        f"has no scheduled activities. Assuming 100% scheduled uptime")
-    #     scheduled_uptime = (time_end - time_start).total_seconds()
-    # try:
-    #     availability = runtime / scheduled_uptime
-    # except ZeroDivisionError:
-    #     return 1
-    # if availability > 1:
-    #     logging.warning(f"Availability of >1 calculated for machine {machine.name} on {time_start.date()}")
-    # return availability
+
+    unplanned_downtime_duration = get_machine_activity_duration(machine, time_start, time_end,
+                                                                machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME)
+    uptime_duration = get_machine_activity_duration(machine, time_start, time_end,
+                                                    machine_state=Config.MACHINE_STATE_UPTIME)
+    overtime_duration = get_machine_activity_duration(machine, time_start, time_end,
+                                                      machine_state=Config.MACHINE_STATE_OVERTIME)
+    runtime = uptime_duration + overtime_duration
+    scheduled_uptime = runtime + unplanned_downtime_duration
+    if scheduled_uptime == 0:
+        return 1
+    availability = runtime / scheduled_uptime
+    if availability > 1:
+        logging.warning(f"Availability of >1 calculated for machine {machine.name} on {time_start.date()}")
+    return availability
+
+
+def get_machine_activity_duration(machine: Machine, time_start: datetime, time_end: datetime, machine_state: int = None,
+                                  activity_code_id: int = None):
+    """ Calculate the amount of time a machine spent in a certain state between two times"""
+    activities = get_machine_activities(machine, time_start, time_end, activity_code_id=activity_code_id,
+                                        machine_state=machine_state)
+    duration = 0
+    for act in activities:
+        start, end = get_activity_cropped_start_end(act, time_start, time_end)
+        duration += (end - start).total_seconds()
+    return duration
 
 
 def get_daily_machine_availability_dict(requested_date: date = None, human_readable=False):
@@ -51,30 +63,6 @@ def get_daily_machine_availability_dict(requested_date: date = None, human_reada
             v = v * 100
             availability_dict[k] = f"{round(v, 1)}%"
     return availability_dict
-
-
-def get_machine_runtime(machine: Machine, requested_start: datetime, requested_end: datetime):
-    """ Takes a machine id and two times, and returns the amount of time the machine was running """
-    # Get all the activities for the machine between the two given times, where the machine is up
-    activities = get_machine_activities(machine, time_start=requested_start, time_end=requested_end,
-                                        machine_state=Config.MACHINE_STATE_RUNNING)
-    run_time = 0
-    for act in activities:
-        start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
-        run_time += (end - start).total_seconds()
-    return run_time
-
-
-def get_scheduled_machine_runtime(machine: Machine, requested_start: datetime, requested_end: datetime):
-    """ Takes a machine id and two times, and returns the amount of time the machine was scheduled to run"""
-    activities = get_machine_activities(machine, time_start=requested_start, time_end=requested_end)
-
-    run_time = 0
-    for act in activities:
-        if act.activity_code_id not in [Config.PLANNED_DOWNTIME_CODE_ID]:
-            start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
-            run_time += (end - start).total_seconds()
-    return run_time
 
 
 def get_activity_duration_dict(requested_start: datetime, requested_end: datetime, machine: Machine = None,
@@ -167,20 +155,10 @@ def get_daily_scheduled_runtime_dicts(requested_date: date = None, human_readabl
     return runtime_dict
 
 
-def calculate_activity_percent(machine_id, activity_code_id, time_start: datetime, time_end: datetime):
-    """ Returns the percent of time a certain activity code takes up for a certain machine over two times"""
-    activities = Activity.query \
-        .filter(Activity.machine_id == machine_id) \
-        .filter(Activity.activity_code_id == activity_code_id) \
-        .filter(Activity.time_end >= time_start) \
-        .filter(Activity.time_start <= time_end).all()
-
-    total_time = time_end - time_start
-    activity_code_time = timedelta()
-    for act in activities:
-        activity_code_time += (act.time_end - act.time_start)
-
-    if activity_code_time.total_seconds() == 0:
-        return 100
-    else:
-        return (total_time / activity_code_time) * 100
+def get_scheduled_machine_runtime(machine: Machine, time_start: datetime, time_end: datetime):
+    """ Get the duration a machine is scheduled to run between two times """
+    planned_downtime_duration = get_machine_activity_duration(machine, time_start, time_end,
+                                                              machine_state=Config.MACHINE_STATE_PLANNED_DOWNTIME)
+    total_duration = get_machine_activity_duration(machine, time_start, time_end)
+    scheduled_runtime = total_duration - planned_downtime_duration
+    return scheduled_runtime

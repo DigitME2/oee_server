@@ -93,6 +93,9 @@ class Job(db.Model):
             total_reject_qty += q.quantity_rejects
         return total_reject_qty
 
+    def get_total_quantity(self):
+        return self.get_total_quantity_good() + self.get_total_reject_quantity()
+
 
 class ProductionQuantity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -133,14 +136,17 @@ class Shift(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
 
     machines = db.relationship('Machine', back_populates='shift')
+    shift_periods = db.relationship('ShiftPeriod', back_populates='shift')
 
 
 class ShiftPeriod(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shift_id = db.Column(db.Integer, db.ForeignKey("shift.id"))
-    day = db.Column(db.String(100))
-    start = db.Column(db.String(100))
-    end = db.Column(db.String(100))
+    shift_state = db.Column(db.Integer)
+    day = db.Column(db.String(5))
+    start_time = db.Column(db.String(20))
+
+    shift = db.relationship('Shift')
 
 
 class ActivityCode(db.Model):

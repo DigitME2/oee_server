@@ -3,7 +3,7 @@ from operator import attrgetter
 
 from flask import current_app
 
-from app import db
+from app.extensions import db
 from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity
 from app.login.models import UserSession
 from config import Config
@@ -56,10 +56,25 @@ def android_log_out(input_device: InputDevice, dt: datetime):
 
 
 def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: int):
-    if new_activity_code_id == Config.UPTIME_CODE_ID:
-        machine_state = 1
+    # Calculate the machine state based on the scheduled state and the activity code given
+    if machine.schedule_state == Config.MACHINE_STATE_UPTIME:
+        if new_activity_code_id == Config.UPTIME_CODE_ID:
+            # Machine is running while scheduled to run
+            machine_state = Config.MACHINE_STATE_UPTIME
+        else:
+            # Machine is down while scheduled to run
+            machine_state = Config.MACHINE_STATE_UNPLANNED_DOWNTIME
+    elif machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
+        if new_activity_code_id == Config.UPTIME_CODE_ID:
+            # Machine is running while in planned downtime
+            machine_state = Config.MACHINE_STATE_OVERTIME
+        else:
+            # Machine is down in planned downtime
+            machine_state = Config.MACHINE_STATE_PLANNED_DOWNTIME
     else:
-        machine_state = 0
+        current_app.logger.warning(f"Incorrect scheduled state for {machine}")
+        machine_state = -1
+
     # End the current activity
     if machine.current_activity:
         current_activity = machine.current_activity

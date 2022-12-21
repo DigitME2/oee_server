@@ -3,7 +3,7 @@ from datetime import datetime, date, time, timedelta
 
 from flask import current_app
 
-from app.default.db_helpers import get_jobs
+from app.default.helpers import get_jobs
 from app.default.models import Machine
 
 

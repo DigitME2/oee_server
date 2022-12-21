@@ -1,32 +1,40 @@
 from datetime import datetime
 
 from app.default import events
-from app.default.models import Machine, Shift
-from app.extensions import db
-from config import Config
+from app.default.models import ShiftPeriod, SHIFT_STRFTIME_FORMAT, Shift
+from app.extensions import db, scheduler
 
 
 def add_shift_schedule_tasks():
-    shifts = Shift.query.all()
+    shift_periods = ShiftPeriod.query.all()
+    for period in shift_periods:
+        job_id = f"shift_change for ShiftPeriod ID={period.id}"
+        t = datetime.strptime(period.start_time, SHIFT_STRFTIME_FORMAT).time()
+        shift_id = period.shift_id
+        scheduler.add_job(id=job_id,
+                          func=lambda: shift_change(shift_id=shift_id, shift_state=period.shift_state),
+                          trigger="cron",
+                          day_of_week=period.day,
+                          hour=t.hour,
+                          minute=t.minute)
 
 
-def start_shift(machine_id):
-    machine = Machine.query.get(machine_id)
-    machine.schedule_state = Config.MACHINE_STATE_RUNNING
-    db.session.commit()
-    if machine.current_activity == Config.UPTIME_CODE_ID:
-        events.change_activity(datetime.now(),
-                               machine,
-                               Config.UPTIME_CODE_ID,
-                               user_id=machine.active_user_id,
-                               job_id=machine.active_job_id)
+def shift_change(shift_id, shift_state):
+    with scheduler.app.app_context():
+        now = datetime.now()
+        shift = Shift.query.get(shift_id)
+        for machine in shift.machines:
+            machine.schedule_state = shift_state
+            db.session.commit()  # Commit here so that change_activity is aware of the new schedule state
+            # Call change_activity, but keep the same activity code
+            events.change_activity(now,
+                                   machine=machine,
+                                   new_activity_code_id=machine.current_activity_id,
+                                   user_id=machine.active_user_id,
+                                   job_id=machine.active_job_id)
 
 
-def end_shift():
-    ...
 
-
-# TODO End jobs that have obviously been left running overnight
 
 #
 # @celery_app.on_after_finalize.connect

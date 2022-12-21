@@ -4,7 +4,8 @@ from typing import List, Tuple
 
 from flask import current_app
 
-from app.default.models import Activity, Machine, Job, ProductionQuantity, InputDevice
+from app.default.models import Activity, Machine, Job, ProductionQuantity, InputDevice, SHIFT_STRFTIME_FORMAT, \
+    ShiftPeriod
 from app.extensions import db
 from config import Config
 
@@ -69,7 +70,7 @@ def get_legible_duration(time_start: datetime, time_end: datetime):
 
 
 def get_machine_activities(machine: Machine, time_start: datetime, time_end: datetime, activity_code_id=None,
-                           machine_state=None):
+                           machine_state=None, scheduled_state=None):
     """ Returns the activities for a machine, between two times. Activities can overrun the two times given"""
 
     if machine is None:
@@ -199,3 +200,20 @@ def add_new_input_device(uuid):
     new_input.name = "Tablet " + str(new_input.id)
     db.session.commit()
     return new_input
+
+
+def get_current_machine_shift_period(machine: Machine) -> ShiftPeriod:
+    day = datetime.now().strftime("%A")[0:3].lower()  # day of the week in the format mon, tue etc
+    time_now = datetime.now().time()
+    # Get a list of today's shifts that have already passed
+    today_past_shifts = []
+    for p in machine.shift.shift_periods:
+        if p.day == day:
+            shift_start_time = datetime.strptime(p.start_time, SHIFT_STRFTIME_FORMAT).time()
+            if shift_start_time < time_now:
+                today_past_shifts.append(p)
+    # The most recent of today's past shifts is the current shift
+    today_past_shifts.sort(key=lambda x: float(x.start_time), reverse=True)
+    current_shift_period = today_past_shifts[0]
+    return current_shift_period
+

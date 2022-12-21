@@ -10,7 +10,9 @@ from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.db_helpers import DAYS
+from app.default.helpers import DAYS
+
+from app.default.helpers import get_current_machine_shift_period
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, ShiftPeriod, \
     Shift
 from app.default.models import SHIFT_STRFTIME_FORMAT
@@ -139,9 +141,12 @@ def edit_shift():
                 db.session.rollback()
                 flash(f"Shift end before shift start for {day}")
                 return abort(400)
-            period_1 = ShiftPeriod(shift_id=shift.id, day=day, start=midnight, end=shift_start)
-            period_2 = ShiftPeriod(shift_id=shift.id, day=day, start=shift_start, end=shift_end)
-            period_3 = ShiftPeriod(shift_id=shift.id, day=day, start=shift_end, end=midnight)
+            period_1 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
+                                   day=day, start_time=midnight)
+            period_2 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_UPTIME,
+                                   day=day, start_time=shift_start)
+            period_3 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
+                                   day=day, start_time=shift_end)
             db.session.add(period_1)
             db.session.add(period_2)
             db.session.add(period_3)
@@ -272,6 +277,7 @@ def edit_machine():
         machine.shift_id = form.shift_pattern.data
         machine.job_start_activity_id = form.job_start_activity.data
 
+
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
         for ac in optional_activity_codes:
             if ac.short_description not in request.form and ac not in machine.excluded_activity_codes:
@@ -296,16 +302,18 @@ def edit_machine():
             current_app.logger.info(f"{machine} created by {current_user}")
             first_act = Activity(time_start=datetime.now(),
                                  machine_id=machine.id,
-                                 machine_state=Config.MACHINE_STATE_OFF,
+                                 machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
                                  activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
             db.session.add(first_act)
             db.session.flush()
             db.session.refresh(first_act)
             machine.current_activity_id = first_act.id
-            db.session.commit()
             current_app.logger.debug(f"{first_act} started on machine creation")
-        else:
-            db.session.commit()
+
+        # Set current machine state according to current shift
+        current_shift_period = get_current_machine_shift_period(machine)
+        machine.schedule_state = current_shift_period.shift_state
+        db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page

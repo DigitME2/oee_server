@@ -6,7 +6,7 @@ from flask_table import Table, Col, create_table
 
 from app.data_analysis.oee.availability import get_activity_duration_dict
 from app.data_analysis.oee.oee import get_daily_machine_oee
-from app.default.db_helpers import get_jobs
+from app.default.helpers import get_jobs
 from app.default.models import Job, ActivityCode, Machine
 from app.extensions import db
 from app.login.models import User

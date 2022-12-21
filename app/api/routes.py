@@ -53,7 +53,7 @@ def change_machine_state():
     post_data = MachineStateChange(**request.get_json())
     # If only the state is supplied (up/down), create the activity code id
     if post_data.machine_state and not post_data.activity_code_id:
-        if post_data.machine_state == Config.MACHINE_STATE_RUNNING:
+        if post_data.machine_state == Config.MACHINE_STATE_UPTIME:
             activity_code_id = Config.UPTIME_CODE_ID
         else:
             activity_code_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID

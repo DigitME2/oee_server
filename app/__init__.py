@@ -1,9 +1,11 @@
 import logging
 import logging.config
+import sched
 from pathlib import Path
 
 from flask import Flask, request
 
+from app.default.schedule_tasks import add_shift_schedule_tasks
 from app.extensions import db, migrate, login_manager, scheduler
 from config import Config
 
@@ -56,11 +58,15 @@ def create_app(config_class=Config):
             # Fill the database with default values
             from app.setup_database import setup_database
             if not Config.TESTING:
-                setup_database()
+                if Config.DEMO_MODE:
+                    setup_demo_database()
+                else:
+                    setup_database()
 
             # Set up APScheduler
             from app.default import schedule_tasks
             scheduler.start()
+            add_shift_schedule_tasks()
 
             if Config.DEMO_MODE:
                 from app.demo.machine_simulator import backfill_missed_simulations

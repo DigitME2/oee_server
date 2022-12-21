@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, time
 
-from app.default.db_helpers import get_legible_duration, get_jobs
+from app.default.helpers import get_legible_duration, get_jobs
 from app.default.models import Machine, Job
 from app.login.models import User
 

@@ -4,9 +4,9 @@ from random import randrange
 
 from flask import current_app
 
-from app import db
+from app.extensions import db
 from app.default import events
-from app.default.db_helpers import machine_schedule_active
+from app.default.helpers import machine_schedule_active
 from app.default.models import Machine, Activity, Job
 from app.demo.models import DemoSettings
 from app.extensions import db
@@ -122,7 +122,7 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
     while virtual_time <= time_end:
         uptime_activity = Activity(machine_id=machine_id,
                                    time_start=virtual_time,
-                                   machine_state=Config.MACHINE_STATE_RUNNING,
+                                   machine_state=Config.MACHINE_STATE_UPTIME,
                                    activity_code_id=Config.UPTIME_CODE_ID,
                                    job_id=job_id)
         virtual_time += randrange(400, 3000)
@@ -131,7 +131,7 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
 
         downtime_activity = Activity(machine_id=machine_id,
                                      time_start=virtual_time,
-                                     machine_state=Config.MACHINE_STATE_OFF,
+                                     machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
                                      activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                      job_id=job_id)
         virtual_time += randrange(60, 1000)

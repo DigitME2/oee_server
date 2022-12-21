@@ -7,7 +7,7 @@ from flask import request, current_app, abort
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default import events
-from app.default.db_helpers import add_new_input_device
+from app.default.helpers import add_new_input_device
 from app.default.models import Job, InputDevice, Settings, Machine
 from app.extensions import db
 from app.login import bp

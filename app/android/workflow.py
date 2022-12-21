@@ -95,9 +95,9 @@ class PausableWorkflow(Workflow):
     def build_server_response(self):
         if self.state == "no_job":
             response = self.no_job_response()
-        elif self.machine_state == Config.MACHINE_STATE_RUNNING:
+        elif self.machine_state == Config.MACHINE_STATE_UPTIME:
             response = self.active_job_response()
-        elif self.machine_state == Config.MACHINE_STATE_OFF:
+        elif self.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
             self.state = "paused"
             response = self.active_job_response()
         else:
@@ -109,7 +109,7 @@ class PausableWorkflow(Workflow):
         if hasattr(self, "current_activity"):
             return self.current_activity.machine_state
         else:
-            return Config.MACHINE_STATE_OFF
+            return Config.MACHINE_STATE_UNPLANNED_DOWNTIME
 
 
 class RunningTotalWorkflow(Workflow):

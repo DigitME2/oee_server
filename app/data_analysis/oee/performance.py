@@ -1,11 +1,10 @@
 import logging
 from datetime import datetime, time, timedelta, date
 
-from flask import current_app
-
-from app.data_analysis.oee.availability import get_machine_runtime
-from app.default.db_helpers import get_job_cropped_start_end_ratio, get_jobs
-from app.default.models import Job, Machine
+from app.data_analysis.oee.availability import get_machine_activity_duration
+from app.default.helpers import get_job_cropped_start_end_ratio, get_jobs
+from app.default.models import Machine, ProductionQuantity
+from config import Config
 
 
 def get_machine_performance(machine: Machine, time_start: datetime, time_end: datetime) -> float:
@@ -17,14 +16,40 @@ def get_machine_performance(machine: Machine, time_start: datetime, time_end: da
         if not job.ideal_cycle_time_s:
             continue
         job_start, job_end, ratio_of_job_in_time_range = get_job_cropped_start_end_ratio(job, time_start, time_end)
-        ideal_machine_runtime_s += job.ideal_cycle_time_s * (job.get_total_quantity_good() * ratio_of_job_in_time_range)
-        machine_uptime_during_jobs_s += get_machine_runtime(machine, job_start, job_end)
+        amount_produced = get_production_amount(time_start, time_end, job_id=job.id)
+        ideal_machine_runtime_s += job.ideal_cycle_time_s * (amount_produced * ratio_of_job_in_time_range)
+        machine_uptime_during_jobs_s += get_machine_activity_duration(machine, job_start, job_end,
+                                                                      machine_state=Config.MACHINE_STATE_UPTIME)
+        machine_uptime_during_jobs_s += get_machine_activity_duration(machine, job_start, job_end,
+                                                                      machine_state=Config.MACHINE_STATE_OVERTIME)
     if machine_uptime_during_jobs_s == 0:
         return 0
     performance = ideal_machine_runtime_s / machine_uptime_during_jobs_s
     if performance > 1:
         logging.warning(f"Value of performance >1 for machine ID {machine.id} on {time_start.date()}")
     return ideal_machine_runtime_s / machine_uptime_during_jobs_s
+
+
+def get_production_amount(time_start, time_end, machine_id: int = None, job_id: int = None,
+                          include_good=True, include_rejects=True):
+    quantity = 0
+    quantities_query = ProductionQuantity.query. \
+        filter(ProductionQuantity.time_start <= time_end). \
+        filter(ProductionQuantity.time_end >= time_start)
+    if machine_id:
+        quantities_query = quantities_query.filter(ProductionQuantity.machine_id == machine_id)
+    if job_id:
+        quantities_query = quantities_query.filter(ProductionQuantity.job_id == job_id)
+    quantities = quantities_query.all()
+
+    #todo need to crop and get ratio (As in the get_job_cropped_start_end_ratio function)
+    #  to make assumption about how much is produced in this duration using
+    for q in quantities:
+        if include_good:
+            quantity += q.quantity_good
+        if include_rejects:
+            quantity += q.quantity_rejects
+    return quantity
 
 
 def get_target_production_amount(machine, time_start: datetime, time_end: datetime):

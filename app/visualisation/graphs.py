@@ -9,9 +9,9 @@ from plotly.graph_objs import Layout
 from plotly.graph_objs.layout import Shape, Annotation
 from plotly.offline import plot
 
-from app.data_analysis.oee.availability import get_activity_duration_dict, calculate_activity_percent
+from app.data_analysis.oee.availability import get_activity_duration_dict
 from app.data_analysis.oee.oee import get_daily_machine_oee
-from app.default.db_helpers import get_machine_activities, get_activity_cropped_start_end
+from app.default.helpers import get_machine_activities, get_activity_cropped_start_end
 from app.default.models import Activity, Machine, ActivityCode, Settings
 from app.visualisation.helpers import get_machine_status
 from config import Config
@@ -229,7 +229,7 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
     colours = []
     for ac in ActivityCode.query.all():
         labels.append(ac.short_description)
-        values.append(calculate_activity_percent(machine_id, ac.id, graph_start, graph_end))
+        # values.append(calculate_activity_percent(machine_id, ac.id, graph_start, graph_end))
         colours.append(ac.graph_colour)
 
     layout = Layout(title=f"OEE for {machine.name}", )

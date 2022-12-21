@@ -7,7 +7,7 @@ from app.data_analysis.oee.availability import get_daily_machine_availability_di
 from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
-from app.default.db_helpers import get_daily_production_dict
+from app.default.helpers import get_daily_production_dict
 from app.default.forms import StartJobForm, EndJobForm
 from app.default.models import ActivityCode, Activity, Machine
 from app.login.models import User
