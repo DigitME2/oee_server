@@ -1,6 +1,5 @@
 import logging
 import logging.config
-import sched
 from pathlib import Path
 
 from flask import Flask, request
