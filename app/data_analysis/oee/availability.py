@@ -2,16 +2,12 @@ import logging
 from datetime import datetime, timedelta, date, time
 
 import humanize as humanize
-from flask import current_app
 
-from app.default.helpers import get_user_activities, get_machine_activities, get_activity_cropped_start_end
+from app.default.helpers import get_user_activities, get_machine_activities, get_cropped_start_end_ratio, \
+    get_machine_activity_duration
 from app.default.models import Activity, ActivityCode, Machine
 from app.login.models import User
 from config import Config
-
-
-# TODO When a machine runs during scheduled downtime, we get bad data. Need to change the scheduled downtime
-#  into overtime or "unscheduled uptime" and count this as scheduled run time in the the availability calculation
 
 
 def get_machine_availability(machine: Machine, time_start: datetime, time_end: datetime):
@@ -31,18 +27,6 @@ def get_machine_availability(machine: Machine, time_start: datetime, time_end: d
     if availability > 1:
         logging.warning(f"Availability of >1 calculated for machine {machine.name} on {time_start.date()}")
     return availability
-
-
-def get_machine_activity_duration(machine: Machine, time_start: datetime, time_end: datetime, machine_state: int = None,
-                                  activity_code_id: int = None):
-    """ Calculate the amount of time a machine spent in a certain state between two times"""
-    activities = get_machine_activities(machine, time_start, time_end, activity_code_id=activity_code_id,
-                                        machine_state=machine_state)
-    duration = 0
-    for act in activities:
-        start, end = get_activity_cropped_start_end(act, time_start, time_end)
-        duration += (end - start).total_seconds()
-    return duration
 
 
 def get_daily_machine_availability_dict(requested_date: date = None, human_readable=False):
@@ -84,8 +68,8 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
     else:
         # Get all activities
         activities = Activity.query \
-            .filter(Activity.time_end >= requested_start) \
-            .filter(Activity.time_start <= requested_end).all()
+            .filter(Activity.end_time >= requested_start) \
+            .filter(Activity.start_time <= requested_end).all()
 
     # Initialise the dictionary that will hold the totals
     activities_dict = {}
@@ -97,7 +81,7 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
         activities_dict[key] = 0
 
     for act in activities:
-        start, end = get_activity_cropped_start_end(act, requested_start, requested_end)
+        start, end, _ = get_cropped_start_end_ratio(act, requested_start, requested_end)
 
         # Calculate the duration and add to the dict
         if act.activity_code is None:

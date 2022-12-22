@@ -73,7 +73,7 @@ def view_activities():
         selected_user = User.query.get(user_id)
     activities = Activity.query \
         .filter_by(user_id=user_id) \
-        .order_by(desc(Activity.time_start)) \
+        .order_by(desc(Activity.start_time)) \
         .paginate(1, 50, False).items
 
     return render_template('default/activities.html',

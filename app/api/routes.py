@@ -183,6 +183,7 @@ def start_job():
 @bp.route('/api/end-job', methods=["POST"])
 def end_job():
     """ End a job"""
+    # TODO Do we want to change the activity to "down" here? Maybe add a "end_job" flag
     now = datetime.now()
     end_job_form = EndJobForm()
     if end_job_form.validate_on_submit():

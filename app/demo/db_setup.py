@@ -78,7 +78,7 @@ def create_demo_machines():
         db.session.refresh(machine)
         # Create the first activity
         act_start = datetime.now() - timedelta(days=Config.DAYS_BACKFILL)
-        first_act = Activity(time_start=act_start,
+        first_act = Activity(start_time=act_start,
                              machine_id=machine.id,
                              machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
                              activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)

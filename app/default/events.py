@@ -56,6 +56,7 @@ def android_log_out(input_device: InputDevice, dt: datetime):
 
 
 def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: int):
+    # TODO Don't allow a machine to be set "UP" without an assigned job or we won't be able to calculate performance because there'll be no ideal cycle time
     # Calculate the machine state based on the scheduled state and the activity code given
     if machine.schedule_state == Config.MACHINE_STATE_UPTIME:
         if new_activity_code_id == Config.UPTIME_CODE_ID:
@@ -78,11 +79,11 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     # End the current activity
     if machine.current_activity:
         current_activity = machine.current_activity
-        current_activity.time_end = dt
+        current_activity.end_time = dt
 
     # Start a new activity with no user
     new_activity = Activity(machine_id=machine.id,
-                            time_start=dt,
+                            start_time=dt,
                             activity_code_id=new_activity_code_id,
                             machine_state=machine_state,
                             user_id=user_id,
@@ -128,13 +129,13 @@ def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time
         job_production_quantities = ProductionQuantity.query.filter(ProductionQuantity.job_id == job_id).all()
         if len(job_production_quantities) > 0:
             last_pq = max(job_production_quantities, key=attrgetter('time_end'))
-            time_start = last_pq.time_end
+            time_start = last_pq.end_time
         else:
             job = Job.query.get(job_id)
             time_start = job.start_time
 
-    production_quantity = ProductionQuantity(time_start=time_start,
-                                             time_end=time_end,
+    production_quantity = ProductionQuantity(start_time=time_start,
+                                             end_time=time_end,
                                              quantity_good=quantity_good,
                                              quantity_rejects=quantity_rejects,
                                              job_id=job_id,

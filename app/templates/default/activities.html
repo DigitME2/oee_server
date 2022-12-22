@@ -25,16 +25,16 @@
             {% for act in activities %}
                 <li class="list-group-item">
                     {#                Show the date once for each day #}
-                    {% if act.time_start.strftime("%d-%m-%y") != ns.date %}
-                        {% set ns.date = act.time_start.strftime("%d-%m-%y") %}
+                    {% if act.start_time.strftime("%d-%m-%y") != ns.date %}
+                        {% set ns.date = act.start_time.strftime("%d-%m-%y") %}
                         <div class="row my-2">
-                            <h3>{{ act.time_start.strftime("%a %d-%m-%y") }}</h3>
+                            <h3>{{ act.start_time.strftime("%a %d-%m-%y") }}</h3>
                         </div>
                     {% endif %}
 
                     <div class="row">
                         <div class="col-3">
-                            {{ act.time_start.strftime("%H:%M") }} -
+                            {{ act.start_time.strftime("%H:%M") }} -
                             {% if act.time_end %}
                                 {{ act.time_end.strftime("%H:%M") }}
                             {% else %}

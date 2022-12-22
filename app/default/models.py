@@ -99,8 +99,8 @@ class Job(db.Model):
 
 class ProductionQuantity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    time_start = db.Column(db.DateTime, nullable=False)
-    time_end = db.Column(db.DateTime, nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False)
     quantity_good = db.Column(db.Integer)
     quantity_rejects = db.Column(db.Integer)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
@@ -112,8 +112,8 @@ class Activity(db.Model):
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
     activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), nullable=False)
     machine_state = db.Column(db.Integer, nullable=False)
-    time_start = db.Column(db.DateTime, nullable=False)
-    time_end = db.Column(db.DateTime)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime)
     explanation_required = db.Column(db.Boolean)
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -126,7 +126,7 @@ class Activity(db.Model):
 def receive_after_update(mapper, connection, target: Activity):
     """ Publish changes to redis to allow updates to be pushed to clients"""
     # Don't publish activities ending
-    if target.time_end is None:
+    if target.end_time is None:
         r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT)
         r.publish("machine" + str(target.machine_id) + "activity", target.activity_code_id)
 

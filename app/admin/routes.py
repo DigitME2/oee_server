@@ -300,7 +300,7 @@ def edit_machine():
             db.session.flush()
             db.session.refresh(machine)
             current_app.logger.info(f"{machine} created by {current_user}")
-            first_act = Activity(time_start=datetime.now(),
+            first_act = Activity(start_time=datetime.now(),
                                  machine_id=machine.id,
                                  machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
                                  activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)

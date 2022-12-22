@@ -11,7 +11,7 @@ from plotly.offline import plot
 
 from app.data_analysis.oee.availability import get_activity_duration_dict
 from app.data_analysis.oee.oee import get_daily_machine_oee
-from app.default.helpers import get_machine_activities, get_activity_cropped_start_end
+from app.default.helpers import get_machine_activities, get_cropped_start_end_ratio
 from app.default.models import Activity, Machine, ActivityCode, Settings
 from app.visualisation.helpers import get_machine_status
 from config import Config
@@ -323,11 +323,11 @@ def get_activities_df(activities: List[Activity], group_by, graph_start: datetim
             continue
         # Don't show values outside of graph time range
         if crop_overflow:
-            start, end = get_activity_cropped_start_end(act, graph_start, graph_end)
+            start, end, _ = get_cropped_start_end_ratio(act, graph_start, graph_end)
         # Use actual times if they're not being cropped
         else:
-            start = act.time_start
-            end = act.time_end
+            start = act.start_time
+            end = act.end_time
         code = act.activity_code.short_description
 
         task = operator.attrgetter("machine.name")(act)

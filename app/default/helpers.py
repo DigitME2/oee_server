@@ -1,6 +1,6 @@
 import math as maths
 from datetime import datetime, timedelta, date, time
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from flask import current_app
 
@@ -20,7 +20,7 @@ def flag_activities(activities: List[Activity], threshold):
     for act in activities:
         # Only Flag activities with the downtime code and with a duration longer than the threshold
         if act.activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID and \
-                (act.time_end - act.time_start) > downtime_explanation_threshold:
+                (act.end_time - act.start_time) > downtime_explanation_threshold:
             act.explanation_required = True
             # Give the unexplained downtimes their own index
             act.ud_index = ud_index_counter
@@ -48,7 +48,7 @@ def split_activity(activity_id, split_time=None):
                             job_id=old_activity.job_id)
 
     # End the old activity
-    old_activity.time_end = split_time
+    old_activity.end_time = split_time
 
     db.session.add(new_activity)
     db.session.commit()
@@ -78,15 +78,15 @@ def get_machine_activities(machine: Machine, time_start: datetime, time_end: dat
         return
     activities_query = Activity.query \
         .filter(Activity.machine_id == machine.id) \
-        .filter(Activity.time_end >= time_start) \
-        .filter(Activity.time_start <= time_end)
+        .filter(Activity.end_time >= time_start) \
+        .filter(Activity.start_time <= time_end)
     if activity_code_id:
         activities_query = activities_query.filter(Activity.activity_code_id == activity_code_id)
     if machine_state:
         activities_query = activities_query.filter(Activity.machine_state == machine_state)
     activities = activities_query.all()
     # If required, add the current_activity (The above loop will not get it)
-    if machine.current_activity.time_start <= time_end:
+    if machine.current_activity.start_time <= time_end:
         # Only add the current activity if it matches the filters given to this function
         if not activity_code_id or machine.current_activity.activity_code_id == activity_code_id:
             if not machine_state or machine.current_activity.machine_state == machine_state:
@@ -111,51 +111,32 @@ def get_user_activities(user_id, time_start: datetime, time_end: datetime):
 
     activities = Activity.query \
         .filter(Activity.user_id == user_id) \
-        .filter(Activity.time_end >= time_start) \
-        .filter(Activity.time_start <= time_end).all()
+        .filter(Activity.end_time >= time_start) \
+        .filter(Activity.start_time <= time_end).all()
 
     # Add any unfinished activities (The above call will not get them)
-    active_activities = Activity.query.filter(Activity.user_id == user_id, Activity.time_end == None).all()
+    active_activities = Activity.query.filter(Activity.user_id == user_id, Activity.end_time == None).all()
     for aa in active_activities:
-        if aa.time_start <= time_end:
+        if aa.start_time <= time_end:
             activities.append(aa)
     return activities
 
 
-def get_activity_cropped_start_end(act: Activity,
-                                   requested_start: datetime,
-                                   requested_end: datetime) -> (datetime, datetime):
-    """ Crops the start and end of an activity if it overruns the requested start or end time.
-    e.g. if an activity is from 2pm -> 4pm and the requested start/end is 1pm -> 3pm, this function will return
-    2pm -> 3pm. """
-    if act.time_start is not None and act.time_start > requested_start:
-        start = act.time_start
-    else:
-        start = requested_start
-
-        # If the activity extends past the requested end or has no end, crop it to the requested end (or current time)
-    if act.time_end is None or act.time_end > requested_end:
-        end = min([requested_end, datetime.now()])
-    else:
-        end = act.time_end
-    return start, end
-
-
-def get_job_cropped_start_end_ratio(job: Job,
-                                    requested_start: datetime,
-                                    requested_end: datetime) -> (datetime, datetime, float):
-    """ Crops the start and end of a job if it overruns the requested start or end time. Also returns the
-    ratio of time cropped to total time"""
-    if job.start_time is not None and job.start_time > requested_start:
-        start = job.start_time
+def get_cropped_start_end_ratio(obj: Union[Job, ProductionQuantity, Activity],
+                                requested_start: datetime,
+                                requested_end: datetime) -> (datetime, datetime, float):
+    """ Crops the start and end of a job/activity/production_quantity if it overruns the requested start or end time.
+    Also returns the ratio of time cropped to total time"""
+    if obj.start_time is not None and obj.start_time > requested_start:
+        start = obj.start_time
     else:
         start = requested_start
 
     # If the job extends past the requested end or has no end, crop it to the requested end (or current time)
-    if job.end_time is None or job.end_time > requested_end:
+    if obj.end_time is None or obj.end_time > requested_end:
         end = min([requested_end, datetime.now()])
     else:
-        end = job.end_time
+        end = obj.end_time
     job_length = (end - start).total_seconds()
     cropped_length = (end - start).total_seconds()
     ratio_of_length_used = cropped_length / job_length
@@ -175,8 +156,8 @@ def get_daily_production_dict(requested_date: date = None) -> Tuple[dict, dict]:
         quantity_rejects = 0
         today_quantities = ProductionQuantity.query. \
             filter(ProductionQuantity.machine_id == machine.id). \
-            filter(ProductionQuantity.time_start >= last_midnight). \
-            filter(ProductionQuantity.time_end <= next_midnight).all()
+            filter(ProductionQuantity.start_time >= last_midnight). \
+            filter(ProductionQuantity.end_time <= next_midnight).all()
         for q in today_quantities:
             quantity_good += q.quantity_good
             quantity_rejects += q.quantity_rejects
@@ -217,3 +198,14 @@ def get_current_machine_shift_period(machine: Machine) -> ShiftPeriod:
     current_shift_period = today_past_shifts[0]
     return current_shift_period
 
+
+def get_machine_activity_duration(machine: Machine, time_start: datetime, time_end: datetime, machine_state: int = None,
+                                  activity_code_id: int = None):
+    """ Calculate the amount of time a machine spent in a certain state between two times"""
+    activities = get_machine_activities(machine, time_start, time_end, activity_code_id=activity_code_id,
+                                        machine_state=machine_state)
+    duration = 0
+    for act in activities:
+        start, end, _ = get_cropped_start_end_ratio(act, time_start, time_end)
+        duration += (end - start).total_seconds()
+    return duration

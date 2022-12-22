@@ -126,7 +126,7 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
                                    activity_code_id=Config.UPTIME_CODE_ID,
                                    job_id=job_id)
         virtual_time += randrange(400, 3000)
-        uptime_activity.time_end = virtual_time
+        uptime_activity.end_time = virtual_time
         activities.append(uptime_activity)
 
         downtime_activity = Activity(machine_id=machine_id,
@@ -135,7 +135,7 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
                                      activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                      job_id=job_id)
         virtual_time += randrange(60, 1000)
-        downtime_activity.time_end = virtual_time
+        downtime_activity.end_time = virtual_time
         activities.append(downtime_activity)
 
     return activities
