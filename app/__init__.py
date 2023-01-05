@@ -65,6 +65,7 @@ def create_app(config_class=Config):
             # Set up APScheduler
             from app.default import schedule_tasks
             scheduler.start()
+            # FIXME Scheduled tasks aren't working
             add_shift_schedule_tasks()
 
             if Config.DEMO_MODE:

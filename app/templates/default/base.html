@@ -40,9 +40,11 @@
             <ul class="navbar-nav">
                 {% if current_user.admin %}
                     <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
+                                            href="{{ url_for('default.status_page') }}">Status</a></li>
+                    <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
                                             href="{{ url_for('admin.admin_home') }}">Admin</a></li>
                     <li class="nav-item"><a id="nav_data_btn" class="nav-link"
-                                            href="{{ url_for('visualisation.data') }}">Visualisation</a></li>
+                                            href="{{ url_for('visualisation.data') }}">Graphs</a></li>
                     <li class="nav-item">
                         <a id="nav_dashboard_btn"
                            class="nav-link"

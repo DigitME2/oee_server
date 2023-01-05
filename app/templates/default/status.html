@@ -3,6 +3,17 @@
 
 {% block content %}
     <div class="container-fluid">
+        {% if not machines %}
+            <div class="row">
+                <div class="col-md-8 offset-md-2 mt-5">
+                    <h3>No machines created. Visit the
+                        <a href="{{ url_for('admin.admin_home') }}">
+                            admin page
+                        </a>
+                        to get started. </h3>
+                </div>
+            </div>
+        {% endif %}
         {% for machine in machines %}
             <div class="border border-3 my-5 pl-5 py-2
                     {% if machine.current_activity.activity_code_id == uptime_code %}
@@ -117,8 +128,7 @@
     <script>
 
 
-
-    function postActivity(machineId, newActivityCodeId, userId) {
+        function postActivity(machineId, newActivityCodeId, userId) {
             let data = {
                 machine_id: machineId,
                 user_id: userId,

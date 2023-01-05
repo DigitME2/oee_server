@@ -56,6 +56,8 @@ def android_log_out(input_device: InputDevice, dt: datetime):
     db.session.commit()
 
 
+# TODO Modify to use the machine state directly from the activity code instead of inferring it
+#  Make sure to respect whether it's planned or unplanned depending on the scheduled state
 def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: Optional[int]):
     # Calculate the machine state based on the scheduled state and the activity code given
     if machine.schedule_state == Config.MACHINE_STATE_UPTIME:

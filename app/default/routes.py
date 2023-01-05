@@ -64,7 +64,9 @@ def status_page():
 @bp.route('/machine')
 @login_required
 def machine():
+    # TODO
     return render_template('default/machine.html')
+
 
 @bp.route('/view_activities')
 @login_required
