@@ -13,6 +13,7 @@
                     {% for error in form.name.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
+
                 </div>
             </div>
 
@@ -32,6 +33,10 @@
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
                 </div>
+            <div class="form-group">
+                {{ form.mon_disable.label }}
+                {{ form.mon_disable }}
+            </div>
             </div>
 
             <div class="form-row">
@@ -48,6 +53,10 @@
                     {% for error in form.tue_end.errors %}
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.tue_disable.label }}
+                    {{ form.tue_disable }}
                 </div>
             </div>
 
@@ -66,6 +75,10 @@
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
                 </div>
+                <div class="form-group">
+                    {{ form.wed_disable.label }}
+                    {{ form.wed_disable }}
+                </div>
             </div>
 
             <div class="form-row">
@@ -82,6 +95,10 @@
                     {% for error in form.thu_end.errors %}
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.thu_disable.label }}
+                    {{ form.thu_disable }}
                 </div>
             </div>
 
@@ -100,6 +117,10 @@
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
                 </div>
+                <div class="form-group">
+                    {{ form.fri_disable.label }}
+                    {{ form.fri_disable }}
+                </div>
             </div>
 
             <div class="form-row">
@@ -116,6 +137,10 @@
                     {% for error in form.sat_end.errors %}
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.sat_disable.label }}
+                    {{ form.sat_disable }}
                 </div>
             </div>
 
@@ -134,9 +159,47 @@
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
                 </div>
+                <div class="form-group">
+                    {{ form.sun_disable.label }}
+                    {{ form.sun_disable }}
+                </div>
             </div>
 
             <p>{{ form.submit(class_="btn btn-success") }}</p>
         </form>
     </div>
+
+
+    <script>
+
+        // Receives a checkbox element and disables the corresponding fields. The name of the checkbox should be the
+        // database id of the field it is disabling
+        function disableFields(element) {
+            // Set the all-parts field
+            let allPartsField = document.getElementById("0:" + element.name);
+
+            if (element.checked) {
+                allPartsField.style = "";
+                allPartsField.disabled = false;
+            } else {
+                allPartsField.disabled = true;
+                allPartsField.style = "background-color: gray;";
+            }
+
+            // Set the separate fields
+            let fields = document.getElementsByClassName(element.name);
+            for (let i = 0; i < fields.length; i++) {
+                if (element.checked) {
+                    fields[i].disabled = true;
+                    fields[i].style = "background-color: gray;";
+                } else {
+                    fields[i].style = "";
+                    fields[i].disabled = false;
+
+                }
+            }
+        }
+
+
+    </script>
 {% endblock %}

@@ -9,7 +9,8 @@ from wtforms.validators import NoneOf, DataRequired
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
-from app.admin.helpers import admin_required, fix_colour_code
+from app.admin.helpers import admin_required, fix_colour_code, create_shift_day, load_shift_form_values, \
+    ModifiedShiftException, save_shift_form
 from app.default.helpers import DAYS
 
 from app.default.helpers import get_current_machine_shift_period
@@ -122,48 +123,30 @@ def edit_shift():
     shift_id = request.args.get("shift_id", None)
 
     if shift_id is None or 'new' in request.args and request.args['new'] == "True":
+        new_shift = True
         # Create a new shift
         shift = Shift(name="")
         db.session.add(shift)
         db.session.flush()
         db.session.refresh(shift)
     else:
+        new_shift = False
         shift = Shift.query.get_or_404(shift_id)
 
-    if form.validate_on_submit():
+    if form.validate_on_submit() and form.validate_disabled_days():
         # Save the data from the form to the database
-        shift.name = form.name.data
-        for day in DAYS:
-            midnight = time(0, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
-            shift_start = getattr(form, day + "_start").data.strftime(SHIFT_STRFTIME_FORMAT)
-            shift_end = getattr(form, day + "_end").data.strftime(SHIFT_STRFTIME_FORMAT)
-            if shift_end < shift_start:
-                db.session.rollback()
-                flash(f"Shift end before shift start for {day}")
-                return abort(400)
-            period_1 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
-                                   day=day, start_time=midnight)
-            period_2 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_UPTIME,
-                                   day=day, start_time=shift_start)
-            period_3 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
-                                   day=day, start_time=shift_end)
-            db.session.add(period_1)
-            db.session.add(period_2)
-            db.session.add(period_3)
-        db.session.commit()
+        save_shift_form(form, shift)
         return redirect(url_for('admin.admin_home'))
 
-    # Set the form data to show data from the database
-    form.name.data = shift.name
-    blank_time = time().strftime(SHIFT_STRFTIME_FORMAT)  # Replace empty times with 00:00
-    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        # FIXME
-        start_form = getattr(form, day + "_start")
-        start_form.data = datetime.strptime(getattr(shift, day + "_start", blank_time) or blank_time,
-                                            SHIFT_STRFTIME_FORMAT)
-        end_form = getattr(form, day + "_end")
-        end_form.data = datetime.strptime(getattr(shift, day + "_end", blank_time) or blank_time,
-                                          SHIFT_STRFTIME_FORMAT)
+    if not new_shift:
+        # Set the form data to show data from the database
+        form.name.data = shift.name
+        try:
+            form = load_shift_form_values(form, shift)
+        except ModifiedShiftException:
+            flash(f"Shift pattern \"{shift.name}\" has been modified manually and cannot be edited here."
+                  " Edit values directly in the database or create a new shift pattern.")
+            return redirect(url_for('admin.admin_home'))
     return render_template("admin/shift.html",
                            form=form)
 
@@ -276,7 +259,6 @@ def edit_machine():
         machine.autofill_job_start_amount = form.autofill_input_amount.data
         machine.shift_id = form.shift_pattern.data
         machine.job_start_activity_id = form.job_start_activity.data
-
 
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
         for ac in optional_activity_codes:
@@ -406,7 +388,7 @@ def edit_machine_group():
 @admin_required
 def edit_activity_code():
     """The page to edit an activity code"""
-
+    # TODO Create hard-coded categories to help with data analysis
     # Get the activity code to be edited (If no code is given we will create a new one)
     if 'ac_id' in request.args:
         try:

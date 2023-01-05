@@ -1,9 +1,11 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField, \
-    FieldList, FloatField
+    FieldList, FloatField, validators
 from wtforms.validators import DataRequired, EqualTo, Optional
 from wtforms.widgets import TextArea
 from wtforms_components import TimeField
+
+from app.default.models import SHIFT_STRFTIME_FORMAT
 
 
 class ChangePasswordForm(FlaskForm):
@@ -24,26 +26,46 @@ class ActivityCodeForm(FlaskForm):
 
 class ShiftForm(FlaskForm):
 
-    # TODO This needs refactoring in a major way, I think we need to have the same field repeating for each "period"
-    #  We need to know how to handle a day with no shift. Midnight to midnight won't work
-
-    error_message = "Enter 00:00 if no shift on this day"
-    name = StringField(label="Shift Name", validators=[DataRequired(message=error_message)])
-    mon_start = TimeField(validators=[DataRequired(message=error_message)])
-    mon_end = TimeField(validators=[DataRequired(message=error_message)])
-    tue_start = TimeField(validators=[DataRequired(message=error_message)])
-    tue_end = TimeField(validators=[DataRequired(message=error_message)])
-    wed_start = TimeField(validators=[DataRequired(message=error_message)])
-    wed_end = TimeField(validators=[DataRequired(message=error_message)])
-    thu_start = TimeField(validators=[DataRequired(message=error_message)])
-    thu_end = TimeField(validators=[DataRequired(message=error_message)])
-    fri_start = TimeField(validators=[DataRequired(message=error_message)])
-    fri_end = TimeField(validators=[DataRequired(message=error_message)])
-    sat_start = TimeField(validators=[DataRequired(message=error_message)])
-    sat_end = TimeField(validators=[DataRequired(message=error_message)])
-    sun_start = TimeField(validators=[DataRequired(message=error_message)])
-    sun_end = TimeField(validators=[DataRequired(message=error_message)])
+    name = StringField(label="Shift Name", validators=[DataRequired()])
+    mon_start = TimeField(validators=[Optional()])
+    mon_end = TimeField(validators=[Optional()])
+    mon_disable = BooleanField(label="No Shifts")
+    tue_start = TimeField(validators=[Optional()])
+    tue_end = TimeField(validators=[Optional()])
+    tue_disable = BooleanField(label="No Shifts")
+    wed_start = TimeField(validators=[Optional()])
+    wed_end = TimeField(validators=[Optional()])
+    wed_disable = BooleanField(label="No Shifts")
+    thu_start = TimeField(validators=[Optional()])
+    thu_end = TimeField(validators=[Optional()])
+    thu_disable = BooleanField(label="No Shifts")
+    fri_start = TimeField(validators=[Optional()])
+    fri_end = TimeField(validators=[Optional()])
+    fri_disable = BooleanField(label="No Shifts")
+    sat_start = TimeField(validators=[Optional()])
+    sat_end = TimeField(validators=[Optional()])
+    sat_disable = BooleanField(label="No Shifts")
+    sun_start = TimeField(validators=[Optional()])
+    sun_end = TimeField(validators=[Optional()])
+    sun_disable = BooleanField(label="No Shifts")
     submit = SubmitField('Save')
+
+    def validate_disabled_days(self):
+        """ Don't allow time fields to be empty, except for the days that are disabled"""
+        valid = True
+        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+            disable_day_input = getattr(self, day + "_disable")
+            if disable_day_input.data:
+                continue
+            start_time = getattr(self, day + "_start")
+            end_time = getattr(self, day + "_end")
+            if not start_time.data:
+                start_time.errors = ["Not a valid value"]
+                valid = False
+            if not end_time.data:
+                end_time.errors = ["Not a valid value"]
+                valid = False
+        return valid
 
 
 class MachineForm(FlaskForm):

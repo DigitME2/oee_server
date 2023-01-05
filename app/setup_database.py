@@ -2,6 +2,7 @@ from datetime import datetime, time
 
 from flask import current_app
 
+from app.admin.helpers import create_shift_day
 from app.default.helpers import DAYS
 from app.default.models import ActivityCode, Settings, Shift, MachineGroup, \
     SHIFT_STRFTIME_FORMAT, ShiftPeriod
@@ -36,18 +37,9 @@ def create_default_shift():
     db.session.flush()
     db.session.refresh(shift)
     for day in DAYS:
-        midnight = time(0, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
         shift_start = time(9, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
         shift_end = time(18, 0, 0, 0).strftime(SHIFT_STRFTIME_FORMAT)
-        period_1 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
-                               day=day, start_time=midnight)
-        db.session.add(period_1)
-        period_2 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_UPTIME,
-                               day=day, start_time=shift_start)
-        db.session.add(period_2)
-        period_3 = ShiftPeriod(shift_id=shift.id, shift_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
-                               day=day, start_time=shift_end)
-        db.session.add(period_3)
+        create_shift_day(day, shift_start=shift_start, shift_end=shift_end, shift_id=shift.id)
     db.session.commit()
     current_app.logger.info("Created default schedule on first startup")
 
