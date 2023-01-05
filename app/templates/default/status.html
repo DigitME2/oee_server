@@ -12,6 +12,14 @@
                     {% endif %}">
                 <div class="row">
                     <h2>{{ machine.name }}</h2>
+                    <div class="ml-2">
+                        <a href="{{ url_for("default.machine") }}">
+                            <button class="btn btn-dark"
+                                    onclick="forceLogout({{ machine.input_device.id }})">
+                                Edit Activity
+                            </button>
+                        </a>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col">
@@ -84,6 +92,7 @@
                                 {% endif %}
                             {% endfor %}
                         </div>
+
                     </div>
                     <div class="col">
                         <h4>Performance {{ performance_dict[machine.id] }}</h4>

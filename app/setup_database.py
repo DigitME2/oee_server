@@ -2,8 +2,7 @@ from datetime import datetime, time
 
 from flask import current_app
 
-from app.admin.helpers import create_shift_day
-from app.default.helpers import DAYS
+from app.default.helpers import DAYS, create_shift_day
 from app.default.models import ActivityCode, Settings, Shift, MachineGroup, \
     SHIFT_STRFTIME_FORMAT, ShiftPeriod
 from app.extensions import db

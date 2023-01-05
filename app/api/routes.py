@@ -188,7 +188,6 @@ def end_job():
     now = datetime.now()
     end_job_form = EndJobForm()
     if end_job_form.validate_on_submit():
-        user_id = int(request.form.get("user_id"))
         job_id = request.form.get("job_id")
         job = Job.query.get_or_404(job_id)
         # Remove it as active_job from its machine
@@ -203,7 +202,7 @@ def end_job():
         events.change_activity(now,
                                machine=machine,
                                new_activity_code_id=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
-                               user_id=user_id,
+                               user_id=current_user.id,
                                job_id=None)
         events.end_job(now, job=job)
     return make_response("", 200)

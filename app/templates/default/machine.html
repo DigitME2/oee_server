@@ -1,0 +1,93 @@
+{% extends "default/base.html" %}
+
+{% block content %}
+    {% set ns = namespace(date=None) %}
+    <div class="container mt-5">
+        <p class="font-italic">Show a user's activities and allow the activity code to be changed</p>
+        {% if current_user.admin %}
+            <div class="dropdown">
+                <button class="btn btn-dark dropdown-toggle" type="button" id="userSelect"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {{ selected_user.username }}
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    {% for user in users %}
+                        <form action="{{ url_for('default.view_activities', user_id=user.id) }}" method="get">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button class="dropdown-item">{{ user.username }}</button>
+                        </form>
+                    {% endfor %}
+                </div>
+
+            </div>
+        {% endif %}
+        <ul class="list-group-flush">
+            {% for act in activities %}
+                <li class="list-group-item">
+                    {#                Show the date once for each day #}
+                    {% if act.start_time.strftime("%d-%m-%y") != ns.date %}
+                        {% set ns.date = act.start_time.strftime("%d-%m-%y") %}
+                        <div class="row my-2">
+                            <h3>{{ act.start_time.strftime("%a %d-%m-%y") }}</h3>
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-3">
+                            {{ act.start_time.strftime("%H:%M") }} -
+                            {% if act.time_end %}
+                                {{ act.time_end.strftime("%H:%M") }}
+                            {% else %}
+                                now
+                            {% endif %}
+
+                        </div>
+                        <div class="col-3">
+                            {{ act.machine.name }}
+                        </div>
+
+                        <div class="text-right col">
+                            <div class="dropdown">
+                                <button class="btn btn-light dropdown-toggle" type="button"
+                                        id="ActivityCodeDropdown{{ act.id }}"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    {% if act.activity_code %}
+                                        <a style="color: {{ act.activity_code.graph_colour }}">{{ act.activity_code.short_description }}</a>
+                                    {% endif %}
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    {% set i = 0 %}
+                                    {% for code in activity_codes %}
+                                        <button class="dropdown-item"
+                                                onclick="putActivity({{ act.id }}, {{ code.id }}, {{ i }})">{{ code.short_description }}</button>
+                                        {% set i = i + 1 %}
+                                    {% endfor %}
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        function putActivity(activityId, newActivityCodeId, dropdownIndex) {
+            let data = {
+                activity_code_id: newActivityCodeId
+            }
+            $.ajax({
+                url: '/api/activity/' + activityId,
+                type: 'PUT',
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                success: function (result) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+
+{% endblock %}
+

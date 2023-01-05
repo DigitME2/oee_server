@@ -2,6 +2,7 @@ from flask import render_template, redirect, url_for, request
 from flask_login import current_user, login_required
 from sqlalchemy import desc
 
+from app.admin.helpers import admin_required
 from app.data_analysis.oee.availability import get_daily_machine_availability_dict, \
     get_daily_activity_duration_dict, get_daily_scheduled_runtime_dicts
 from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict
@@ -19,6 +20,7 @@ def default():
     return redirect(url_for('login.login'))
 
 
+@admin_required
 @bp.route('/status', methods=["GET", "POST"])
 def status_page():
     """ Show today's details for all machines"""
@@ -58,6 +60,11 @@ def status_page():
                            rejects_dict=rejects_dict,
                            uptime_code=Config.UPTIME_CODE_ID)
 
+
+@bp.route('/machine')
+@login_required
+def machine():
+    return render_template('default/machine.html')
 
 @bp.route('/view_activities')
 @login_required

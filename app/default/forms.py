@@ -4,7 +4,6 @@ from wtforms.validators import DataRequired
 
 
 class StartJobForm(FlaskForm):
-    machine_id = HiddenField()
     job_number = StringField('Job Number', validators=[DataRequired()])
     ideal_cycle_time = FloatField('Ideal Cycle Time (s)')
 
@@ -12,7 +11,6 @@ class StartJobForm(FlaskForm):
 
 
 class EndJobForm(FlaskForm):
-    machine_id = HiddenField()
     quantity_good = IntegerField("Good Quantity")
     rejects = IntegerField("Rejects")
     submit = SubmitField("End")

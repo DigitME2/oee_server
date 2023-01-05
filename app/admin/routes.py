@@ -9,9 +9,8 @@ from wtforms.validators import NoneOf, DataRequired
 from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
-from app.admin.helpers import admin_required, fix_colour_code, create_shift_day, load_shift_form_values, \
-    ModifiedShiftException, save_shift_form
-from app.default.helpers import DAYS
+from app.admin.helpers import admin_required, fix_colour_code
+from app.default.helpers import DAYS, create_shift_day, save_shift_form, load_shift_form_values, ModifiedShiftException
 
 from app.default.helpers import get_current_machine_shift_period
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, ShiftPeriod, \
