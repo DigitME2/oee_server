@@ -55,6 +55,12 @@ class Config(object):
     UPTIME_CODE_ID = 1
     UNEXPLAINED_DOWNTIME_CODE_ID = 2
 
+    # Categories for activity codes
+    DOWNTIME_CATEGORIES = [("none", "None"),
+                           ("machine_error", "Machine error"),
+                           ("operator_error", "Operator error"),
+                           ("material_error", "Material error")]
+
     # Database ID for machine state and scheduled state
     MACHINE_STATE_UPTIME = 1
     MACHINE_STATE_UNPLANNED_DOWNTIME = 2

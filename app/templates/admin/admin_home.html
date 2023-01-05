@@ -1,7 +1,7 @@
 {% extends "default/base.html" %}
 
 {% block content %}
-    <div class="container mt-2">
+    <div class="container-flex mt-2">
         <div class="card-group">
 
 
@@ -107,7 +107,7 @@
                         {% for ac in activity_codes %}
                             <li class="list-group-item">
                                 <a id="edit_activity_code_{{ ac.id }}" href="{{ url_for('admin.edit_activity_code', ac_id=ac.id) }}">
-                                    {{ ac.code }} - {{ ac.short_description }}
+                                    {{ ac.short_description }}
                                 </a>
                             </li>
                         {% endfor %}

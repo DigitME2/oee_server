@@ -1,11 +1,15 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField, \
-    FieldList, FloatField, validators
+    FieldList, FloatField
 from wtforms.validators import DataRequired, EqualTo, Optional
 from wtforms.widgets import TextArea
 from wtforms_components import TimeField
 
-from app.default.models import SHIFT_STRFTIME_FORMAT
+from config import Config
+
+MACHINE_STATE_CHOICES = [(Config.MACHINE_STATE_UPTIME, "Uptime"),
+                         (Config.MACHINE_STATE_UNPLANNED_DOWNTIME, "Unplanned downtime"),
+                         (Config.MACHINE_STATE_PLANNED_DOWNTIME, "Planned downtime")]
 
 
 class ChangePasswordForm(FlaskForm):
@@ -17,15 +21,15 @@ class ChangePasswordForm(FlaskForm):
 
 class ActivityCodeForm(FlaskForm):
     active = BooleanField()
-    code = StringField()
     short_description = StringField(validators=[DataRequired()])
     long_description = StringField(widget=TextArea())
-    graph_colour = StringField(validators=[DataRequired()])
+    machine_state = SelectField(choices=MACHINE_STATE_CHOICES, default=Config.MACHINE_STATE_UNPLANNED_DOWNTIME)
+    downtime_category = SelectField(choices=Config.DOWNTIME_CATEGORIES)
+    graph_colour = StringField(label="Colour", validators=[DataRequired()])
     submit = SubmitField('Save')
 
 
 class ShiftForm(FlaskForm):
-
     name = StringField(label="Shift Name", validators=[DataRequired()])
     mon_start = TimeField(validators=[Optional()])
     mon_end = TimeField(validators=[Optional()])

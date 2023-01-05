@@ -387,7 +387,6 @@ def edit_machine_group():
 @admin_required
 def edit_activity_code():
     """The page to edit an activity code"""
-    # TODO Create hard-coded categories to help with data analysis
     # Get the activity code to be edited (If no code is given we will create a new one)
     if 'ac_id' in request.args:
         try:
@@ -426,10 +425,12 @@ def edit_activity_code():
             # These issues occur because we manually assigned the IDs of the first 3 activity codes
             activity_code_id = db.session.query(func.max(ActivityCode.id)).first()[0] + 1
             activity_code = ActivityCode(id=activity_code_id, active=True)
-        activity_code.code = form.code.data
         activity_code.active = form.active.data
         activity_code.short_description = form.short_description.data
         activity_code.long_description = form.long_description.data
+        activity_code.machine_state = form.machine_state.data
+        if int(form.machine_state.data) == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
+            activity_code.downtime_category = form.downtime_category.data
         activity_code.graph_colour = fix_colour_code(form.graph_colour.data)
         db.session.add(activity_code)
         db.session.commit()
@@ -439,10 +440,11 @@ def edit_activity_code():
     if activity_code:
         # Fill out the form with existing values
         form.active.data = activity_code.active
-        form.code.data = activity_code.code
         form.short_description.data = activity_code.short_description
         form.long_description.data = activity_code.long_description
         form.graph_colour.data = activity_code.graph_colour
+        form.machine_state.data = str(activity_code.machine_state)
+        form.downtime_category.data = activity_code.downtime_category
 
     return render_template("admin/edit_activity_code.html",
                            form=form,

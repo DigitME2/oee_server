@@ -42,7 +42,6 @@ def get_activity_codes():
         activity_codes.append({"short_description": ac.short_description,
                                "id": ac.id,
                                "graph_colour": ac.graph_colour,
-                               "code": ac.code,
                                "long_description": ac.long_description})
     return jsonify(activity_codes)
 

@@ -37,20 +37,17 @@ def setup_demo_database():
 
 
 def create_demo_activity_codes():
-    ac1 = ActivityCode(code="OB",
-                       short_description="Operator Break",
+    ac1 = ActivityCode(short_description="Operator Break",
                        long_description="Operator has taken a break",
                        graph_colour="#dd9313")
     db.session.add(ac1)
 
-    ac2 = ActivityCode(code="NM",
-                       short_description="No material",
+    ac2 = ActivityCode(short_description="No material",
                        long_description="The machine is short of material",
                        graph_colour="#d60092")
     db.session.add(ac2)
 
-    ac3 = ActivityCode(code="SM",
-                       short_description="Scheduled Maintenance",
+    ac3 = ActivityCode(short_description="Scheduled Maintenance",
                        long_description="",
                        graph_colour="#00d6cf")
     db.session.add(ac3)

@@ -152,9 +152,10 @@ class ShiftPeriod(db.Model):
 class ActivityCode(db.Model):
     """ Holds the codes to identify activities"""
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(100))
     short_description = db.Column(db.String(100), nullable=False, unique=True)
     long_description = db.Column(db.String(100))
+    machine_state = db.Column(db.Integer, nullable=False)
+    downtime_category = db.Column(db.String(100))
     graph_colour = db.Column(db.String(100))
     active = db.Column(db.Boolean, default=True)
 

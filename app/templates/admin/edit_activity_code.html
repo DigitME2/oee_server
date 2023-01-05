@@ -3,29 +3,17 @@
 {% block content %}
     <div class="container mt-2">
         <link href="{{ url_for('static',filename='styles/style.css') }}" type="text/css" rel="stylesheet">
-        <p>{{ message|safe }}</p> <br>
+        <p>{{ message|safe }}</p>
 
         <form action="" method="post">
             {{ form.hidden_tag() }}
+            <div class="form-check">
+                {{ form.active(size=32, class_="form-check-input") }}
+                {{ form.active.label(class_="form-check-label") }}
+            </div>
+
             <div class="form-group">
-                <div class="form-check">
-                    {{ form.active(size=32, class_="form-check-input") }}
-                    {{ form.active.label(class_="form-check-label") }}
-                </div>
-
-                {{ form.code.label }}
-                {{ form.code(size=32, class_="form-control") }}
-                <small id="autofillAmountHelp" class="form-text text-muted">
-                    A short, 1 or 2-letter code for downtime reasons.
-                </small>
-
-                {% for error in form.code.errors %}
-                    <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-                <br>
-
-
-                {{ form.short_description.label }}<br>
+                {{ form.short_description.label }}
                 {{ form.short_description(size=32, class_="form-control") }}
                 <small id="autofillAmountHelp" class="form-text text-muted">
                     Required. The name of the downtime reason that will be shown on the tablet and in graphs.
@@ -33,40 +21,69 @@
                 {% for error in form.short_description.errors %}
                     <span class="text-danger">[{{ error }}]</span>
                 {% endfor %}
-                <br>
-
-                <p>
-                    {{ form.long_description.label }}<br>
-                    {{ form.long_description(size=32, class_="form-control") }}
-                    <small id="autofillAmountHelp" class="form-text text-muted">
-                        Optional. A longer description to clarify when this downtime code should be used.
-                    </small>
-                    <br>
-                    {% for error in form.long_description.errors %}
-                        <span class="text-danger">[{{ error }}]</span>
-                    {% endfor %}
-
-                <p>
-                    {{ form.graph_colour.label }}
-                    {{ form.graph_colour(size=32, class_="jscolor form-control") }}<br>
-                    {% for error in form.long_description.errors %}
-                        <span class="text-danger">[{{ error }}]</span>
-                    {% endfor %}
-                <p>
-
-
-                {{ form.submit(class_="btn btn-success") }}
             </div>
+
+            {{ form.long_description.label }}
+            {{ form.long_description(size=32, class_="form-control") }}
+            <small id="autofillAmountHelp" class="form-text text-muted">
+                Optional. A longer description to clarify when this downtime code should be used.
+            </small>
+            {% for error in form.long_description.errors %}
+                <span class="text-danger">[{{ error }}]</span>
+            {% endfor %}
+
+            <div class="form-row mt-2">
+                <div class="form-group col-md-6">
+                    {{ form.machine_state.label }}
+                    {{ form.machine_state(class_="form-control") }}
+                    {% for error in form.machine_state.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                    <small id="scheduleHelp" class="form-text text-muted">
+                        The state of the machine during this activity, for calculating OEE
+                    </small>
+                </div>
+
+
+                <div class="form-group col-md-6">
+                    {{ form.downtime_category.label }}
+                    {{ form.downtime_category(class_="form-control") }}
+                    {% for error in form.downtime_category.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                    <small id="scheduleHelp" class="form-text text-muted">
+                        Select a category for this downtime code
+                    </small>
+                </div>
+            </div>
+
+
+            {{ form.graph_colour.label }}
+            {{ form.graph_colour(size=32, class_="jscolor form-control") }}
+            {% for error in form.long_description.errors %}
+                <span class="text-danger">[{{ error }}]</span>
+            {% endfor %}
+            <small id="colourHelp" class="form-text text-muted">
+                The colour for this code used in graphs and visuals
+            </small>
+
+            {{ form.submit(class_="btn btn-success mt-3") }}
         </form>
-
-
-        <script src="{{ url_for('static', filename='node_modules/@eastdesire/jscolor/jscolor.min.js') }}"
-                type="text/javascript"></script>
-
-
     </div>
 
-    <style>
 
-    </style>
+    <script src="{{ url_for('static', filename='node_modules/@eastdesire/jscolor/jscolor.min.js') }}"
+            type="text/javascript"></script>
+
+
+    <script>
+        let machineStateSelect = document.querySelector("#machine_state")
+        let downtimeCategorySelect = document.querySelector("#downtime_category");
+
+        machineStateSelect.addEventListener("change", () => {
+            console.log("changed")
+            downtimeCategorySelect.disabled = machineStateSelect.value !== "2";
+        })
+    </script>
+
 {% endblock %}

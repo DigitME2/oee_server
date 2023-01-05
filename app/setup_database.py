@@ -52,15 +52,15 @@ def create_default_group():
 
 def create_default_activity_codes():
     unexplained_code = ActivityCode(id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                                    code="DO",
                                     short_description='Down',
                                     long_description="Downtime that doesn't have an explanation from the user",
+                                    machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
                                     graph_colour='#b22222')
     db.session.add(unexplained_code)
     uptime_code = ActivityCode(id=Config.UPTIME_CODE_ID,
-                               code="UP",
                                short_description='Up',
                                long_description='The machine is in use',
+                               machine_state=Config.MACHINE_STATE_UPTIME,
                                graph_colour='#00ff80')
     db.session.add(uptime_code)
     db.session.commit()
