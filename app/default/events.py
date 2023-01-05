@@ -1,5 +1,6 @@
 from datetime import datetime
 from operator import attrgetter
+from typing import Optional
 
 from flask import current_app
 
@@ -55,8 +56,7 @@ def android_log_out(input_device: InputDevice, dt: datetime):
     db.session.commit()
 
 
-def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: int):
-    # TODO Don't allow a machine to be set "UP" without an assigned job or we won't be able to calculate performance because there'll be no ideal cycle time
+def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: Optional[int]):
     # Calculate the machine state based on the scheduled state and the activity code given
     if machine.schedule_state == Config.MACHINE_STATE_UPTIME:
         if new_activity_code_id == Config.UPTIME_CODE_ID:

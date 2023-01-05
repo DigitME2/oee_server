@@ -60,6 +60,8 @@ def change_machine_state():
     else:
         activity_code_id = post_data.activity_code_id
     machine = Machine.query.get_or_404(post_data.machine_id)
+    if activity_code_id == Config.UPTIME_CODE_ID and not machine.active_job:
+        return abort(400)
     events.change_activity(datetime.now(),
                            machine=machine,
                            new_activity_code_id=activity_code_id,
@@ -183,10 +185,10 @@ def start_job():
 @bp.route('/api/end-job', methods=["POST"])
 def end_job():
     """ End a job"""
-    # TODO Do we want to change the activity to "down" here? Maybe add a "end_job" flag
     now = datetime.now()
     end_job_form = EndJobForm()
     if end_job_form.validate_on_submit():
+        user_id = int(request.form.get("user_id"))
         job_id = request.form.get("job_id")
         job = Job.query.get_or_404(job_id)
         # Remove it as active_job from its machine
@@ -198,5 +200,10 @@ def end_job():
                         quantity_rejects=end_job_form.rejects.data,
                         job_id=job.id,
                         machine_id=machine.id)
+        events.change_activity(now,
+                               machine=machine,
+                               new_activity_code_id=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
+                               user_id=user_id,
+                               job_id=None)
         events.end_job(now, job=job)
     return make_response("", 200)

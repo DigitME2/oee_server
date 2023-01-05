@@ -25,10 +25,13 @@
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 {% set i = 0 %}
                                 {% for code in activity_codes %}
-                                    <button class="dropdown-item"
-                                            onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
-                                        {{ code.short_description }}
-                                    </button>
+                                    {#Don't show 'up' if there's no job#}
+                                    {% if code.id != uptime_code or machine.active_job %}
+                                        <button class="dropdown-item"
+                                                onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
+                                            {{ code.short_description }}
+                                        </button>
+                                    {% endif %}
                                     {% set i = i + 1 %}
                                 {% endfor %}
                             </div>
