@@ -57,8 +57,9 @@ def get_target_production_amount(machine, time_start: datetime, time_end: dateti
         if job.ideal_cycle_time_s:
             # Crop the time to account for a job that is halfway through
             start, end, _ = get_cropped_start_end_ratio(job, time_start, time_end)
-            adjusted_job_length_s = (end - start).total_seconds()
-            ideal_production_amount += adjusted_job_length_s / job.ideal_cycle_time_s
+            machine_uptime_during_jobs_s = get_machine_activity_duration(machine, start, end,
+                                                                         machine_state=Config.MACHINE_STATE_UPTIME)
+            ideal_production_amount += machine_uptime_during_jobs_s / job.ideal_cycle_time_s
     return ideal_production_amount
 
 
