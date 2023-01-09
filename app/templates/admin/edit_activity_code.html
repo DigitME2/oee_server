@@ -39,33 +39,30 @@
                 <span class="text-danger">[{{ error }}]</span>
             {% endfor %}
 
-            {% if not activity_code_id in default_codes %}
-                <div class="form-row mt-2">
-                    <div class="form-group col-md-6">
-                        {{ form.machine_state.label }}
-                        {{ form.machine_state(class_="form-control") }}
-                        {% for error in form.machine_state.errors %}
-                            <span class="text-danger">[{{ error }}]</span>
-                        {% endfor %}
-                        <small id="scheduleHelp" class="form-text text-muted">
-                            The state of the machine during this activity, for calculating OEE
-                        </small>
-                    </div>
-
-
-                    <div class="form-group col-md-6">
-                        {{ form.downtime_category.label }}
-                        {{ form.downtime_category(class_="form-control") }}
-                        {% for error in form.downtime_category.errors %}
-                            <span class="text-danger">[{{ error }}]</span>
-                        {% endfor %}
-                        <small id="scheduleHelp" class="form-text text-muted">
-                            Select a category for this downtime code
-                        </small>
-                    </div>
+            <div class="form-row mt-2">
+                <div class="form-group col-md-6">
+                    {{ form.machine_state.label }}
+                    {{ form.machine_state(class_="form-control") }}
+                    {% for error in form.machine_state.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                    <small id="scheduleHelp" class="form-text text-muted">
+                        The state of the machine during this activity, for calculating OEE
+                    </small>
                 </div>
-            {% endif %}
 
+
+                <div class="form-group col-md-6">
+                    {{ form.downtime_category.label }}
+                    {{ form.downtime_category(class_="form-control") }}
+                    {% for error in form.downtime_category.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                    <small id="scheduleHelp" class="form-text text-muted">
+                        Select a category for this downtime code
+                    </small>
+                </div>
+            </div>
 
             {{ form.graph_colour.label }}
             {{ form.graph_colour(size=32, class_="jscolor form-control") }}
@@ -94,5 +91,15 @@
             downtimeCategorySelect.disabled = machineStateSelect.value !== "2";
         })
     </script>
+
+
+    {% if activity_code_id in default_codes %}
+        <script>
+            window.onload = function () {
+                console.log("hiding")
+                document.getElementById("machine_state").disabled = true
+            }
+        </script>
+    {% endif %}
 
 {% endblock %}
