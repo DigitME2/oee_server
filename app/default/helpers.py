@@ -1,6 +1,6 @@
 import math as maths
-from datetime import datetime, timedelta, date, time
-from typing import List, Tuple, Union
+from datetime import datetime, timedelta, time
+from typing import List, Union
 
 from flask import current_app, flash, abort
 
@@ -127,43 +127,23 @@ def get_cropped_start_end_ratio(obj: Union[Job, ProductionQuantity, Activity],
                                 requested_end: datetime) -> (datetime, datetime, float):
     """ Crops the start and end of a job/activity/production_quantity if it overruns the requested start or end time.
     Also returns the ratio of time cropped to total time"""
-    if obj.start_time is not None and obj.start_time > requested_start:
-        start = obj.start_time
+    if obj.start_time and obj.start_time > requested_start:
+        cropped_start = obj.start_time
     else:
-        start = requested_start
+        cropped_start = requested_start
 
     # If the job extends past the requested end or has no end, crop it to the requested end (or current time)
     if obj.end_time is None or obj.end_time > requested_end:
-        end = min([requested_end, datetime.now()])
+        cropped_end = min([requested_end, datetime.now()])
     else:
-        end = obj.end_time
-    job_length = (end - start).total_seconds()
-    cropped_length = (end - start).total_seconds()
+        cropped_end = obj.end_time
+    if not obj.end_time:
+        job_length = (datetime.now() - obj.start_time).total_seconds()
+    else:
+        job_length = (obj.end_time - obj.start_time).total_seconds()
+    cropped_length = (cropped_end - cropped_start).total_seconds()
     ratio_of_length_used = cropped_length / job_length
-    return start, end, ratio_of_length_used
-
-
-def get_daily_production_dict(requested_date: date = None) -> Tuple[dict, dict]:
-    if requested_date is None:
-        requested_date = datetime.now().date()
-    last_midnight = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    next_midnight = last_midnight + timedelta(days=1)
-    good_amounts = {}
-    reject_amounts = {}
-    machines = Machine.query.all()
-    for machine in machines:
-        quantity_good = 0
-        quantity_rejects = 0
-        today_quantities = ProductionQuantity.query. \
-            filter(ProductionQuantity.machine_id == machine.id). \
-            filter(ProductionQuantity.start_time >= last_midnight). \
-            filter(ProductionQuantity.end_time <= next_midnight).all()
-        for q in today_quantities:
-            quantity_good += q.quantity_good
-            quantity_rejects += q.quantity_rejects
-        good_amounts[machine.id] = quantity_good
-        reject_amounts[machine.id] = quantity_rejects
-    return good_amounts, reject_amounts
+    return cropped_start, cropped_end, ratio_of_length_used
 
 
 def add_new_input_device(uuid):

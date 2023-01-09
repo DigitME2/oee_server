@@ -5,10 +5,10 @@ from sqlalchemy import desc
 from app.admin.helpers import admin_required
 from app.data_analysis.oee.availability import get_daily_machine_availability_dict, \
     get_daily_activity_duration_dict, get_daily_scheduled_runtime_dicts
-from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict
+from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict, \
+    get_daily_production_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
-from app.default.helpers import get_daily_production_dict
 from app.default.forms import StartJobForm, EndJobForm
 from app.default.models import ActivityCode, Activity, Machine
 from app.login.models import User
@@ -31,7 +31,7 @@ def status_page():
     activity_codes = ActivityCode.query.all()
     # jobs_dict =
     # Production amounts and reject amounts
-    production_dict, rejects_dict = get_daily_production_dict()
+    production_dict, rejects_dict = get_daily_production_dict(human_readable=True)
     # Availability figure for each machine
     availability_dict = get_daily_machine_availability_dict(human_readable=True)
     # Scheduled uptime for each machine
