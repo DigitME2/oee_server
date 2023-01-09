@@ -63,5 +63,11 @@ def create_default_activity_codes():
                                machine_state=Config.MACHINE_STATE_UPTIME,
                                graph_colour='#00ff80')
     db.session.add(uptime_code)
+    planned_downtime_code = ActivityCode(id=Config.PLANNED_DOWNTIME_CODE_ID,
+                                         short_description='Closed',
+                                         long_description='Planned downtime outside of shift hours',
+                                         machine_state=Config.MACHINE_STATE_PLANNED_DOWNTIME,
+                                         graph_colour='#FFFFFF')
+    db.session.add(planned_downtime_code)
     db.session.commit()
     current_app.logger.info("Created default activity codes on first startup")

@@ -54,6 +54,7 @@ class Config(object):
     # The database IDs for activity codes
     UPTIME_CODE_ID = 1
     UNEXPLAINED_DOWNTIME_CODE_ID = 2
+    PLANNED_DOWNTIME_CODE_ID = 3
 
     # Categories for activity codes
     DOWNTIME_CATEGORIES = [("none", "None"),

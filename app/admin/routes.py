@@ -226,7 +226,7 @@ def edit_machine():
         return abort(400, error_message)
 
     # Get downtime codes for exclusion checkboxes
-    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
+    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID, Config.PLANNED_DOWNTIME_CODE_ID]
     optional_activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(non_excludable_codes)).all()
 
     # Create first activity dropdown
@@ -398,17 +398,23 @@ def edit_activity_code():
             return abort(400, error_message)
         # Show a warning to the user depending on the code being edited.
         if activity_code_id == Config.UPTIME_CODE_ID:
-            message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
+            message = f'Warning: This entry (ID={activity_code_id})' \
+                      f' is a default code and must always represent uptime'
         elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
-            message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
+            message = f'Warning: This entry (ID={activity_code_id})' \
+                      f' is a default code and must always represent unplanned downtime'
+        elif activity_code_id == Config.PLANNED_DOWNTIME_CODE_ID:
+            message = f'Warning: This entry (ID={activity_code_id})' \
+                      f' is a default code and must always represent planned downtime'
         else:
             message = "Changes to these values will be reflected in " \
-                      "past readings with this activity code.<br> \
+                      "past data. Major changes are not recommended. \
                       If this code is no longer needed, deselect \"Active\" for this code " \
                       "and create another activity code instead."
     else:
         activity_code = None
-        message = "Create new activity code"
+        activity_code_id = None
+        message = ""
 
     form = ActivityCodeForm()
     # Get a list of existing activity codes to use for form validation to prevent repeat codes
@@ -446,6 +452,9 @@ def edit_activity_code():
         form.machine_state.data = str(activity_code.machine_state)
         form.downtime_category.data = activity_code.downtime_category
 
+    default_codes = [Config.UPTIME_CODE_ID, Config.PLANNED_DOWNTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
     return render_template("admin/edit_activity_code.html",
                            form=form,
-                           message=message)
+                           message=message,
+                           activity_code_id=activity_code_id,
+                           default_codes=default_codes)
