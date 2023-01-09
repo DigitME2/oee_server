@@ -24,7 +24,7 @@
                 <div class="row">
                     <h2>{{ machine.name }}</h2>
                     <div class="ml-2">
-                        <a href="{{ url_for("default.machine") }}">
+                        <a href="{{ url_for("default.machine_report", machine_id=machine.id) }}">
                             <button class="btn btn-dark"
                                     onclick="forceLogout({{ machine.input_device.id }})">
                                 Edit Activity
@@ -89,15 +89,16 @@
                         {% endif %}
                     </div>
 
-                    <div class="col">
+                    <div class="col col-3">
                         <div class="card-text">
                             <h4>Availability {{ availability_dict[machine.id] }}</h4>
                         </div>
                         <div class="card-text">
-                            Uptime: {{ activity_durations_dict[machine.id][uptime_code] }}<br>
-                            Scheduled: {{ schedule_dict[machine.id] }}<br>
+                            <font color="{{ colours_dict[uptime_code] }}">● </font>Uptime: {{ activity_durations_dict[machine.id][uptime_code] }}<br>
+                            ● Scheduled: {{ schedule_dict[machine.id] }}<br>
                             {% for act_code in activity_codes %}
                                 {% if act_code.id != uptime_code %}
+                                    <font color="{{ colours_dict[act_code.id] }}">● </font>
                                     {{ act_code.short_description }}:
                                     {{ activity_durations_dict[machine.id][act_code.id] }}<br>
                                 {% endif %}

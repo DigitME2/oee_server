@@ -35,8 +35,8 @@
                     <div class="row">
                         <div class="col-3">
                             {{ act.start_time.strftime("%H:%M") }} -
-                            {% if act.time_end %}
-                                {{ act.time_end.strftime("%H:%M") }}
+                            {% if act.end_time %}
+                                {{ act.end_time.strftime("%H:%M") }}
                             {% else %}
                                 now
                             {% endif %}
