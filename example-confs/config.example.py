@@ -56,6 +56,10 @@ class Config(object):
     UNEXPLAINED_DOWNTIME_CODE_ID = 2
     PLANNED_DOWNTIME_CODE_ID = 3
 
+    DASHBOARD_UPDATE_INTERVAL = 10
+    # Allow a user to start a job and say it actually started 5 minutes (or whatever) ago
+    ALLOW_DELAYED_JOB_START = True
+
     # Categories for activity codes
     DOWNTIME_CATEGORIES = [("none", "None"),
                            ("machine_error", "Machine error"),

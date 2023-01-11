@@ -94,31 +94,12 @@ def android_login():
         return json.dumps(response), 401, {'ContentType': 'application/json'}
 
     current_settings = Settings.query.get_or_404(1)
-    if len(user.active_input_devices) > 0 and not current_settings.allow_concurrent_user_jobs:
-        # Warn if the user is already logged in (and this is not allowed)
-        job = Job.query.filter_by(user_id=user_id, active=True).first()
-        # If this is the second attempt, end the job and log in the user
-        redis_key = f"login_attempted_user_{user_id}"
-        previous_login_attempt = r.get(redis_key)
-        if previous_login_attempt:
-            events.android_log_out(input_device, now)
-            r.delete(redis_key)
-        else:
-            response["success"] = False
-            response["reason"] = f"User already has an active job on machine {job.machine.name}. " \
-                                 f"Log in again to end this job."
-            r.set(redis_key, "True", 600)
-            return json.dumps(response), 200, {'ContentType': 'application/json'}
-
     # Check the password and log in if successful
     if not user.check_password(request.get_json()["password"]):
         response["success"] = False
         response["reason"] = "Wrong password"
         print("authentication failure")
         return json.dumps(response), 400, {'ContentType': 'application/json'}
-    if not current_settings.allow_concurrent_user_jobs:
-        # Log out sessions on the same user if concurrent sessions not allowed
-        end_all_user_sessions(user.id)
     current_app.logger.info(f"Logged in {user} (Android)")
     success = events.android_log_in(now, user, input_device)
     if success:

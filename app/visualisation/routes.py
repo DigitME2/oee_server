@@ -15,6 +15,7 @@ from app.visualisation.graphs import create_machine_gantt, create_multiple_machi
 from app.visualisation.helpers import parse_requested_machine_list
 from app.visualisation.tables import get_work_order_table, get_job_table, get_raw_database_table, \
     get_user_activity_table, get_machine_activity_table, get_oee_table, get_machine_production_table
+from config import Config
 
 
 @bp.route('/data', methods=['GET', 'POST'])
@@ -141,7 +142,7 @@ def create_dashboard():
 @bp.route('/dashboard')
 def dashboard():
     # Get the update interval to send to the page
-    update_interval_seconds = Settings.query.get(1).dashboard_update_interval_s
+    update_interval_seconds = Config.DASHBOARD_UPDATE_INTERVAL
     update_interval_ms = update_interval_seconds * 1000  # The jquery function takes milliseconds
 
     # Get the group of machines to show

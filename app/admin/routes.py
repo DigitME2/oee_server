@@ -7,7 +7,7 @@ from sqlalchemy import func
 from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
 from app.default.helpers import get_current_machine_shift_period
@@ -33,33 +33,6 @@ def admin_home():
                            machine_groups=MachineGroup.query.all(),
                            activity_codes=ActivityCode.query.all(),
                            jobs=Job.query.all())
-
-
-@bp.route('/settings', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def settings():
-    # Get the current settings. There can only be one row in the settings table.
-    current_settings = Settings.query.get_or_404(1)
-    form = SettingsForm()
-    if form.validate_on_submit():
-        # Save the new settings
-        current_settings.dashboard_update_interval_s = form.dashboard_update_interval.data
-        current_settings.job_number_input_type = form.job_number_input_type.data
-        current_settings.allow_delayed_job_start = form.allow_delayed_job_start.data
-        current_settings.allow_concurrent_user_jobs = form.allow_concurrent_user_jobs.data
-        db.session.add(current_settings)
-        db.session.commit()
-        current_app.logger.info(f"Changed settings: {current_settings}")
-        return redirect(url_for('admin.admin_home'))
-
-    # Set the form data to show the existing settings
-    form.dashboard_update_interval.data = current_settings.dashboard_update_interval_s
-    form.job_number_input_type.data = current_settings.job_number_input_type
-    form.allow_delayed_job_start.data = current_settings.allow_delayed_job_start
-    form.allow_concurrent_user_jobs.data = current_settings.allow_concurrent_user_jobs
-    return render_template('admin/settings.html',
-                           form=form)
 
 
 @bp.route('/new-user', methods=['GET', 'POST'])
@@ -257,6 +230,8 @@ def edit_machine():
         machine.autofill_job_start_amount = form.autofill_input_amount.data
         machine.shift_id = form.shift_pattern.data
         machine.job_start_activity_id = form.job_start_activity.data
+        machine.job_number_input_type = form.job_number_input_type.data
+
 
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
         for ac in optional_activity_codes:
@@ -305,6 +280,7 @@ def edit_machine():
     form.autofill_input_bool.data = bool(machine.autofill_job_start_input)
     form.autofill_input_amount.data = machine.autofill_job_start_amount
     form.job_start_activity.data = str(machine.job_start_activity_id)
+    form.job_number_input_type.data = machine.job_number_input_type
 
     if not creating_new_machine:
         form.name.data = machine.name

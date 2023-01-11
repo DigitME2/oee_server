@@ -92,6 +92,8 @@ class MachineForm(FlaskForm):
     autofill_input_amount = FloatField("Cycle Time Input Autofill")
     activity_codes_checkboxes = FieldList(BooleanField())
     job_start_activity = SelectField("First Activity on Job Start")
+    job_number_input_type = RadioField("Job Code Input type", choices=[("text", "Alphanumeric"),
+                                                                       ("number", "Numbers only")])
     submit = SubmitField('Save')
 
 
@@ -115,12 +117,3 @@ class RegisterForm(FlaskForm):
                                                      EqualTo('confirm_password', message="Passwords do not match")])
     confirm_password = PasswordField('Confirm Password')
     submit = SubmitField('Register')
-
-
-class SettingsForm(FlaskForm):
-    dashboard_update_interval = IntegerField('Dashboard update frequency (Seconds)', validators=[DataRequired()])
-    job_number_input_type = RadioField("Job Code Input type", choices=[("text", "Alphanumeric"),
-                                                                       ("number", "Numbers only")])
-    allow_delayed_job_start = BooleanField("Allow operator to enter adjusted start time during job start")
-    allow_concurrent_user_jobs = BooleanField("Allow operators to have multiple active jobs/logons at once")
-    submit = SubmitField('Save')

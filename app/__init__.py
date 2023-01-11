@@ -3,6 +3,7 @@ import logging.config
 from pathlib import Path
 
 from flask import Flask, request
+from sqlalchemy import inspect
 
 from app.default.schedule_tasks import add_shift_schedule_tasks
 from app.extensions import db, migrate, login_manager, scheduler
@@ -52,25 +53,14 @@ def create_app(config_class=Config):
     app.register_blueprint(android_bp)
 
     with app.app_context():
+        # Setup database if not initialised
+        inspector = inspect(db.engine)
+        if not inspector.has_table("user"):
+            from app.setup_database import setup_database
+            setup_database()
         # Set up APScheduler
         scheduler.start()
-        # FIXME Scheduled tasks aren't working
         add_shift_schedule_tasks()
-
-    @app.before_first_request
-    def initial_setup():
-        with app.app_context():
-            # Fill the database with default values
-            from app.setup_database import setup_database
-            if not Config.TESTING:
-                if Config.DEMO_MODE:
-                    setup_demo_database()
-                else:
-                    setup_database()
-
-            if Config.DEMO_MODE:
-                from app.demo.machine_simulator import backfill_missed_simulations
-                backfill_missed_simulations()
 
     # Function to log requests
     @app.after_request

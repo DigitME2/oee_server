@@ -30,6 +30,7 @@ class Machine(db.Model):
     workflow_type = db.Column(db.String(100))
     job_start_input_type = db.Column(db.String(100))
     group_id = db.Column(db.Integer, db.ForeignKey('machine_group.id'))
+    job_number_input_type = db.Column(db.String(100))
     active = db.Column(db.Boolean, default=True)
 
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
@@ -170,9 +171,3 @@ class Settings(db.Model):
     # Only allow one row in this table
     id = db.Column(db.Integer, db.CheckConstraint("id = 1"), primary_key=True)
     first_start = db.Column(db.DateTime)
-    dashboard_update_interval_s = db.Column(db.Integer)
-    job_number_input_type = db.Column(db.String(100))
-    allow_delayed_job_start = db.Column(db.Boolean, default=False)
-    allow_concurrent_user_jobs = db.Column(db.Boolean, default=True)
-
-

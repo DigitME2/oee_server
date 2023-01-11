@@ -23,8 +23,7 @@ def setup_database():
 
 def create_default_settings():
     first_start = datetime.now()
-    settings = Settings(job_number_input_type="number", allow_delayed_job_start=False,
-                        dashboard_update_interval_s=10, first_start=first_start)
+    settings = Settings(first_start=first_start)
     db.session.add(settings)
     db.session.commit()
     current_app.logger.info("Created default settings on first startup")

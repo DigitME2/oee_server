@@ -31,7 +31,7 @@ def get_job_start_data(input_type: str, input_autofill) -> dict:
         except Exception as e:
             job_start_data["job_number"]["warning"] = "Could not get job validation data from database."
             current_app.logger.exception("Failed to get job validation data")
-    if current_settings.allow_delayed_job_start:
+    if Config.ALLOW_DELAYED_JOB_START:
         job_start_data["start_time"] = {"title": "Start Time",
                                         "type": "time",
                                         "autofill": "current"}
