@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 from distutils.util import strtobool
 
 from flask import render_template, url_for, redirect, request, abort, current_app, flash
@@ -10,12 +10,10 @@ from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.helpers import DAYS, create_shift_day, save_shift_form, load_shift_form_values, ModifiedShiftException
-
 from app.default.helpers import get_current_machine_shift_period
-from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, ShiftPeriod, \
-    Shift
-from app.default.models import SHIFT_STRFTIME_FORMAT
+from app.default.helpers import save_shift_form, load_shift_form_values, ModifiedShiftException
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, Shift
+from app.default.schedule_tasks import add_all_jobs_to_scheduler
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -135,6 +133,7 @@ def edit_shift():
     if form.validate_on_submit() and form.validate_disabled_days():
         # Save the data from the form to the database
         save_shift_form(form, shift)
+        add_all_jobs_to_scheduler()
         return redirect(url_for('admin.admin_home'))
 
     if not new_shift:

@@ -51,6 +51,12 @@ def create_app(config_class=Config):
     app.register_blueprint(oee_displaying_bp)
     app.register_blueprint(android_bp)
 
+    with app.app_context():
+        # Set up APScheduler
+        scheduler.start()
+        # FIXME Scheduled tasks aren't working
+        add_shift_schedule_tasks()
+
     @app.before_first_request
     def initial_setup():
         with app.app_context():
@@ -62,16 +68,9 @@ def create_app(config_class=Config):
                 else:
                     setup_database()
 
-            # Set up APScheduler
-            from app.default import schedule_tasks
-            scheduler.start()
-            # FIXME Scheduled tasks aren't working
-            add_shift_schedule_tasks()
-
             if Config.DEMO_MODE:
                 from app.demo.machine_simulator import backfill_missed_simulations
                 backfill_missed_simulations()
-
 
     # Function to log requests
     @app.after_request

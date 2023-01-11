@@ -77,6 +77,7 @@ class Job(db.Model):
 
     activities = db.relationship('Activity', backref='job')
     quantities = db.relationship('ProductionQuantity', backref='job')
+    machine = db.relationship('Machine', back_populates='active_job')
 
     def __repr__(self):
         return f"<Job {self.job_number} (ID {self.id})>"

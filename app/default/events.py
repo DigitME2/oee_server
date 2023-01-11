@@ -3,6 +3,7 @@ from operator import attrgetter
 from typing import Optional
 
 from flask import current_app
+from flask_login import current_user
 
 from app.extensions import db
 from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity, ActivityCode
@@ -59,11 +60,9 @@ def android_log_out(input_device: InputDevice, dt: datetime):
 def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: Optional[int]):
     new_activity_code = ActivityCode.query.get_or_404(new_activity_code_id)
     machine_state = new_activity_code.machine_state
-    # Change the machine state according to the scheduled state of the machine
-    if machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
-        if machine_state == Config.MACHINE_STATE_UPTIME:
-            # Machine is up while scheduled to be down
-            machine_state = Config.MACHINE_STATE_OVERTIME
+    # If the activity is uptime during planned downtime, record it as overtime
+    if machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME and machine_state == Config.MACHINE_STATE_UPTIME:
+        machine_state = Config.MACHINE_STATE_OVERTIME
 
     # End the current activity
     if machine.current_activity:
@@ -105,7 +104,16 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
                     job_id=machine.active_job_id)
 
 
-def end_job(dt, job):
+def end_job(dt, job: Job):
+    # Set the activity to down
+    new_activity_code = Config.UNEXPLAINED_DOWNTIME_CODE_ID
+    if job.machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
+        new_activity_code = Config.PLANNED_DOWNTIME_CODE_ID
+    change_activity(dt=dt,
+                    machine=job.machine,
+                    new_activity_code_id=new_activity_code,
+                    user_id=current_user.user_id,
+                    job_id=job.id)
     job.end_time = dt
     job.active = False
     db.session.commit()
@@ -131,3 +139,37 @@ def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time
                                              machine_id=machine_id)
     db.session.add(production_quantity)
     db.session.commit()
+
+
+def start_shift(dt: datetime, machine):
+    """ Run a shift change on a machine"""
+    machine.schedule_state = Config.MACHINE_STATE_UPTIME
+    db.session.commit()
+    # If we're in the default "no shift" planned downtime activity (as expected)
+    if machine.current_activity.activity_code_id == Config.PLANNED_DOWNTIME_CODE_ID:
+        # Set to the standard unplanned downtime activity
+        change_activity(dt, machine=machine, new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                        user_id=machine.active_user_id, job_id=machine.active_job_id)
+    # Otherwise we keep the same activity code and call change_activity to handle the change in machine_state
+    else:
+        change_activity(dt, machine=machine, new_activity_code_id=machine.current_activity.activity_code_id,
+                        user_id=machine.active_user_id, job_id=machine.active_job_id)
+
+
+def end_shift(dt: datetime, machine):
+    """ Run a shift change on a machine"""
+    machine.schedule_state = Config.MACHINE_STATE_PLANNED_DOWNTIME
+    db.session.commit()
+    if not machine.active_job:
+        # If the machine is in unplanned downtime (as expected)
+        if machine.current_activity.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
+            change_activity(dt, machine=machine, new_activity_code_id=Config.PLANNED_DOWNTIME_CODE_ID,
+                            user_id=machine.active_user_id, job_id=machine.active_job_id)
+        # If machine is in planned downtime, make no change
+    # If there's a job active keep the same activity
+    else:
+        # Call change activity if the machine is up so that it changes to overtime
+        if machine.current_activity.machine_state == Config.MACHINE_STATE_UPTIME:
+            change_activity(dt, machine=machine, new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                            user_id=machine.active_user_id, job_id=machine.active_job_id)
+        # If machine is down during a job, make no change. The machine will be set to planned downtime on job end.

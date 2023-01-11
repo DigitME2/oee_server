@@ -214,11 +214,5 @@ def android_end_job():
     events.end_job(now, current_job)
     input_device.machine.active_job_id = None
     db.session.commit()
-    # Set the activity to downtime
-    events.change_activity(dt=now,
-                           machine=input_device.machine,
-                           new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                           user_id=user_session.user_id,
-                           job_id=current_job.id)
     events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
     return json.dumps({"success": True})

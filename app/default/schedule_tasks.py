@@ -3,6 +3,12 @@ from datetime import datetime
 from app.default import events
 from app.default.models import ShiftPeriod, SHIFT_STRFTIME_FORMAT, Shift
 from app.extensions import db, scheduler
+from config import Config
+
+
+def add_all_jobs_to_scheduler():
+    scheduler.remove_all_jobs()
+    add_shift_schedule_tasks()
 
 
 def add_shift_schedule_tasks():
@@ -10,31 +16,25 @@ def add_shift_schedule_tasks():
     for period in shift_periods:
         job_id = f"shift_change for ShiftPeriod ID={period.id}"
         t = datetime.strptime(period.start_time, SHIFT_STRFTIME_FORMAT).time()
-        shift_id = period.shift_id
         scheduler.add_job(id=job_id,
-                          func=lambda: shift_change(shift_id=shift_id, shift_state=period.shift_state),
+                          func=shift_change,
+                          kwargs={"shift_period_id": period.id},
                           trigger="cron",
                           day_of_week=period.day,
                           hour=t.hour,
                           minute=t.minute)
 
 
-def shift_change(shift_id, shift_state):
+def shift_change(shift_period_id):
     with scheduler.app.app_context():
+        shift_period = ShiftPeriod.query.get(shift_period_id)
         now = datetime.now()
-        shift = Shift.query.get(shift_id)
-        for machine in shift.machines:
-            machine.schedule_state = shift_state
-            db.session.commit()  # Commit here so that change_activity is aware of the new schedule state
-            # Call change_activity, but keep the same activity code
-            events.change_activity(now,
-                                   machine=machine,
-                                   new_activity_code_id=machine.current_activity_id,
-                                   user_id=machine.active_user_id,
-                                   job_id=machine.active_job_id)
-
-
-
+        shift_starting = (shift_period.shift_state == Config.MACHINE_STATE_UPTIME)
+        for machine in shift_period.shift.machines:
+            if shift_starting:
+                events.start_shift(now, machine)
+            else:
+                events.end_shift(now, machine)
 
 #
 # @celery_app.on_after_finalize.connect

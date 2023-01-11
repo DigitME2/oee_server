@@ -198,10 +198,5 @@ def end_job():
                         quantity_rejects=end_job_form.rejects.data,
                         job_id=job.id,
                         machine_id=machine.id)
-        events.change_activity(now,
-                               machine=machine,
-                               new_activity_code_id=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
-                               user_id=current_user.id,
-                               job_id=None)
         events.end_job(now, job=job)
     return make_response("", 200)
