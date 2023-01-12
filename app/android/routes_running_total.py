@@ -34,6 +34,6 @@ def running_total_update_quantity():
     r.set(f"job_{input_device.machine.active_job_id}_last_update", now.timestamp(), ex=86400)
 
     return json.dumps({"success": True,
-                       "quantity_produced": current_job.get_total_quantity_good(),
+                       "quantity_produced": current_job.get_total_good_quantity(),
                        "quantity_rejects": current_job.get_total_reject_quantity(),
                        "last_update": now.timestamp()})

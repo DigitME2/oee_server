@@ -179,7 +179,7 @@ def edit_machine():
 
     if creating_new_machine:
         # Create a new machine
-        machine = Machine(name="", active=True)
+        machine = Machine(name="", job_number_input_type="number", active=True)
 
     # Otherwise, get the machine to be edited
     elif 'machine_id' in request.args:

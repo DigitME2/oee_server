@@ -112,7 +112,7 @@ def end_job(dt, job: Job):
     change_activity(dt=dt,
                     machine=job.machine,
                     new_activity_code_id=new_activity_code,
-                    user_id=current_user.user_id,
+                    user_id=current_user.id,
                     job_id=job.id)
     job.end_time = dt
     job.active = False
@@ -125,7 +125,7 @@ def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time
     if not time_start:
         job_production_quantities = ProductionQuantity.query.filter(ProductionQuantity.job_id == job_id).all()
         if len(job_production_quantities) > 0:
-            last_pq = max(job_production_quantities, key=attrgetter('time_end'))
+            last_pq = max(job_production_quantities, key=attrgetter('end_time'))
             time_start = last_pq.end_time
         else:
             job = Job.query.get(job_id)

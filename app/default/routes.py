@@ -74,6 +74,7 @@ def status_page():
 @login_required
 def machine_report():
     """ Show all a user's activities and allow them to be edited """
+    # TODO Finish off this page. Need to show more info for jobs and create the routes to save edits
     machine_id = request.args.get("machine_id")
     machine = Machine.query.get_or_404(machine_id)
     activity_codes = ActivityCode.query.all()
@@ -84,6 +85,11 @@ def machine_report():
     activities = get_machine_activities(machine=machine, time_start=period_start, time_end=period_end)
     activities.sort(key=lambda a: a.start_time, reverse=True)
     jobs = get_jobs(time_start=period_start, time_end=period_end, machine=machine)
+    good_production_dict = {}
+    reject_production_dict = {}
+    for job in jobs:
+        good_production_dict[job.id] = job.get_total_good_quantity()
+        reject_production_dict[job.id] = job.get_total_reject_quantity()
     activity_form = EditActivityForm()
     activity_code_choices = []
     for ac in ActivityCode.query.all():
@@ -95,11 +101,14 @@ def machine_report():
                            date=requested_date,
                            machine=machine,
                            jobs=jobs,
+                           good_production_dict=good_production_dict,
+                           reject_production_dict=reject_production_dict,
                            activities=activities,
                            activity_form=activity_form,
                            activity_codes=activity_codes)
 
 
+# TODO This can be removed once I've finished the machine report page
 @bp.route('/view_activities')
 @login_required
 def view_activities():

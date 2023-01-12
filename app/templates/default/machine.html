@@ -6,28 +6,54 @@
     <div class="container mt-5">
         <h1 class="my-5">{{ machine.name }} - {{ date }}</h1>
         <div class="row">
-            <div class="col">
+            <div class="col col-8">
                 <h2>Jobs</h2>
-                <ul class="list-group-flush">
+                <ul class="list-group-flush pl-0">
                     <li class="list-group-item">
-                        <div class="row">
-                            <div class="col-4">
+                        <div class="row flex-nowrap">
+                            <div class="col-3">
                                 Job Number
                             </div>
-                            <div class="col-6">
-                                Ideal Cycle time (seconds)
+                            <div class="col-1">
+                                Start
+                            </div>
+                            <div class="col-1">
+                                End
+                            </div>
+                            <div class="col-2">
+                                Cycle (s)
+                            </div>
+                            <div class="col-2">
+                                Good Qty
+                            </div>
+                            <div class="col-2">
+                                Reject Qty
                             </div>
                         </div>
                     </li>
 
                     {% for job in jobs %}
                         <li class="list-group-item">
-                            <div class="row">
-                                <div class="col-4">
+                            <div class="row flex-nowrap">
+                                <div class="col-3">
                                     {{ job.job_number }}
                                 </div>
-                                <div class="col-6">
+                                <div class="col-1">
+                                    {{ job.start_time.strftime("%H:%M") }}
+                                </div>
+                                <div class="col-1">
+                                    {% if job.end_time %}
+                                    {{ job.end_time.strftime("%H:%M") }}
+                                    {% endif %}
+                                </div>
+                                <div class="col-2">
                                     {{ job.ideal_cycle_time_s }}
+                                </div>
+                                <div class="col-2">
+                                    {{ good_production_dict[job.id] }}
+                                </div>
+                                <div class="col-2">
+                                    {{ reject_production_dict[job.id] }}
                                 </div>
 
                                 <div class="text-right col">
@@ -41,24 +67,24 @@
                     {% endfor %}
                 </ul>
             </div>
-            <div class="col">
-                <h2>Activity</h2>
+            <div class="col col-4">
+                <h2>Activities</h2>
 
-                <ul class="list-group-flush">
+                <ul class="list-group-flush pl-0">
                     <li class="list-group-item">
                         <div class="row">
-                            <div class="col-4">
+                            <div class="col col-5">
                                 Time
                             </div>
-                            <div class="col-5">
-                                Activity
+                            <div class="col col-5">
+                                State
                             </div>
                         </div>
                     </li>
                     {% for act in activities %}
                         <li class="list-group-item">
                             <div class="row">
-                                <div class="col-4">
+                                <div class="col col-5 flex-shrink-1">
                                     {{ act.start_time.strftime("%H:%M") }} ->
                                     {% if act.end_time %}
                                         {{ act.end_time.strftime("%H:%M") }}
@@ -67,11 +93,11 @@
                                     {% endif %}
 
                                 </div>
-                                <div class="col-3">
+                                <div class="col col-5">
                                     {{ act.activity_code.short_description }}
                                 </div>
 
-                                <div class="text-right col">
+                                <div class="col col-2 text-right">
                                     <button type="button" class="btn btn-dark" data-toggle="modal"
                                             data-target="#editActivityModal{{ act.id }}">
                                         Edit

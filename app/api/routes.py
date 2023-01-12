@@ -189,9 +189,7 @@ def end_job():
     if end_job_form.validate_on_submit():
         job_id = request.form.get("job_id")
         job = Job.query.get_or_404(job_id)
-        # Remove it as active_job from its machine
-        machine = Machine.query.filter(Machine.active_job_id == job.id).first()
-        machine.active_job_id = None
+        machine = job.machine
         db.session.commit()
         events.produced(now,
                         quantity_good=end_job_form.quantity_good.data,

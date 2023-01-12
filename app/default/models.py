@@ -72,18 +72,18 @@ class Job(db.Model):
     job_number = db.Column(db.String(100), nullable=False)
     part_number = db.Column(db.String(100))
     ideal_cycle_time_s = db.Column(db.Integer)
-    machine_id = db.Column(db.Integer)
+    machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'))
     active = db.Column(db.Boolean)
     notes = db.Column(db.String(100))
 
     activities = db.relationship('Activity', backref='job')
     quantities = db.relationship('ProductionQuantity', backref='job')
-    machine = db.relationship('Machine', back_populates='active_job')
+    machine = db.relationship('Machine', uselist=False, foreign_keys=[machine_id])
 
     def __repr__(self):
         return f"<Job {self.job_number} (ID {self.id})>"
 
-    def get_total_quantity_good(self):
+    def get_total_good_quantity(self):
         total_good_qty = 0
         for q in self.quantities:
             total_good_qty += q.quantity_good
@@ -96,7 +96,7 @@ class Job(db.Model):
         return total_reject_qty
 
     def get_total_quantity(self):
-        return self.get_total_quantity_good() + self.get_total_reject_quantity()
+        return self.get_total_good_quantity() + self.get_total_reject_quantity()
 
 
 class ProductionQuantity(db.Model):
