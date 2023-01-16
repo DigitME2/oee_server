@@ -109,6 +109,7 @@ def end_job(dt, job: Job):
     new_activity_code = Config.UNEXPLAINED_DOWNTIME_CODE_ID
     if job.machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
         new_activity_code = Config.PLANNED_DOWNTIME_CODE_ID
+    job.machine.active_job_id = None
     change_activity(dt=dt,
                     machine=job.machine,
                     new_activity_code_id=new_activity_code,

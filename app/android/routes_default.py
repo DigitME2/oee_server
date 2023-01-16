@@ -193,7 +193,6 @@ def android_end_job():
     if current_job is None:
         abort(400, message="No active job")
     events.end_job(now, current_job)
-    input_device.machine.active_job_id = None
     db.session.commit()
     events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
     return json.dumps({"success": True})

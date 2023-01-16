@@ -27,6 +27,11 @@ def default():
 @bp.route('/status', methods=["GET", "POST"])
 def status_page():
     """ Show today's details for all machines"""
+    requested_date = request.args.get("date")
+    if requested_date:
+        requested_date = datetime.strptime(requested_date, "%Y-%m-%d").date()
+    else:
+        requested_date = datetime.now().date()
     machines = Machine.query.all()
     start_job_form = StartJobForm()
     end_job_form = EndJobForm()
@@ -36,22 +41,22 @@ def status_page():
     for ac in activity_codes:
         colours_dict[ac.id] = ac.graph_colour
     # Production amounts and reject amounts
-    good_dict, rejects_dict = get_daily_production_dict(human_readable=True)
+    good_dict, rejects_dict = get_daily_production_dict(requested_date, human_readable=True)
     production_dict = {}
     for k, v in good_dict.items():
         production_dict[k] = good_dict[k] + rejects_dict[k]
     # Availability figure for each machine
-    availability_dict = get_daily_machine_availability_dict(human_readable=True)
+    availability_dict = get_daily_machine_availability_dict(requested_date, human_readable=True)
     # Scheduled uptime for each machine
-    schedule_dict = get_daily_scheduled_runtime_dicts(human_readable=True)
+    schedule_dict = get_daily_scheduled_runtime_dicts(requested_date, human_readable=True)
     # Performance figure for each machine
-    performance_dict = get_daily_performance_dict(human_readable=True)
+    performance_dict = get_daily_performance_dict(requested_date, human_readable=True)
     # Target production amount for each machine
-    target_production_dict = get_daily_target_production_amount_dict()
+    target_production_dict = get_daily_target_production_amount_dict(requested_date)
     # Quality figure for each machine
-    quality_dict = get_daily_quality_dict(human_readable=True)
+    quality_dict = get_daily_quality_dict(requested_date, human_readable=True)
     # Total time spent in each activity for each machine
-    activity_durations_dict = get_daily_activity_duration_dict(human_readable=True)
+    activity_durations_dict = get_daily_activity_duration_dict(requested_date, human_readable=True)
     return render_template("default/status.html",
                            activity_codes=activity_codes,
                            colours_dict=colours_dict,
@@ -67,7 +72,8 @@ def status_page():
                            activity_durations_dict=activity_durations_dict,
                            production_dict=production_dict,
                            rejects_dict=rejects_dict,
-                           uptime_code=Config.UPTIME_CODE_ID)
+                           uptime_code=Config.UPTIME_CODE_ID,
+                           date=requested_date)
 
 
 @bp.route('/machine')
@@ -78,7 +84,11 @@ def machine_report():
     machine_id = request.args.get("machine_id")
     machine = Machine.query.get_or_404(machine_id)
     activity_codes = ActivityCode.query.all()
-    requested_date = request.args.get("date", default=datetime.now().date())
+    requested_date = request.args.get("date")
+    if requested_date:
+        requested_date = datetime.strptime(requested_date, "%Y-%m-%d").date()
+    else:
+        requested_date = datetime.now().date()
     period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
     period_end = period_start + timedelta(days=1)
 

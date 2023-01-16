@@ -14,8 +14,28 @@
                 </div>
             </div>
         {% endif %}
+        <div class="row">
+            <div class="col col-auto">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label for="selectDate">Set Date: </label>
+                        <input class="form-control flex-shrink-1" id="selectDate" name="select-date"
+                               onchange="changeDate(this)" type="date" value="{{ date }}">
+                    </div>
+                </form>
+            </div>
+            <div class="container">
+                <div class="row my-2 align-middle">
+                    <div class="col col-auto">
+                        <h1>
+                            Summary {{ date.strftime("%a %d %b %Y") }}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% for machine in machines %}
-            <div class="border border-3 my-5 pl-5 py-2
+            <div class="border border-3 my-3 pl-5 py-2
                     {% if machine.current_activity.activity_code_id == uptime_code %}
                  border-success
                     {% else %}
@@ -24,7 +44,7 @@
                 <div class="row">
                     <h2>{{ machine.name }}</h2>
                     <div class="ml-2">
-                        <a href="{{ url_for("default.machine_report", machine_id=machine.id) }}">
+                        <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
                             <button class="btn btn-dark"
                                     onclick="forceLogout({{ machine.input_device.id }})">
                                 View
@@ -125,10 +145,14 @@
         {% endfor %}
     </div>
 
+    <script>
+        {#    Reload the page for a different date when the date select box changes #}
+        function changeDate(selectDate) {
+            window.location.replace("{{ url_for("default.status_page")}}" + "?date=" + selectDate.value)
+        }
+    </script>
 
     <script>
-
-
         function postActivity(machineId, newActivityCodeId, userId) {
             let data = {
                 machine_id: machineId,
