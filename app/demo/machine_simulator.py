@@ -122,7 +122,6 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
     while virtual_time <= time_end:
         uptime_activity = Activity(machine_id=machine_id,
                                    time_start=virtual_time,
-                                   machine_state=Config.MACHINE_STATE_UPTIME,
                                    activity_code_id=Config.UPTIME_CODE_ID,
                                    job_id=job_id)
         virtual_time += randrange(400, 3000)
@@ -131,7 +130,6 @@ def get_dummy_machine_activity(time_start: datetime, time_end: datetime, job_id,
 
         downtime_activity = Activity(machine_id=machine_id,
                                      time_start=virtual_time,
-                                     machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
                                      activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                                      job_id=job_id)
         virtual_time += randrange(60, 1000)
@@ -168,7 +166,6 @@ def end_job(job, machine, simulation_datetime=None):
     complete_last_activity(machine_id=machine.id, time_end=simulation_datetime, commit=False)
     new_activity = Activity(machine_id=machine.id,
                             time_start=simulation_datetime,
-                            machine_state=0,
                             activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             job_id=job.id)
     db.session.add(new_activity)
@@ -208,7 +205,6 @@ def change_activity(machine, job, user, simulation_datetime=None):
     if random.random() < chance_the_activity_is_uptime:
         new_activity = Activity(machine_id=machine.id,
                                 time_start=simulation_datetime,
-                                machine_state=1,
                                 activity_code_id=Config.UPTIME_CODE_ID,
                                 job_id=job.id,
                                 user_id=user.id)
@@ -216,7 +212,6 @@ def change_activity(machine, job, user, simulation_datetime=None):
         # otherwise the activity is downtime
         new_activity = Activity(machine_id=machine.id,
                                 time_start=simulation_datetime,
-                                machine_state=0,
                                 activity_code_id=randrange(2, 7),
                                 job_id=job.id,
                                 user_id=user.id)

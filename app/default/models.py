@@ -34,7 +34,7 @@ class Machine(db.Model):
     active = db.Column(db.Boolean, default=True)
 
     excluded_activity_codes = db.relationship('ActivityCode', secondary=machine_activity_codes_association_table)
-    activities = db.relationship('Activity', foreign_keys="[Activity.machine_id]", backref='machine')
+    activities = db.relationship('Activity', foreign_keys="[Activity.machine_id]", back_populates='machine')
     current_activity = db.relationship('Activity', foreign_keys=[current_activity_id])
     active_job = db.relationship('Job', foreign_keys=[active_job_id])
     active_user = db.relationship('User', foreign_keys=[active_user_id])
@@ -113,15 +113,17 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
     activity_code_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), nullable=False)
-    machine_state = db.Column(db.Integer, nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime)
     explanation_required = db.Column(db.Boolean)
+    notes = db.Column(db.String(255))
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    machine = db.relationship("Machine", foreign_keys="[Activity.machine_id]", uselist=False)
+
     def __repr__(self):
-        return f"<Activity machine:{self.machine_id} machine_state:{self.machine_state} (ID {self.id})>"
+        return f"<Activity machine:{self.machine_id} (ID {self.id})>"
 
 
 @event.listens_for(Activity, 'after_insert')

@@ -21,7 +21,6 @@ class OEETests(BaseTest):
             create_all_scheduled_activities()
             act = Activity(machine_id=machine.id,
                            activity_code_id=Config.UPTIME_CODE_ID,
-                           machine_state=Config.MACHINE_STATE_UPTIME,
                            time_start=day_start + timedelta(hours=9),
                            time_end=day_start + timedelta(hours=18))
             db.session.add(act)

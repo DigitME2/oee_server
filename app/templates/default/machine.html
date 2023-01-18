@@ -1,9 +1,10 @@
 {% extends "default/base.html" %}
-{% import "default/activity_modal.html" as activity_modal %}
+{% import "default/activity_modals.html" as activity_modals %}
+{% import "default/job_modals.html" as job_modals %}
 
 {% block content %}
     {% set ns = namespace(date=None) %}
-    <div class="container-fluid">
+    <div class="container">
         <div class="row">
             <div class="col col-auto">
                 <form class="form-inline">
@@ -25,8 +26,18 @@
             </div>
         </div>
         <div class="row">
-            <div class="col col-8">
-                <h2>Jobs </h2>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <h2>Jobs</h2>
+                    </div>
+
+                    <button type="button" class="btn btn-dark" data-toggle="modal"
+                            data-target="#createPastJobModal">
+                        Add Past Job
+                    </button>
+                    {{ job_modals.add_past_job(job_form, machine, date) }}
+                </div>
                 <table id="jobTable" class="dataTable table table-striped table-bordered">
                     <thead>
                     <tr>
@@ -71,22 +82,36 @@
                                 {{ reject_production_dict[job.id] }}
                             </td>
                             <td>
-                                <button type="button" class="btn btn-dark">
+                                <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
+                                        data-target="#editJobModal{{ job.id }}">
                                     Edit
                                 </button>
+                                {{ job_modals.edit_job(job_form, job) }}
                             </td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <div class="col col-4">
-                <h2>Activities</h2>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <h2>Activity</h2>
+                    </div>
+                    <button type="button" class="btn btn-dark" data-toggle="modal"
+                            data-target="#createActivityModal">
+                        Add Past Activity
+                    </button>
 
+                    {{ activity_modals.create_past_activity_macro(machine.id, date, activity_form) }}
+                </div>
                 <table id="activityTable" class="dataTable table table-striped">
                     <thead>
                     <tr>
-                        <th scope="col">Time</th>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
                         <th scope="col">State</th>
                         <th scope="col" class="no-export"></th>
                     </tr>
@@ -100,7 +125,8 @@
                                 {% else %}
                                     {{ act.start_time.strftime("%H:%M (%d/%m/%Y)") }}
                                 {% endif %}
-                                ->
+                            </td>
+                            <td>
                                 {% if act.end_time %}
                                     {% if act.end_time.date() == date %}
                                         {{ act.end_time.strftime("%H:%M") }}
@@ -116,14 +142,79 @@
                             </td>
                             <td>
                                 <div class="col col-2 text-right">
-                                    <button type="button" class="btn btn-dark" data-toggle="modal"
-                                            data-target="#editActivityModal{{ act.id }}">
-                                        Edit
-                                    </button>
+                                    {% if act.end_time %}
+                                        <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
+                                                data-target="#editActivityModal{{ act.id }}">
+                                            Edit
+                                        </button>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
-                        {{ activity_modal.edit_activity_modal(act, activity_form) }}
+                        {{ activity_modals.edit_activity_modal(act, activity_form) }}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <h2>Production</h2>
+                    </div>
+                    <button type="button" class="btn btn-dark" data-toggle="modal"
+                            data-target="#createActivityModal">
+                        Add Past Production Qty
+                    </button>
+
+                </div>
+                <table id="productionTable" class="dataTable table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col">Qty Good</th>
+                        <th scope="col">Qty Reject</th>
+                        <th scope="col" class="no-export"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for pq in production_quantities %}
+                        <tr>
+                            <td>
+                                {% if pq.start_time.date() == date %}
+                                    {{ pq.start_time.strftime("%H:%M") }}
+                                {% else %}
+                                    {{ pq.start_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pq.end_time %}
+                                    {% if pq.end_time.date() == date %}
+                                        {{ pq.end_time.strftime("%H:%M") }}
+                                    {% else %}
+                                        {{ pq.end_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        <td>
+                            {{ pq.quantity_good }}
+                        </td>
+                        <td>
+                            {{ pq.quantity_rejects }}
+                        </td>
+
+                            <td>
+                                <div class="col col-2 text-right">
+                                    {% if pq.end_time %}
+                                        <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
+                                                data-target="">
+                                            Edit
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
                     {% endfor %}
                     </tbody>
                 </table>
@@ -131,29 +222,12 @@
         </div>
     </div>
     <script>
-{#    Reload the page for a different date when the date select box changes #}
+        {#    Reload the page for a different date when the date select box changes #}
+
         function changeDate(selectDate) {
             window.location.replace("{{ url_for("default.machine_report", machine_id=machine.id)}}" + "&date=" + selectDate.value)
         }
     </script>
-    <script>
-
-        function putActivity(activityId, newActivityCodeId, dropdownIndex) {
-            let data = {
-                activity_code_id: newActivityCodeId
-            }
-            $.ajax({
-                url: '/api/activity/' + activityId,
-                type: 'PUT',
-                data: JSON.stringify(data),
-                contentType: "application/json",
-                success: function (result) {
-                    window.location.reload();
-                }
-            });
-        }
-    </script>
-
 
 
 
@@ -228,26 +302,17 @@
             }
         ]
         $(document).ready(function () {
-                $('#jobTable').DataTable({
+                $('.dataTable').DataTable({
                     dom: 'Bfrtip',
                     responsive: true,
-                    scrollY: '400px',
+                    scrollY: '200px',
                     paging: false,
-                    sorting: false,
-                    searching: false,
-                    buttons: dataTablesButtons
-                });
-                $('#activityTable').DataTable({
-                    dom: 'Bfrtip',
-                    responsive: true,
-                    scrollY: '400px',
-                    paging: false,
-                    sorting: false,
                     searching: false,
                     buttons: dataTablesButtons
                 });
             }
-        );
+        )
+
     </script>
 
 

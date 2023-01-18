@@ -59,7 +59,7 @@ class Workflow:
                            "state": self.state,
                            "job_number": self.job.job_number,
                            "current_activity_code_id": self.current_activity_code.id,
-                           "current_machine_state": self.current_activity.machine_state,
+                           "current_machine_state": self.current_activity.activity_code.machine_state,
                            "activity_codes": activity_codes_dicts,
                            "colour": self.current_activity_code.graph_colour,
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
@@ -107,7 +107,7 @@ class PausableWorkflow(Workflow):
 
     def get_machine_state(self):
         if hasattr(self, "current_activity"):
-            return self.current_activity.machine_state
+            return self.current_activity.activity_code.machine_state
         else:
             return Config.MACHINE_STATE_UNPLANNED_DOWNTIME
 

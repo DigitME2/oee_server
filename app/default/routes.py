@@ -11,9 +11,9 @@ from app.data_analysis.oee.performance import get_daily_performance_dict, get_da
     get_daily_production_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
-from app.default.forms import StartJobForm, EndJobForm, EditActivityForm
+from app.default.forms import StartJobForm, EndJobForm, EditActivityForm, FullJobForm
 from app.default.helpers import get_machine_activities, get_jobs
-from app.default.models import ActivityCode, Activity, Machine
+from app.default.models import ActivityCode, Activity, Machine, ProductionQuantity
 from app.login.models import User
 from config import Config
 
@@ -70,6 +70,7 @@ def status_page():
                            target_production_dict=target_production_dict,
                            quality_dict=quality_dict,
                            activity_durations_dict=activity_durations_dict,
+                           good_dict=good_dict,
                            production_dict=production_dict,
                            rejects_dict=rejects_dict,
                            uptime_code=Config.UPTIME_CODE_ID,
@@ -101,10 +102,11 @@ def machine_report():
         good_production_dict[job.id] = job.get_total_good_quantity()
         reject_production_dict[job.id] = job.get_total_reject_quantity()
     activity_form = EditActivityForm()
-    activity_code_choices = []
-    for ac in ActivityCode.query.all():
-        activity_code_choices.append((str(ac.id), str(ac.short_description)))
-    activity_form.activity_code.choices = activity_code_choices
+    job_form = FullJobForm()
+    production_quantities = ProductionQuantity.query. \
+        filter(ProductionQuantity.start_time <= period_end). \
+        filter(ProductionQuantity.end_time >= period_start).\
+        filter(ProductionQuantity.machine_id == machine_id).all()
 
     return render_template('default/machine.html',
                            title='Machine Report',
@@ -113,9 +115,11 @@ def machine_report():
                            jobs=jobs,
                            good_production_dict=good_production_dict,
                            reject_production_dict=reject_production_dict,
+                           job_form=job_form,
                            activities=activities,
                            activity_form=activity_form,
-                           activity_codes=activity_codes)
+                           activity_codes=activity_codes,
+                           production_quantities=production_quantities)
 
 
 # TODO This can be removed once I've finished the machine report page

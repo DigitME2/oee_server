@@ -13,140 +13,146 @@
                         to get started. </h3>
                 </div>
             </div>
-        {% endif %}
-        <div class="row">
-            <div class="col col-auto">
-                <form class="form-inline">
-                    <div class="form-group">
-                        <label for="selectDate">Set Date: </label>
-                        <input class="form-control flex-shrink-1" id="selectDate" name="select-date"
-                               onchange="changeDate(this)" type="date" value="{{ date }}">
-                    </div>
-                </form>
-            </div>
-            <div class="container">
-                <div class="row my-2 align-middle">
-                    <div class="col col-auto">
-                        <h1>
-                            Summary {{ date.strftime("%a %d %b %Y") }}
-                        </h1>
+        {% else %}
+            <div class="row">
+                <div class="col col-auto">
+                    <form class="form-inline">
+                        <div class="form-group">
+                            <label for="selectDate">Set Date: </label>
+                            <input class="form-control flex-shrink-1" id="selectDate" name="select-date"
+                                   onchange="changeDate(this)" type="date" value="{{ date }}">
+                        </div>
+                    </form>
+                </div>
+                <div class="container">
+                    <div class="row my-2 align-middle">
+                        <div class="col col-auto">
+                            <h1>
+                                Summary {{ date.strftime("%a %d %b %Y") }}
+                            </h1>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        {% for machine in machines %}
-            <div class="border border-3 my-3 pl-5 py-2
+            {% for machine in machines %}
+                <div class="border border-3 my-3 pl-5 py-2
                     {% if machine.current_activity.activity_code_id == uptime_code %}
                  border-success
                     {% else %}
                  border-danger
                     {% endif %}">
-                <div class="row">
-                    <h2>{{ machine.name }}</h2>
-                    <div class="ml-2">
-                        <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
-                            <button class="btn btn-dark"
-                                    onclick="forceLogout({{ machine.input_device.id }})">
-                                View
-                            </button>
-                        </a>
+                    <div class="row">
+                        <h2>{{ machine.name }}</h2>
+                        <div class="ml-2">
+                            <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
+                                <button class="btn btn-dark"
+                                        onclick="forceLogout({{ machine.input_device.id }})">
+                                    View
+                                </button>
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <h4>Status</h4>
-                        <div class="dropdown">
-                            <button class="btn btn-dark dropdown-toggle" type="button"
-                                    id="ActivityCodeDropdown{{ machine.current_activity.id }}"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <a>{{ machine.current_activity.activity_code.short_description }}</a>
-                            </button>
-                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                {% set i = 0 %}
-                                {% for code in activity_codes %}
-                                    {#Don't show 'up' if there's no job#}
-                                    {% if code.id != uptime_code or machine.active_job %}
-                                        <button class="dropdown-item"
-                                                onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
-                                            {{ code.short_description }}
-                                        </button>
+                    <div class="row">
+                        <div class="col">
+                            <h4>Status</h4>
+                            <div class="dropdown">
+                                <button class="btn btn-dark dropdown-toggle" type="button"
+                                        id="ActivityCodeDropdown{{ machine.current_activity.id }}"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <a>{{ machine.current_activity.activity_code.short_description }}</a>
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    {% set i = 0 %}
+                                    {% for code in activity_codes %}
+                                        {#Don't show 'up' if there's no job#}
+                                        {% if code.id != uptime_code or machine.active_job %}
+                                            <button class="dropdown-item"
+                                                    onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
+                                                {{ code.short_description }}
+                                            </button>
+                                        {% endif %}
+                                        {% set i = i + 1 %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h4>Job</h4>
+                            {% if machine.active_job %}
+                                {{ machine.active_job.job_number }}
+                                <!-- Open end job modal -->
+                                <button type="button" class="btn btn-dark" data-toggle="modal"
+                                        data-target="#endJobModal{{ machine.active_job.id }}">
+                                    End
+                                </button>
+                                {{ job_modals.end_job_modal(machine.active_job, end_job_form) }}
+                            {% else %}
+                                <!-- Open set job modal -->
+                                <button type="button" class="btn btn-dark" data-toggle="modal"
+                                        data-target="#setJobModal{{ machine.id }}">
+                                    Set Job
+                                </button>
+                                {{ job_modals.set_job_modal(machine, start_job_form) }}
+
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h4>Current User: </h4>
+                            {% if machine.active_user %}
+                                {{ machine.active_user.username }}
+                                <button class="btn btn-dark"
+                                        onclick="forceLogout({{ machine.input_device.id }})">
+                                    Force Logout
+                                </button>
+                            {% else %}
+                                <h4>None</h4>
+                            {% endif %}
+                        </div>
+
+                        <div class="col col-3">
+                            <div class="card-text">
+                                <h4>Availability {{ availability_dict[machine.id] }}</h4>
+                            </div>
+                            <div class="card-text">
+                                <font color="{{ colours_dict[uptime_code] }}">● </font>Uptime: {{ activity_durations_dict[machine.id][uptime_code] }}<br>
+                                ● Scheduled: {{ schedule_dict[machine.id] }}<br>
+                                {% for act_code in activity_codes %}
+                                    {% if act_code.id != uptime_code %}
+                                        <font color="{{ colours_dict[act_code.id] }}">● </font>
+                                        {{ act_code.short_description }}:
+                                        {{ activity_durations_dict[machine.id][act_code.id] }}<br>
                                     {% endif %}
-                                    {% set i = i + 1 %}
                                 {% endfor %}
+                            </div>
+
+                        </div>
+                        <div class="col">
+                            <h4>Performance {{ performance_dict[machine.id] }}</h4>
+                            <div class="card-text">
+                                Produced: {{ production_dict[machine.id] }}<br>
+                                Target: {{ target_production_dict[machine.id] }}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h4>Quality {{ quality_dict[machine.id] }}</h4>
+
+                            <div class="card-text">
+                                Good Qty: {{ good_dict[machine.id] }}
+                            </div>
+
+                            <div class="card-text">
+                                Reject Qty: {{ rejects_dict[machine.id] }}
                             </div>
                         </div>
                     </div>
-                    <div class="col">
-                        <h4>Job</h4>
-                        {% if machine.active_job %}
-                            {{ machine.active_job.job_number }}
-                            <!-- Open end job modal -->
-                            <button type="button" class="btn btn-dark" data-toggle="modal"
-                                    data-target="#endJobModal{{ machine.active_job.id }}">
-                                End
-                            </button>
-                            {{ job_modals.end_job_modal(machine.active_job, end_job_form) }}
-                        {% else %}
-                            <!-- Open set job modal -->
-                            <button type="button" class="btn btn-dark" data-toggle="modal"
-                                    data-target="#setJobModal{{ machine.id }}">
-                                Set Job
-                            </button>
-                            {{ job_modals.set_job_modal(machine.id, start_job_form) }}
-
-                        {% endif %}
-                    </div>
-                    <div class="col">
-                        <h4>Current User: </h4>
-                        {% if machine.active_user %}
-                            {{ machine.active_user.username }}
-                            <button class="btn btn-dark"
-                                    onclick="forceLogout({{ machine.input_device.id }})">
-                                Force Logout
-                            </button>
-                        {% else %}
-                            <h4>None</h4>
-                        {% endif %}
-                    </div>
-
-                    <div class="col col-3">
-                        <div class="card-text">
-                            <h4>Availability {{ availability_dict[machine.id] }}</h4>
-                        </div>
-                        <div class="card-text">
-                            <font color="{{ colours_dict[uptime_code] }}">● </font>Uptime: {{ activity_durations_dict[machine.id][uptime_code] }}<br>
-                            ● Scheduled: {{ schedule_dict[machine.id] }}<br>
-                            {% for act_code in activity_codes %}
-                                {% if act_code.id != uptime_code %}
-                                    <font color="{{ colours_dict[act_code.id] }}">● </font>
-                                    {{ act_code.short_description }}:
-                                    {{ activity_durations_dict[machine.id][act_code.id] }}<br>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-
-                    </div>
-                    <div class="col">
-                        <h4>Performance {{ performance_dict[machine.id] }}</h4>
-                        <div class="card-text">
-                            Produced Today: {{ production_dict[machine.id] }}<br>
-                            Target: {{ target_production_dict[machine.id] }}
-                        </div>
-                    </div>
-                    <div class="col">
-                        <h4>Quality {{ quality_dict[machine.id] }}</h4>
-
-                        <div class="card-text">
-                            Rejects Today: {{ rejects_dict[machine.id] }}
-                        </div>
-                    </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        {% endif %}
     </div>
 
     <script>
         {#    Reload the page for a different date when the date select box changes #}
+
         function changeDate(selectDate) {
             window.location.replace("{{ url_for("default.status_page")}}" + "?date=" + selectDate.value)
         }

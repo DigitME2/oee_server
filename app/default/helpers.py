@@ -5,7 +5,7 @@ from typing import List, Union
 from flask import current_app, flash, abort
 
 from app.default.models import Activity, Machine, Job, ProductionQuantity, InputDevice, SHIFT_STRFTIME_FORMAT, \
-    ShiftPeriod
+    ShiftPeriod, ActivityCode
 from app.extensions import db
 from config import Config
 
@@ -41,7 +41,6 @@ def split_activity(activity_id, split_time=None):
 
     # Copy the old activity to a new activity
     new_activity = Activity(machine_id=old_activity.machine_id,
-                            machine_state=old_activity.machine_state,
                             explanation_required=old_activity.explanation_required,
                             time_start=split_time,
                             activity_code_id=old_activity.activity_code_id,
@@ -70,7 +69,7 @@ def get_legible_duration(time_start: datetime, time_end: datetime):
 
 
 def get_machine_activities(machine: Machine, time_start: datetime, time_end: datetime, activity_code_id=None,
-                           machine_state=None, scheduled_state=None):
+                           machine_state=None, scheduled_state=None) -> List[Activity]:
     """ Returns the activities for a machine, between two times. Activities can overrun the two times given"""
 
     if machine is None:
@@ -83,13 +82,15 @@ def get_machine_activities(machine: Machine, time_start: datetime, time_end: dat
     if activity_code_id:
         activities_query = activities_query.filter(Activity.activity_code_id == activity_code_id)
     if machine_state:
-        activities_query = activities_query.filter(Activity.machine_state == machine_state)
+        activity_codes = ActivityCode.query.filter_by(machine_state=machine_state).all()
+        for ac in activity_codes:
+            activities_query = activities_query.filter(Activity.activity_code_id == ac.id)
     activities = activities_query.all()
     # If required, add the current_activity (The above loop will not get it)
-    if machine.current_activity.start_time <= time_end:
+    if machine.current_activity and machine.current_activity.start_time <= time_end:
         # Only add the current activity if it matches the filters given to this function
         if not activity_code_id or machine.current_activity.activity_code_id == activity_code_id:
-            if not machine_state or machine.current_activity.machine_state == machine_state:
+            if not machine_state or machine.current_activity.activity_code.machine_state == machine_state:
                 activities.append(machine.current_activity)
     return activities
 
@@ -142,7 +143,10 @@ def get_cropped_start_end_ratio(obj: Union[Job, ProductionQuantity, Activity],
     else:
         job_length = (obj.end_time - obj.start_time).total_seconds()
     cropped_length = (cropped_end - cropped_start).total_seconds()
-    ratio_of_length_used = cropped_length / job_length
+    if job_length == 0:
+        ratio_of_length_used = 1
+    else:
+        ratio_of_length_used = cropped_length / job_length
     return cropped_start, cropped_end, ratio_of_length_used
 
 

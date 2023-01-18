@@ -4,13 +4,13 @@ from typing import Optional
 
 import redis
 import simple_websocket
-from flask import request, jsonify, abort, make_response, current_app
+from flask import request, jsonify, abort, make_response, current_app, Response
 from flask_login import current_user
 from pydantic import BaseModel
 
 from app.api import bp
 from app.default import events
-from app.default.forms import StartJobForm, EndJobForm
+from app.default.forms import StartJobForm, EndJobForm, EditActivityForm, FullJobForm
 from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job
 from app.extensions import db
 from app.login.models import User
@@ -72,27 +72,49 @@ def change_machine_state():
 
 
 @bp.route('/api/activity/<activity_id>', methods=['PUT'])
-def edit_activity(activity_id):
+def edit_activity(activity_id=None):
     """ Edit an activity without ending it"""
-    activity = Activity.query.get_or_404(activity_id)
-    if not request.is_json:
-        response = jsonify({"error": "Request is not in json format"})
-        response.status_code = 400
-        return response
-
-    data = request.get_json()
-    # I was getting an issue with get_json() sometimes returning a string and sometimes dict, so I did this
-    if isinstance(data, str):
-        data = json.loads(data)
-
-    if "activity_code_id" in data:
-        activity.activity_code_id = data["activity_code_id"]
-        db.session.commit()
+    now = datetime.now()
+    form = EditActivityForm()
+    new_activity = Activity.query.get_or_404(activity_id)
+    if form.validate_on_submit():
+        new_start = datetime.combine(form.start_date.data, form.start_time.data)
+        new_end = datetime.combine(form.end_date.data, form.end_time.data)
+        if new_start > new_end:
+            return abort(Response(status=400, response="End time greater than start time"))
+        new_activity_code_id = form.activity_code.data
+        events.modify_activity(now, modified_act=new_activity, new_start=new_start, new_end=new_end,
+                               new_activity_code_id=new_activity_code_id)
         response = jsonify({"message": "Success"})
         response.status_code = 200
         return response
     else:
-        abort(400)
+        return abort(400)
+
+
+@bp.route('/api/new-activity', methods=['POST'])
+def create_past_activity(activity_id=None):
+    """ Create an activity in the past """
+    now = datetime.now()
+    form = EditActivityForm()
+    if form.validate_on_submit():
+        start = datetime.combine(form.start_date.data, form.start_time.data)
+        end = datetime.combine(form.end_date.data, form.end_time.data)
+        machine_id = request.form.get("machine_id")  # Hidden input
+        activity_code = ActivityCode.query.get(form.activity_code.data)
+        #todo use events functions
+        activity = Activity(start_time=start, end_time=end, activity_code_id=activity_code.id,
+                            machine_id=machine_id)
+        db.session.add(activity)
+        db.session.commit()
+        # Call modify activity to rearrange other activities
+        events.modify_activity(now, modified_act=activity, new_start=start, new_end=end,
+                               new_activity_code_id=activity_code.id)
+        response = jsonify({"message": "Success"})
+        response.status_code = 200
+        return response
+    else:
+        return abort(400)
 
 
 @bp.route('/api/activity-updates', websocket=True)
@@ -173,6 +195,8 @@ def start_job():
     if start_job_form.validate_on_submit():
         machine_id = request.form.get("machine_id")
         machine = Machine.query.get(machine_id)
+        if not machine:
+            return abort(400)
         events.start_job(now,
                          machine=machine,
                          user_id=current_user.id,
@@ -198,3 +222,50 @@ def end_job():
                         machine_id=machine.id)
         events.end_job(now, job=job)
     return make_response("", 200)
+
+
+@bp.route('/api/edit-past-job', methods=["POST"])
+def edit_past_job():
+    now = datetime.now()
+    form = FullJobForm()
+    if form.validate_on_submit():
+        job_id = request.form.get("job_id")
+        job = Job.query.get(job_id)
+        if not job:
+            return abort(400)
+        new_start = datetime.combine(form.start_date.data, form.start_time.data)
+        new_end = datetime.combine(form.end_date.data, form.end_time.data)
+        if new_start > new_end:
+            return abort(Response(status=400, response="End time greater than start time"))
+        events.modify_job(now, modified_job=job, new_start=new_start, new_end=new_end,
+                          ideal_cycle_time=form.ideal_cycle_time.data,
+                          job_number=form.job_number.data)
+        response = jsonify({"message": "Success"})
+        response.status_code = 200
+        return response
+    else:
+        return abort(400)
+
+
+@bp.route('/api/new-past-job', methods=["POST"])
+def add_past_job():
+    """ Insert a job in the past """
+    form = FullJobForm()
+    if form.validate_on_submit():
+        machine_id = request.form.get("machine_id")
+        machine = Machine.query.get(machine_id)
+        if not machine:
+            return abort(400)
+        start = datetime.combine(form.start_date.data, form.start_time.data)
+        end = datetime.combine(form.end_date.data, form.end_time.data)
+        job = events.start_job(start,
+                               machine=machine,
+                               user_id=current_user.id,
+                               job_number=form.job_number.data,
+                               ideal_cycle_time_s=form.ideal_cycle_time.data,
+                               retroactively=True)
+        events.end_job(dt=end, job=job, retroactively=True)
+    #     todo create production quantity
+    return make_response("", 200)
+
+# todo UI and routes For creating a production "session"

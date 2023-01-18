@@ -1,0 +1,242 @@
+{% macro edit_activity_modal(activity, form) %}
+    <div class="modal fade" id="editActivityModal{{ activity.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="editActivityModal{{ activity.id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activity{{ activity.id }}Label">
+                        Edit Activity {{ activity.id }}
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="editActivityId{{ activity.id }}" class="form-group">
+                    <div class="modal-body">
+
+                        <input type="hidden" name="activity_id" value="{{ activity.id }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-row mt-2">
+                            <div class="form-group pr-2">
+                                {{ form.activity_code.label }}
+                                <select class="form-control" id="activity_code" name="activity_code">
+                                    {% for option in form.activity_code.choices %}
+                                        <option value="{{ option[0] }}"
+                                                {% if activity.activity_code.id|int == option[0]|int %}
+                                                selected="selected"
+                                                {% endif %}
+                                        >
+                                            {{ option[1] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group pr-2">
+                                {{ form.start_time.label }}
+                                <input class="form-control" id="start_time" name="start_time" required="" type="time"
+                                       value="{{ activity.start_time.strftime("%H:%M") }}">
+                                {% for error in form.start_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+
+
+                            <div class="form-group pr-2">
+                                {{ form.end_time.label }}
+                                <input class="form-control" id="end_time" name="end_time" required="" type="time"
+                                        {% if activity.end_time %}
+                                       value="{{ activity.end_time.strftime("%H:%M") }}"
+                                        {% endif %}
+                                >
+                                {% for error in form.end_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div id="dates{{ activity.id }}" hidden="hidden" class="form-row mt-2">
+                            <div class="form-group pr-2">
+                                <label for="start_date">Start Date</label>
+                                <input class="form-control" id="start-date" name="start_date" required="" type="date"
+                                       value="{{ activity.start_time.strftime("%Y-%m-%d") }}">
+                                {% for error in form.end_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group pr-2">
+                                <label for="end_date">End Date</label>
+                                <input class="form-control" id="end-date" name="end_date" required="" type="date"
+                                        {% if activity.end_time %}
+                                       value="{{ activity.end_time.strftime("%Y-%m-%d") }}"
+                                        {% endif %}
+                                >
+                                {% for error in form.end_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">
+                        <a onclick="showDates({{ activity.id }})">Show Dates</a>
+                        <script>
+                            function showDates(activityId) {
+                                let dateInputs = document.getElementById("dates" + activityId)
+                                dateInputs.hidden = false
+                            }
+                        </script>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="saveActivity({{ activity.id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+        function saveActivity(activityId) {
+            let formData = new FormData(document.getElementById("editActivityId" + activityId))
+            $.ajax({
+                url: '/api/activity/' + activityId,
+                type: 'PUT',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    let title = document.getElementById("activity" + activityId + "Label")
+                    console.log(title)
+                    title.innerText = result.responseText
+                    title.className = "alert alert-danger"
+                    console.log(title)
+                }
+            });
+        }
+    </script>
+
+
+    <script>
+        function showDates(activityId) {
+            let dateInputs = document.getElementById("dates" + activityId)
+            dateInputs.hidden = false
+        }
+    </script>
+{% endmacro %}
+
+{% macro create_past_activity_macro(machine_id, date, form) %}
+    <div class="modal fade" id="createActivityModal" tabindex="-1" role="dialog"
+         aria-labelledby="createActivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createActivityLabel">
+                        Create Activity
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="createActivityForm" class="form-group">
+                    <div class="modal-body">
+                        {{ form.hidden_tag() }}
+                        <input type="hidden" name="machine_id" value="{{ machine_id }}">
+                        <div class="form-row mt-2">
+                            <div class="form-group pr-2">
+                                {{ form.activity_code.label }}
+                                <select class="form-control" id="activity_code" name="activity_code">
+                                    {% for option in form.activity_code.choices %}
+                                        <option value="{{ option[0] }}">
+                                            {{ option[1] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group pr-2">
+                                {{ form.start_time.label }}
+                                {{ form.start_time(class_="form-control") }}
+                                {% for error in form.start_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="form-group pr-2">
+                                {{ form.end_time.label }}
+                                {{ form.end_time(class_="form-control") }}
+                                {% for error in form.end_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div id="createNewActivityDates" hidden="hidden" class="form-row mt-2">
+                            <div class="form-group pr-2">
+                                {{ form.start_date.label }}
+                                <input class="form-control" id="start-date" name="start_date" required="" type="date"
+                                       value="{{ date }}">
+                                {% for error in form.start_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group pr-2">
+                                {{ form.end_date.label }}
+                                <input class="form-control" id="end-date" name="end_date" required="" type="date"
+                                       value="{{ date }}">
+                                {% for error in form.end_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">
+                        <a onclick="showCreateActivityDates()">Show Dates</a>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="createNewActivity()" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+        function createNewActivity() {
+            let formData = new FormData(document.getElementById("createActivityForm"))
+            $.ajax({
+                url: '{{ url_for('api.create_past_activity') }}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    document.getElementById("createActivityForm").append(result.responseText)
+                }
+            });
+        }
+    </script>
+    <script>
+        function showCreateActivityDates() {
+            let dateInputs = document.getElementById("createNewActivityDates")
+            dateInputs.hidden = false
+        }
+
+    </script>
+{% endmacro %}
