@@ -8,6 +8,7 @@ from flask import request, jsonify, abort, make_response, current_app, Response
 from flask_login import current_user
 from pydantic import BaseModel
 
+import app.default.edit_events
 from app.api import bp
 from app.default import events
 from app.default.forms import StartJobForm, EndJobForm, EditActivityForm, FullJobForm
@@ -83,8 +84,8 @@ def edit_activity(activity_id=None):
         if new_start > new_end:
             return abort(Response(status=400, response="End time greater than start time"))
         new_activity_code_id = form.activity_code.data
-        events.modify_activity(now, modified_act=new_activity, new_start=new_start, new_end=new_end,
-                               new_activity_code_id=new_activity_code_id)
+        app.default.edit_events.modify_activity(modified_act=new_activity, new_start=new_start, new_end=new_end,
+                                                new_activity_code_id=new_activity_code_id)
         response = jsonify({"message": "Success"})
         response.status_code = 200
         return response
@@ -108,8 +109,8 @@ def create_past_activity(activity_id=None):
         db.session.add(activity)
         db.session.commit()
         # Call modify activity to rearrange other activities
-        events.modify_activity(now, modified_act=activity, new_start=start, new_end=end,
-                               new_activity_code_id=activity_code.id)
+        app.default.edit_events.modify_activity(modified_act=activity, new_start=start, new_end=end,
+                                                new_activity_code_id=activity_code.id)
         response = jsonify({"message": "Success"})
         response.status_code = 200
         return response
@@ -228,23 +229,38 @@ def end_job():
 def edit_past_job():
     now = datetime.now()
     form = FullJobForm()
-    if form.validate_on_submit():
-        job_id = request.form.get("job_id")
-        job = Job.query.get(job_id)
-        if not job:
-            return abort(400)
-        new_start = datetime.combine(form.start_date.data, form.start_time.data)
-        new_end = datetime.combine(form.end_date.data, form.end_time.data)
-        if new_start > new_end:
-            return abort(Response(status=400, response="End time greater than start time"))
-        events.modify_job(now, modified_job=job, new_start=new_start, new_end=new_end,
-                          ideal_cycle_time=form.ideal_cycle_time.data,
-                          job_number=form.job_number.data)
-        response = jsonify({"message": "Success"})
-        response.status_code = 200
-        return response
-    else:
+    job_id = request.form.get("job_id")
+    job = Job.query.get(job_id)
+    quantity_good = form.quantity_good.data
+    quantity_rejects = form.quantity_rejects.data
+    if not quantity_good:
+        quantity_good = 0
+    if not quantity_rejects:
+        quantity_rejects = 0
+    if not job:
         return abort(400)
+    new_start = datetime.combine(form.start_date.data, form.start_time.data)
+    if job.active:
+        new_end = None
+    else:
+        if not form.end_date.data or not form.end_time.data:
+            return abort(400)
+        else:
+            new_end = datetime.combine(form.end_date.data, form.end_time.data)
+            if new_start > new_end:
+                return abort(Response(status=400, response="End time greater than start time"))
+    try:
+        app.default.edit_events.modify_job(job=job, new_start=new_start, new_end=new_end,
+                                           ideal_cycle_time=form.ideal_cycle_time.data,
+                                           quantity_good=quantity_good,
+                                           quantity_rejects=quantity_rejects,
+                                           job_number=form.job_number.data)
+    except NotImplementedError:
+        return make_response("Cannot edit a job with multiple production quantity records", 500)
+
+    response = jsonify({"message": "Success"})
+    response.status_code = 200
+    return response
 
 
 @bp.route('/api/new-past-job', methods=["POST"])
@@ -264,8 +280,15 @@ def add_past_job():
                                job_number=form.job_number.data,
                                ideal_cycle_time_s=form.ideal_cycle_time.data,
                                retroactively=True)
+        events.produced(time_end=end,
+                        quantity_good=form.quantity_good.data,
+                        quantity_rejects=form.quantity_rejects.data,
+                        job_id=job.id,
+                        machine_id=machine.id)
         events.end_job(dt=end, job=job, retroactively=True)
     #     todo create production quantity
-    return make_response("", 200)
+        return make_response("", 200)
+    else:
+        return make_response("Error in form", 400)
 
 # todo UI and routes For creating a production "session"

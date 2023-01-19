@@ -86,7 +86,8 @@
                                         data-target="#editJobModal{{ job.id }}">
                                     Edit
                                 </button>
-                                {{ job_modals.edit_job(job_form, job) }}
+                                {{ job_modals.edit_job(job_form, job, good_production_dict[job.id],
+                                 reject_production_dict[job.id]) }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -196,12 +197,12 @@
                                     {% endif %}
                                 {% endif %}
                             </td>
-                        <td>
-                            {{ pq.quantity_good }}
-                        </td>
-                        <td>
-                            {{ pq.quantity_rejects }}
-                        </td>
+                            <td>
+                                {{ pq.quantity_good }}
+                            </td>
+                            <td>
+                                {{ pq.quantity_rejects }}
+                            </td>
 
                             <td>
                                 <div class="col col-2 text-right">

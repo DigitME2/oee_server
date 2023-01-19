@@ -5,7 +5,6 @@ from typing import Optional
 from flask import current_app
 from flask_login import current_user
 
-from app.default.helpers import get_machine_activities
 from app.extensions import db
 from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity, ActivityCode
 from app.login.models import UserSession
@@ -65,6 +64,8 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     # If the activity is uptime during planned downtime, record it as overtime
     if machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME and machine_state == Config.MACHINE_STATE_UPTIME:
         machine_state = Config.MACHINE_STATE_OVERTIME
+        # TODO This broke when I stopped recording machine state in the activity table. I think the best way is to have
+        #  a default activity code for overtime and switch to that code instead when setting uptime outside of hours
 
     # End the current activity
     if machine.current_activity:
@@ -180,63 +181,3 @@ def end_shift(dt: datetime, machine):
             change_activity(dt, machine=machine, new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                             user_id=machine.active_user_id, job_id=machine.active_job_id)
         # If machine is down during a job, make no change. The machine will be set to planned downtime on job end.
-
-
-# FIXME This is being a bit dodgy and creating extra activities sometimes (or maybe editing existing ones incorrectly)
-def modify_activity(dt: datetime, modified_act: Activity, new_start: datetime, new_end: datetime, new_activity_code_id):
-    """ Modify an existing activity in the past, as well as other activities affected by the times being changed """
-    # Account for activities that will be overlapped by the changed times
-    overlapped_activities = get_machine_activities(machine=modified_act.machine, time_start=new_start, time_end=new_end)
-    for act in overlapped_activities:
-        if act.id == modified_act.id:
-            continue
-        # If the new activity completely overlaps this activity
-        if act.start_time >= new_start and act.end_time and act.end_time <= new_end:
-            db.session.delete(act)
-            current_app.logger.debug(f"Deleting {act}")
-        # If the new activity overlaps the end of this activity
-        elif act.end_time and new_start < act.end_time < new_end:
-            act.end_time = new_start
-            current_app.logger.debug(f"Shortening end of {act}")
-        # If the new activity overlaps the start of this activity
-        elif new_start < act.start_time < new_end:
-            act.start_time = new_end
-            current_app.logger.debug(f"Shortening start of {act}")
-        # If the new activity is completely inside another activity we'll need to make another, third activity
-        elif act.start_time < new_end < act.end_time and act.start_time < new_start < act.end_time:
-            final_end_time = act.end_time
-            third_activity = Activity(machine_id=act.machine_id,
-                                      explanation_required=act.explanation_required,
-                                      start_time=new_end,
-                                      end_time=final_end_time,
-                                      activity_code_id=act.activity_code_id,
-                                      job_id=act.job_id,
-                                      user_id=act.user_id)
-
-            current_app.logger.debug(f"Creating new activity {third_activity}")
-            db.session.add(third_activity)
-            act.end_time = new_start
-    # Account for gaps that will be created by an activity shrinking
-    if new_start > modified_act.start_time:
-        # Adjust the end time for the activity in front of the modified activity
-        prequel_activity = Activity.query.filter(Activity.end_time == modified_act.start_time).first()
-        prequel_activity.end_time = new_start
-        current_app.logger.debug(f"lengthening end of {prequel_activity}")
-    if new_end < modified_act.end_time:
-        # Adjust the start time for the activity after the modified activity
-        sequel_activity = Activity.query.filter(Activity.start_time == modified_act.end_time).first()
-        sequel_activity.start_time = new_end
-        current_app.logger.debug(f"lengthening start of {sequel_activity}")
-    modified_act.activity_code_id = new_activity_code_id
-    modified_act.start_time = new_start
-    modified_act.end_time = new_end
-    db.session.commit()
-
-
-def modify_job(now, modified_job: Job, new_start, new_end, ideal_cycle_time, job_number):
-    # Create the job
-    modified_job.start_time = new_start
-    modified_job.end_time = new_end
-    modified_job.job_number = job_number
-    modified_job.ideal_cycle_time_s = ideal_cycle_time
-    db.session.commit()

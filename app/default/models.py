@@ -86,13 +86,15 @@ class Job(db.Model):
     def get_total_good_quantity(self):
         total_good_qty = 0
         for q in self.quantities:
-            total_good_qty += q.quantity_good
+            if q.quantity_good:
+                total_good_qty += q.quantity_good
         return total_good_qty
 
     def get_total_reject_quantity(self):
         total_reject_qty = 0
         for q in self.quantities:
-            total_reject_qty += q.quantity_rejects
+            if q.quantity_rejects:
+                total_reject_qty += q.quantity_rejects
         return total_reject_qty
 
     def get_total_quantity(self):
