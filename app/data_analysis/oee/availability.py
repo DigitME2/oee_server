@@ -91,7 +91,11 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
 
     if human_readable:
         for k, v in activities_dict.items():
-            v = humanize.precisedelta(timedelta(seconds=v), minimum_unit="minutes", format="%0.1f")
+            if v < 60:
+                humanize_format = "%0.1f"
+            else:
+                humanize_format = "%0.0f"
+            v = humanize.precisedelta(timedelta(seconds=v), minimum_unit="minutes", format=humanize_format)
             activities_dict[k] = v
     # Convert to minutes if requested
     elif units == "minutes":
@@ -131,9 +135,12 @@ def get_daily_scheduled_runtime_dicts(requested_date: date = None, human_readabl
     for machine in Machine.query.all():
         scheduled_runtime = get_scheduled_machine_runtime(machine, period_start, period_end)
         if human_readable:
+            if scheduled_runtime < 60:
+                humanize_format = "%0.1f"
+            else:
+                humanize_format = "%0.0f"
             runtime_dict[machine.id] = humanize.precisedelta(
-                timedelta(seconds=scheduled_runtime), minimum_unit="minutes", format="%0.1f"
-            )
+                timedelta(seconds=scheduled_runtime), minimum_unit="minutes", format=humanize_format)
         else:
             runtime_dict[machine.id] = scheduled_runtime
     return runtime_dict

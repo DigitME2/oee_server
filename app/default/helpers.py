@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, time
 from typing import List, Union
 
 from flask import current_app, flash, abort
+from sqlalchemy import or_
 
 from app.default.models import Activity, Machine, Job, ProductionQuantity, InputDevice, SHIFT_STRFTIME_FORMAT, \
     ShiftPeriod, ActivityCode
@@ -32,28 +33,6 @@ def flag_activities(activities: List[Activity], threshold):
     return activities
 
 
-def split_activity(activity_id, split_time=None):
-    """ Ends an activity and starts a new activity with the same values, ending/starting at the split_time"""
-    old_activity = Activity.query.get(activity_id)
-
-    if split_time is None:
-        split_time = datetime.now()
-
-    # Copy the old activity to a new activity
-    new_activity = Activity(machine_id=old_activity.machine_id,
-                            explanation_required=old_activity.explanation_required,
-                            time_start=split_time,
-                            activity_code_id=old_activity.activity_code_id,
-                            job_id=old_activity.job_id)
-
-    # End the old activity
-    old_activity.end_time = split_time
-
-    db.session.add(new_activity)
-    db.session.commit()
-    current_app.logger.debug(f"Ended {old_activity}")
-    current_app.logger.debug(f"Started {new_activity}")
-
 
 def get_legible_duration(time_start: datetime, time_end: datetime):
     """ Takes two times and returns a string in the format <hh:mm> <x> minutes"""
@@ -74,7 +53,7 @@ def get_machine_activities(machine: Machine, time_start: datetime, time_end: dat
 
     if machine is None:
         current_app.logger.warn(f"Activities requested for non-existent Machine ID {machine}")
-        return
+        return []
     activities_query = Activity.query \
         .filter(Activity.machine_id == machine.id) \
         .filter(Activity.end_time >= time_start) \
@@ -82,9 +61,10 @@ def get_machine_activities(machine: Machine, time_start: datetime, time_end: dat
     if activity_code_id:
         activities_query = activities_query.filter(Activity.activity_code_id == activity_code_id)
     if machine_state:
+        # Get all codes with this machine_state and filter the query for these codes
         activity_codes = ActivityCode.query.filter_by(machine_state=machine_state).all()
-        for ac in activity_codes:
-            activities_query = activities_query.filter(Activity.activity_code_id == ac.id)
+        activity_code_ids = [code.id for code in activity_codes]
+        activities_query = activities_query.filter(Activity.activity_code_id.in_(activity_code_ids))
     activities = activities_query.all()
     # If required, add the current_activity (The above loop will not get it)
     if machine.current_activity and machine.current_activity.start_time <= time_end:
@@ -97,7 +77,7 @@ def get_machine_activities(machine: Machine, time_start: datetime, time_end: dat
 
 def get_jobs(time_start: datetime, time_end: datetime, machine: Machine = None):
     """ Get the jobs between two times and apply filters if required"""
-    jobs_query = Job.query.filter(Job.end_time >= time_start).filter(Job.start_time <= time_end)
+    jobs_query = Job.query.filter(Job.end_time > time_start).filter(Job.start_time < time_end)
     if machine:
         jobs_query = jobs_query.filter(Job.machine_id == machine.id)
     jobs = jobs_query.all()

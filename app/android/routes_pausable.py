@@ -23,8 +23,7 @@ def pausable_pause_job():
     change_activity(now,
                     input_device.machine,
                     new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                    user_id=input_device.active_user_session.user_id,
-                    job_id=input_device.machine.active_job_id)
+                    user_id=input_device.active_user_session.user_id)
     return json.dumps({"success": True})
 
 
@@ -50,8 +49,7 @@ def pausable_resume_job():
     change_activity(now,
                     input_device.machine,
                     new_activity_code_id=Config.UPTIME_CODE_ID,
-                    user_id=input_device.active_user_session.user_id,
-                    job_id=input_device.machine.active_job_id)
+                    user_id=input_device.active_user_session.user_id)
     return json.dumps({"success": True})
 
 

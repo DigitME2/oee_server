@@ -10,9 +10,11 @@ from pydantic import BaseModel
 
 import app.default.edit_events
 from app.api import bp
-from app.default import events
-from app.default.forms import StartJobForm, EndJobForm, EditActivityForm, FullJobForm
-from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job
+from app.default import events, edit_events
+from app.default.events import UptimeWithoutJobError
+from app.default.forms import StartJobForm, RecordProductionForm, EditActivityForm, FullJobForm, \
+    RecordPastProductionForm, ModifyProductionForm
+from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job, ProductionQuantity
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -65,8 +67,7 @@ def change_machine_state():
     events.change_activity(datetime.now(),
                            machine=machine,
                            new_activity_code_id=activity_code_id,
-                           user_id=post_data.user_id,
-                           job_id=machine.active_job_id)
+                           user_id=post_data.user_id)
     response = make_response("", 200)
     current_app.logger.debug(f"Activity set to id {activity_code_id}")
     return response
@@ -84,8 +85,13 @@ def edit_activity(activity_id=None):
         if new_start > new_end:
             return abort(Response(status=400, response="End time greater than start time"))
         new_activity_code_id = form.activity_code.data
-        app.default.edit_events.modify_activity(modified_act=new_activity, new_start=new_start, new_end=new_end,
-                                                new_activity_code_id=new_activity_code_id)
+        new_activity_code = ActivityCode.query.get_or_404(new_activity_code_id)
+        try:
+            edit_events.modify_activity(modified_act=new_activity, new_start=new_start, new_end=new_end,
+                                        new_activity_code=new_activity_code)
+        except UptimeWithoutJobError:
+            return make_response("Cannot set to uptime when no job is active", 400)
+
         response = jsonify({"message": "Success"})
         response.status_code = 200
         return response
@@ -103,14 +109,11 @@ def create_past_activity(activity_id=None):
         end = datetime.combine(form.end_date.data, form.end_time.data)
         machine_id = request.form.get("machine_id")  # Hidden input
         activity_code = ActivityCode.query.get(form.activity_code.data)
-        #todo use events functions
-        activity = Activity(start_time=start, end_time=end, activity_code_id=activity_code.id,
-                            machine_id=machine_id)
-        db.session.add(activity)
-        db.session.commit()
-        # Call modify activity to rearrange other activities
-        app.default.edit_events.modify_activity(modified_act=activity, new_start=start, new_end=end,
-                                                new_activity_code_id=activity_code.id)
+        try:
+            edit_events.add_past_activity(start_time=start, end_time=end, activity_code_id=activity_code.id,
+                                          machine_id=machine_id)
+        except UptimeWithoutJobError:
+            return make_response("Cannot set to uptime when no job is active", 400)
         response = jsonify({"message": "Success"})
         response.status_code = 200
         return response
@@ -210,7 +213,7 @@ def start_job():
 def end_job():
     """ End a job"""
     now = datetime.now()
-    end_job_form = EndJobForm()
+    end_job_form = RecordProductionForm()
     if end_job_form.validate_on_submit():
         job_id = request.form.get("job_id")
         job = Job.query.get_or_404(job_id)
@@ -218,7 +221,7 @@ def end_job():
         db.session.commit()
         events.produced(now,
                         quantity_good=end_job_form.quantity_good.data,
-                        quantity_rejects=end_job_form.rejects.data,
+                        quantity_rejects=end_job_form.quantity_rejects.data,
                         job_id=job.id,
                         machine_id=machine.id)
         events.end_job(now, job=job)
@@ -255,8 +258,14 @@ def edit_past_job():
                                            quantity_good=quantity_good,
                                            quantity_rejects=quantity_rejects,
                                            job_number=form.job_number.data)
+
+    except app.default.edit_events.OverlappingJobsError:
+        return make_response("Cannot have two jobs on a machine at once", 400)
+    except app.default.edit_events.IntegrityError:
+        return make_response("Cannot edit job quantity because there are multiple production records for this job."
+                             " Edit in the production table", 400)
     except NotImplementedError:
-        return make_response("Cannot edit a job with multiple production quantity records", 500)
+        return make_response("Cannot edit a job with multiple production quantity records yet", 500)
 
     response = jsonify({"message": "Success"})
     response.status_code = 200
@@ -274,21 +283,73 @@ def add_past_job():
             return abort(400)
         start = datetime.combine(form.start_date.data, form.start_time.data)
         end = datetime.combine(form.end_date.data, form.end_time.data)
-        job = events.start_job(start,
-                               machine=machine,
-                               user_id=current_user.id,
-                               job_number=form.job_number.data,
-                               ideal_cycle_time_s=form.ideal_cycle_time.data,
-                               retroactively=True)
-        events.produced(time_end=end,
+        try:
+            edit_events.add_past_job(start, end,
+                                     machine=machine,
+                                     ideal_cycle_time=form.ideal_cycle_time.data,
+                                     job_number=form.job_number.data,
+                                     quantity_good=form.quantity_good.data,
+                                     quantity_rejects=form.quantity_rejects.data)
+            return make_response("", 200)
+        except app.default.edit_events.OverlappingJobsError:
+            return make_response("Cannot have two jobs on a machine at once", 400)
+    else:
+        return make_response("Error in form", 400)
+
+
+@bp.route('/api/production', methods=['POST'])
+def record_production():
+    """ Update the production amount on a live job"""
+    now = datetime.now()
+    form = RecordProductionForm()
+    if form.validate_on_submit():
+        job_id = request.form.get("job_id")
+        job = Job.query.get(job_id)
+        machine = job.machine
+        db.session.commit()
+        events.produced(now,
                         quantity_good=form.quantity_good.data,
                         quantity_rejects=form.quantity_rejects.data,
                         job_id=job.id,
                         machine_id=machine.id)
-        events.end_job(dt=end, job=job, retroactively=True)
-    #     todo create production quantity
         return make_response("", 200)
     else:
-        return make_response("Error in form", 400)
+        return make_response("Form error", 400)
 
-# todo UI and routes For creating a production "session"
+
+@bp.route('/api/past-production', methods=['POST'])
+def record_past_production():
+    """ Record an amount of production that occurred in the past"""
+    form = RecordPastProductionForm()
+    form.job.choices = [(j.id, j.job_number) for j in Job.query.all()]  # Not strictly correct but not worth validation
+    if form.validate_on_submit():
+        job = Job.query.get(form.job.data)
+        start = datetime.combine(form.start_date.data, form.start_time.data)
+        end = datetime.combine(form.end_date.data, form.end_time.data)
+        edit_events.add_past_production_record(time_start=start,
+                                               time_end=end,
+                                               quantity_good=form.quantity_good.data,
+                                               quantity_rejects=form.quantity_rejects.data,
+                                               job_id=job.id,
+                                               machine_id=job.machine_id)
+        return make_response("", 200)
+    else:
+        return make_response("Form error", 400)
+
+
+@bp.route('/api/production/<production_quantity_id>', methods=['PUT'])
+def edit_production(production_quantity_id):
+    """ Edit an existing production record"""
+    form = ModifyProductionForm()
+    production_quantity = ProductionQuantity.query.get_or_404(production_quantity_id)
+    if form.validate_on_submit():
+        start = datetime.combine(form.start_date.data, form.start_time.data)
+        end = datetime.combine(form.end_date.data, form.end_time.data)
+        edit_events.modify_production_record(record=production_quantity,
+                                             time_start=start,
+                                             time_end=end,
+                                             quantity_good=form.quantity_good.data,
+                                             quantity_rejects=form.quantity_rejects.data)
+        return make_response("", 200)
+    else:
+        return make_response("Form error", 400)

@@ -198,7 +198,7 @@ def edit_machine():
         return abort(400, error_message)
 
     # Get downtime codes for exclusion checkboxes
-    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID, Config.PLANNED_DOWNTIME_CODE_ID]
+    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID, Config.CLOSED_CODE_ID]
     optional_activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(non_excludable_codes)).all()
 
     # Create first activity dropdown
@@ -376,10 +376,13 @@ def edit_activity_code():
                       f' is a default code and must always represent uptime'
         elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
             message = f'Warning: This entry (ID={activity_code_id})' \
-                      f' is a default code and must always represent unplanned downtime'
-        elif activity_code_id == Config.PLANNED_DOWNTIME_CODE_ID:
+                      f' is a default code and must always represent generic downtime'
+        elif activity_code_id == Config.CLOSED_CODE_ID:
             message = f'Warning: This entry (ID={activity_code_id})' \
-                      f' is a default code and must always represent planned downtime'
+                      f' is a default code and must always represent time outside of shift hours'
+        elif activity_code_id == Config.OVERTIME_CODE_ID:
+            message = f"Warning This entry (ID={activity_code_id})" \
+                      f"is a default code and must always represent overtime"
         else:
             message = "Changes to these values will be reflected in " \
                       "past data. Major changes are not recommended. \
@@ -426,7 +429,8 @@ def edit_activity_code():
         form.machine_state.data = str(activity_code.machine_state)
         form.downtime_category.data = activity_code.downtime_category
 
-    default_codes = [Config.UPTIME_CODE_ID, Config.PLANNED_DOWNTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
+    default_codes = [Config.UPTIME_CODE_ID, Config.CLOSED_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                     Config.OVERTIME_CODE_ID]
     return render_template("admin/edit_activity_code.html",
                            form=form,
                            message=message,

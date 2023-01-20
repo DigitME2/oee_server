@@ -9,7 +9,8 @@ from config import Config
 
 MACHINE_STATE_CHOICES = [(Config.MACHINE_STATE_UPTIME, "Uptime"),
                          (Config.MACHINE_STATE_UNPLANNED_DOWNTIME, "Unplanned downtime"),
-                         (Config.MACHINE_STATE_PLANNED_DOWNTIME, "Planned downtime")]
+                         (Config.MACHINE_STATE_PLANNED_DOWNTIME, "Planned downtime"),
+                         (Config.MACHINE_STATE_OVERTIME, "Overtime")]
 
 
 class ChangePasswordForm(FlaskForm):

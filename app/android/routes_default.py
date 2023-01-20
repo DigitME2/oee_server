@@ -165,8 +165,7 @@ def android_update_activity():
     events.change_activity(now,
                            input_device.machine,
                            new_activity_code_id=activity_code_id,
-                           user_id=input_device.active_user_session.user_id,
-                           job_id=input_device.machine.active_job_id)
+                           user_id=input_device.active_user_session.user_id)
 
     current_app.logger.info(f"Set activity_code to {activity_code_id}")
     return json.dumps({"success": True})

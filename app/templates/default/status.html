@@ -1,5 +1,6 @@
 {% extends "default/base.html" %}
 {% import "default/job_modals.html" as job_modals %}
+{% import "default/production_modals.html" as production_modals %}
 
 {% block content %}
     <div class="container-fluid">
@@ -35,18 +36,14 @@
                 </div>
             </div>
             {% for machine in machines %}
-                <div class="border border-3 my-3 pl-5 py-2
-                    {% if machine.current_activity.activity_code_id == uptime_code %}
-                 border-success
-                    {% else %}
-                 border-danger
-                    {% endif %}">
+                {% set current_act_colour =  colours_dict[machine.current_activity.activity_code.id] %}
+                <div class="my-3 pl-5 py-2"
+                     style="border-style: solid; border-color: {{ current_act_colour }}; border-width: medium">
                     <div class="row">
                         <h2>{{ machine.name }}</h2>
                         <div class="ml-2">
                             <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
-                                <button class="btn btn-dark"
-                                        onclick="forceLogout({{ machine.input_device.id }})">
+                                <button class="btn btn-outline-dark">
                                     View
                                 </button>
                             </a>
@@ -56,7 +53,7 @@
                         <div class="col">
                             <h4>Status</h4>
                             <div class="dropdown">
-                                <button class="btn btn-dark dropdown-toggle" type="button"
+                                <button class="btn btn-outline-dark dropdown-toggle" type="button"
                                         id="ActivityCodeDropdown{{ machine.current_activity.id }}"
                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <a>{{ machine.current_activity.activity_code.short_description }}</a>
@@ -79,16 +76,22 @@
                         <div class="col">
                             <h4>Job</h4>
                             {% if machine.active_job %}
-                                {{ machine.active_job.job_number }}
-                                <!-- Open end job modal -->
-                                <button type="button" class="btn btn-dark" data-toggle="modal"
-                                        data-target="#endJobModal{{ machine.active_job.id }}">
-                                    End
-                                </button>
+                                <p>{{ machine.active_job.job_number }}</p>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-outline-dark" data-toggle="modal"
+                                            data-target="#recordProductionModal">
+                                        Add Qty
+                                    </button>
+                                    <button type="button" class="btn btn-outline-dark" data-toggle="modal"
+                                            data-target="#endJobModal{{ machine.active_job.id }}">
+                                        End
+                                    </button>
+                                </div>
+                                {{ production_modals.record_production_modal(production_form, machine.active_job) }}
                                 {{ job_modals.end_job_modal(machine.active_job, end_job_form) }}
                             {% else %}
                                 <!-- Open set job modal -->
-                                <button type="button" class="btn btn-dark" data-toggle="modal"
+                                <button type="button" class="btn btn-outline-dark" data-toggle="modal"
                                         data-target="#setJobModal{{ machine.id }}">
                                     Set Job
                                 </button>
@@ -117,7 +120,7 @@
                                 <font color="{{ colours_dict[uptime_code] }}">● </font>Uptime: {{ activity_durations_dict[machine.id][uptime_code] }}<br>
                                 ● Scheduled: {{ schedule_dict[machine.id] }}<br>
                                 {% for act_code in activity_codes %}
-                                    {% if act_code.id != uptime_code %}
+                                    {% if act_code.id != uptime_code and activity_durations_dict[machine.id][act_code.id] != "0 minutes" %}
                                         <font color="{{ colours_dict[act_code.id] }}">● </font>
                                         {{ act_code.short_description }}:
                                         {{ activity_durations_dict[machine.id][act_code.id] }}<br>
@@ -182,9 +185,21 @@
                 type: 'POST',
                 contentType: "application/json",
                 success: function (result) {
-                    window.location.reload();
+                    window.location.reload()
                 }
             });
+        }
+    </script>
+
+    {# Refresh periodically #}
+    <script>
+        setTimeout("refresh()", 60000)
+
+        function refresh() {
+            // Don't refresh if a modal is open
+            if (document.querySelectorAll('.modal.in').length > 0) {
+                location.reload()
+            }
         }
     </script>
 

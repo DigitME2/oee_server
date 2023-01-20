@@ -1,6 +1,7 @@
 {% extends "default/base.html" %}
 {% import "default/activity_modals.html" as activity_modals %}
 {% import "default/job_modals.html" as job_modals %}
+{% import "default/production_modals.html" as production_modals %}
 
 {% block content %}
     {% set ns = namespace(date=None) %}
@@ -134,8 +135,6 @@
                                     {% else %}
                                         {{ act.end_time.strftime("%H:%M (%d/%m/%Y)") }}
                                     {% endif %}
-                                {% else %}
-                                    now
                                 {% endif %}
                             </td>
                             <td>
@@ -162,10 +161,12 @@
                     <div class="col">
                         <h2>Production</h2>
                     </div>
+
                     <button type="button" class="btn btn-dark" data-toggle="modal"
-                            data-target="#createActivityModal">
+                            data-target="#pastProductionModal">
                         Add Past Production Qty
                     </button>
+                    {{ production_modals.record_past_production_modal(production_form, date) }}
 
                 </div>
                 <table id="productionTable" class="dataTable table table-striped">
@@ -208,9 +209,10 @@
                                 <div class="col col-2 text-right">
                                     {% if pq.end_time %}
                                         <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
-                                                data-target="">
+                                                data-target="#editProductionModal{{ pq.id }}">
                                             Edit
                                         </button>
+                                        {{ production_modals.edit_production_modal(edit_production_form, pq, date) }}
                                     {% endif %}
                                 </div>
                             </td>
@@ -309,6 +311,7 @@
                     scrollY: '200px',
                     paging: false,
                     searching: false,
+                    order: [],
                     buttons: dataTablesButtons
                 });
             }
@@ -317,12 +320,11 @@
     </script>
 
 
-    {#    Set the page title. This will also set the title of any downloaded file #}
+    {# Set the page title. This will also set the title of any downloaded file #}
     <script>
         $(document).ready(function () {
             document.title = "{{ machine.name }} report - {{ date }}"
         })
     </script>
-
 {% endblock %}
 

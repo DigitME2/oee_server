@@ -11,7 +11,8 @@ from app.data_analysis.oee.performance import get_daily_performance_dict, get_da
     get_daily_production_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
 from app.default import bp
-from app.default.forms import StartJobForm, EndJobForm, EditActivityForm, FullJobForm
+from app.default.forms import StartJobForm, RecordProductionForm, EditActivityForm, FullJobForm, \
+    RecordPastProductionForm, ModifyProductionForm
 from app.default.helpers import get_machine_activities, get_jobs
 from app.default.models import ActivityCode, Activity, Machine, ProductionQuantity
 from app.login.models import User
@@ -34,7 +35,8 @@ def status_page():
         requested_date = datetime.now().date()
     machines = Machine.query.all()
     start_job_form = StartJobForm()
-    end_job_form = EndJobForm()
+    end_job_form = RecordProductionForm()
+    production_form = RecordProductionForm()
     # All activity codes
     activity_codes = ActivityCode.query.all()
     colours_dict = {}
@@ -63,6 +65,7 @@ def status_page():
                            machines=machines,
                            start_job_form=start_job_form,
                            end_job_form=end_job_form,
+                           production_form=production_form,
                            current_user=current_user,
                            availability_dict=availability_dict,
                            schedule_dict=schedule_dict,
@@ -81,7 +84,6 @@ def status_page():
 @login_required
 def machine_report():
     """ Show all a user's activities and allow them to be edited """
-    # TODO Finish off this page. Need to show more info for jobs and create the routes to save edits
     machine_id = request.args.get("machine_id")
     machine = Machine.query.get_or_404(machine_id)
     activity_codes = ActivityCode.query.all()
@@ -103,6 +105,9 @@ def machine_report():
         reject_production_dict[job.id] = job.get_total_reject_quantity()
     activity_form = EditActivityForm()
     job_form = FullJobForm()
+    production_form = RecordPastProductionForm()
+    production_form.job.choices = [(j.id, j.job_number) for j in jobs]
+    edit_production_form = ModifyProductionForm()
     production_quantities = ProductionQuantity.query. \
         filter(ProductionQuantity.start_time <= period_end). \
         filter(ProductionQuantity.end_time >= period_start).\
@@ -116,33 +121,9 @@ def machine_report():
                            good_production_dict=good_production_dict,
                            reject_production_dict=reject_production_dict,
                            job_form=job_form,
+                           production_form=production_form,
+                           edit_production_form=edit_production_form,
                            activities=activities,
                            activity_form=activity_form,
                            activity_codes=activity_codes,
                            production_quantities=production_quantities)
-
-
-# TODO This can be removed once I've finished the machine report page
-@bp.route('/view_activities')
-@login_required
-def view_activities():
-    """ Show all a user's activities and allow them to be edited """
-    activity_codes = ActivityCode.query.all()
-    users = User.query.all()
-    if "user_id" in request.args and current_user.admin:
-        user_id = request.args["user_id"]
-        selected_user = User.query.get(user_id)
-    else:
-        user_id = current_user.id
-        selected_user = User.query.get(user_id)
-    activities = Activity.query \
-        .filter_by(user_id=user_id) \
-        .order_by(desc(Activity.start_time)) \
-        .paginate(1, 50, False).items
-
-    return render_template('default/activities.html',
-                           title='Activities',
-                           selected_user=selected_user,
-                           users=users,
-                           activities=activities,
-                           activity_codes=activity_codes)

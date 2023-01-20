@@ -5,6 +5,7 @@ from typing import Optional
 from flask import current_app
 from flask_login import current_user
 
+from app.default.helpers import get_jobs
 from app.extensions import db
 from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity, ActivityCode
 from app.login.models import UserSession
@@ -32,8 +33,7 @@ def android_log_in(dt, user, input_device) -> bool:
     change_activity(dt,
                     input_device.machine,
                     new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                    user_id=user.id,
-                    job_id=input_device.machine.active_job_id)
+                    user_id=user.id)
     current_app.logger.info(f"Started user session {new_us}")
     return True
 
@@ -45,8 +45,7 @@ def android_log_out(input_device: InputDevice, dt: datetime):
     change_activity(dt,
                     input_device.machine,
                     new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                    user_id=-1,
-                    job_id=input_device.machine.active_job_id)
+                    user_id=-1)
 
     # End the user session
     input_device.active_user_session.time_logout = dt
@@ -57,15 +56,18 @@ def android_log_out(input_device: InputDevice, dt: datetime):
     db.session.commit()
 
 
-def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, job_id: Optional[int]):
-    # TODO Prevent uptime without job
+def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int):
     new_activity_code = ActivityCode.query.get_or_404(new_activity_code_id)
+    if not machine.active_job and \
+            new_activity_code.machine_state in [Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME]:
+        raise UptimeWithoutJobError
+
     machine_state = new_activity_code.machine_state
     # If the activity is uptime during planned downtime, record it as overtime
-    if machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME and machine_state == Config.MACHINE_STATE_UPTIME:
-        machine_state = Config.MACHINE_STATE_OVERTIME
-        # TODO This broke when I stopped recording machine state in the activity table. I think the best way is to have
-        #  a default activity code for overtime and switch to that code instead when setting uptime outside of hours
+    if machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME and \
+            machine_state in [Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME]:
+        new_activity_code = ActivityCode.query.get(Config.MACHINE_STATE_OVERTIME)
+        new_activity_code_id = new_activity_code.id
 
     # End the current activity
     if machine.current_activity:
@@ -76,8 +78,7 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     new_activity = Activity(machine_id=machine.id,
                             start_time=dt,
                             activity_code_id=new_activity_code_id,
-                            user_id=user_id,
-                            job_id=job_id)
+                            user_id=user_id)
     db.session.add(new_activity)
     db.session.flush()
     db.session.refresh(new_activity)
@@ -86,7 +87,7 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     db.session.commit()
 
 
-def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s, retroactively=False) -> Job:
+def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s) -> Job:
     # Create the job
     job = Job(start_time=dt,
               job_number=job_number,
@@ -94,34 +95,29 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
               ideal_cycle_time_s=ideal_cycle_time_s,
               active=True)
     db.session.add(job)
-    if not retroactively:
-        # Don't create activities or set the active job if this job is being added retroactively
-        db.session.flush()
-        db.session.refresh(job)
-        machine.active_job_id = job.id
-        starting_activity_code = machine.job_start_activity_id
-        change_activity(dt,
-                        machine,
-                        new_activity_code_id=starting_activity_code,
-                        user_id=user_id,
-                        job_id=machine.active_job_id)
+    db.session.flush()
+    db.session.refresh(job)
+    machine.active_job_id = job.id
+    starting_activity_code = machine.job_start_activity_id
+    change_activity(dt,
+                    machine,
+                    new_activity_code_id=starting_activity_code,
+                    user_id=user_id)
     db.session.commit()
     return job
 
 
-def end_job(dt, job: Job, retroactively=False):
+def end_job(dt, job: Job):
     # Set the activity to down
     new_activity_code = Config.UNEXPLAINED_DOWNTIME_CODE_ID
     if job.machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
-        new_activity_code = Config.PLANNED_DOWNTIME_CODE_ID
-    if not retroactively:
-        # Don't create activities or set the active job if this job is being added retroactively
-        job.machine.active_job_id = None
-        change_activity(dt=dt,
-                        machine=job.machine,
-                        new_activity_code_id=new_activity_code,
-                        user_id=current_user.id,
-                        job_id=job.id)
+        new_activity_code = Config.CLOSED_CODE_ID
+    # Don't create activities or set the active job if this job is being added retroactively
+    job.machine.active_job_id = None
+    change_activity(dt=dt,
+                    machine=job.machine,
+                    new_activity_code_id=new_activity_code,
+                    user_id=current_user.id)
     job.end_time = dt
     job.active = False
     db.session.commit()
@@ -130,6 +126,7 @@ def end_job(dt, job: Job, retroactively=False):
 def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time_start=None):
     """ Record a production quantity. time_start and time_end mark the period of time in which the parts were created
     If time_start is not given, it is inferred from either the last ProductionQuantity or the start of the job"""
+    # TODO Check there is uptime in the duration, or raise an exception
     if not time_start:
         job_production_quantities = ProductionQuantity.query.filter(ProductionQuantity.job_id == job_id).all()
         if len(job_production_quantities) > 0:
@@ -154,14 +151,14 @@ def start_shift(dt: datetime, machine):
     machine.schedule_state = Config.MACHINE_STATE_UPTIME
     db.session.commit()
     # If we're in the default "no shift" planned downtime activity (as expected)
-    if machine.current_activity.activity_code_id == Config.PLANNED_DOWNTIME_CODE_ID:
+    if machine.current_activity.activity_code_id == Config.CLOSED_CODE_ID:
         # Set to the standard unplanned downtime activity
         change_activity(dt, machine=machine, new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                        user_id=machine.active_user_id, job_id=machine.active_job_id)
+                        user_id=machine.active_user_id)
     # Otherwise we keep the same activity code and call change_activity to handle the change in machine_state
     else:
         change_activity(dt, machine=machine, new_activity_code_id=machine.current_activity.activity_code_id,
-                        user_id=machine.active_user_id, job_id=machine.active_job_id)
+                        user_id=machine.active_user_id)
 
 
 def end_shift(dt: datetime, machine):
@@ -171,13 +168,17 @@ def end_shift(dt: datetime, machine):
     if not machine.active_job:
         # If the machine is in unplanned downtime (as expected)
         if machine.current_activity.activity_code.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
-            change_activity(dt, machine=machine, new_activity_code_id=Config.PLANNED_DOWNTIME_CODE_ID,
-                            user_id=machine.active_user_id, job_id=machine.active_job_id)
+            change_activity(dt, machine=machine, new_activity_code_id=Config.CLOSED_CODE_ID,
+                            user_id=machine.active_user_id)
         # If machine is in planned downtime, make no change
     # If there's a job active keep the same activity
     else:
         # Call change activity if the machine is up so that it changes to overtime
         if machine.current_activity.activity_code.machine_state == Config.MACHINE_STATE_UPTIME:
             change_activity(dt, machine=machine, new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                            user_id=machine.active_user_id, job_id=machine.active_job_id)
+                            user_id=machine.active_user_id)
         # If machine is down during a job, make no change. The machine will be set to planned downtime on job end.
+
+
+class UptimeWithoutJobError(Exception):
+    pass

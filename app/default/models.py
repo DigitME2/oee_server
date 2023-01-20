@@ -76,8 +76,7 @@ class Job(db.Model):
     active = db.Column(db.Boolean)
     notes = db.Column(db.String(100))
 
-    activities = db.relationship('Activity', backref='job')
-    quantities = db.relationship('ProductionQuantity', backref='job')
+    quantities = db.relationship('ProductionQuantity', back_populates='job')
     machine = db.relationship('Machine', uselist=False, foreign_keys=[machine_id])
 
     def __repr__(self):
@@ -110,6 +109,8 @@ class ProductionQuantity(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     machine_id = db.Column(db.Integer, db.ForeignKey('machine.id'), nullable=False)
 
+    job = db.relationship("Job", uselist=False)
+
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -119,7 +120,6 @@ class Activity(db.Model):
     end_time = db.Column(db.DateTime)
     explanation_required = db.Column(db.Boolean)
     notes = db.Column(db.String(255))
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     machine = db.relationship("Machine", foreign_keys="[Activity.machine_id]", uselist=False)

@@ -1,0 +1,281 @@
+{% macro record_production_modal(form, job) %}
+    <div class="modal fade" id="recordProductionModal" tabindex="-1" role="dialog"
+         aria-labelledby="recordProductionModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recordProductionLabel">
+                        Record Production
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form id="recordProductionForm" class="form-group">
+                    <div class="modal-body">
+                        {{ form.hidden_tag() }}
+                        <input type="hidden" name="job_id" value="{{ job.id }}">
+                        {{ form.quantity_good.label }}
+                        {{ form.quantity_good(class_="form-control") }}
+                        {{ form.quantity_rejects.label }}
+                        {{ form.quantity_rejects(class_="form-control") }}
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="recordProduction()" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function recordProduction() {
+            let formData = new FormData(document.getElementById("recordProductionForm"))
+            if (document.contains(document.getElementById("errorWarning"))) {
+                document.getElementById("errorWarning").remove()
+            }
+            $.ajax({
+                url: '/api/production',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    let warning = document.createElement("div")
+                    warning.id = "errorWarning"
+                    warning.innerText = result.responseText
+                    warning.className = "alert alert-danger"
+                    document.getElementById("recordProductionForm").append(warning)
+                }
+            });
+        }
+    </script>
+
+    <script>
+        function showDates(activityId) {
+            let dateInputs = document.getElementById("dates" + activityId)
+            dateInputs.hidden = false
+        }
+    </script>
+{% endmacro %}
+
+{% macro edit_production_modal(form, record, date) %}
+    <div class="modal fade" id="editProductionModal{{ record.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="editProductionModal{{ record.id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProduction{{ record.id }}Label">
+                        Record Production
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form id="editProductionForm{{ record.id }}" class="form-group">
+                    <div class="modal-body">
+                        {{ form.hidden_tag() }}
+                        <div class="form-row my-4">
+                            {{ form.quantity_good.label }}
+                            <input autocomplete="off" class="form-control" id="quantity_good" name="quantity_good"
+                                   type="number" value="{{ record.quantity_good }}">
+                            {{ form.quantity_rejects.label }}
+                            <input autocomplete="off" class="form-control" id="quantity_rejects" name="quantity_rejects"
+                                   type="number" value="{{ record.quantity_rejects }}">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group pr-2">
+                                {{ form.start_time.label }}
+                                <input class="form-control" id="start_time" name="start_time" required="" type="time"
+                                       value="{{ record.start_time.strftime("%H:%M") }}">
+                            </div>
+
+                            <div class="form-group pr-2">
+                                {{ form.end_time.label }}
+                                <input class="form-control" id="end_time" name="end_time" required="" type="time"
+                                        {% if record.end_time %}
+                                       value="{{ record.end_time.strftime("%H:%M") }}"
+                                        {% endif %}
+                                >
+                            </div>
+                        </div>
+                        <div id="editProductionDates{{ record.id }}" hidden="hidden" class="form-row my-4">
+                            <div class="form-group pr-2">
+                                <label for="start-date">Start Date</label>
+                                <input class="form-control" id="start-date" name="start_date" required="" type="date"
+                                       value="{{ record.start_time.strftime("%Y-%m-%d") }}">
+                                {% for error in form.start_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group pr-2">
+                                <label for="end-date">End Date</label>
+                                <input class="form-control" id="end-date" name="end_date" required="" type="date"
+                                        {% if record.end_time %}
+                                       value="{{ record.end_time.strftime("%Y-%m-%d") }}"
+                                        {% endif %}
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">
+                        <a onclick="showEditProductionDates({{ record.id }})">Show Dates</a>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="editProduction({{ record.id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function editProduction(recordId) {
+            let formData = new FormData(document.getElementById("editProductionForm" + recordId))
+            if (document.contains(document.getElementById("errorWarning"))) {
+                document.getElementById("errorWarning").remove()
+            }
+            $.ajax({
+                url: '/api/production/' + recordId,
+                type: 'PUT',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    let warning = document.createElement("div")
+                    warning.id = "errorWarning"
+                    warning.innerText = result.responseText
+                    warning.className = "alert alert-danger"
+                    document.getElementById("editProductionForm" + recordId).append(warning)
+                }
+            });
+        }
+    </script>
+
+    <script>
+        function showEditProductionDates(recordId) {
+            let dateInputs = document.getElementById("editProductionDates" + recordId)
+            dateInputs.hidden = false
+        }
+    </script>
+{% endmacro %}
+
+{% macro record_past_production_modal(form, date) %}
+    <div class="modal fade" id="pastProductionModal" tabindex="-1" role="dialog"
+         aria-labelledby="pastProductionModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pastProductionLabel">
+                        Record Past Production
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form id="pastProductionForm" class="form-group">
+                    <div class="modal-body">
+                        {{ form.hidden_tag() }}
+                        <div class="form-row my-4">
+
+                            <div class="form-group col-4">
+                                {{ form.job.label }}
+                                {{ form.job(class_="form-control") }}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.quantity_good.label }}
+                                {{ form.quantity_good(size=32, autocomplete="off", class_="form-control") }}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.quantity_rejects.label }}
+                                {{ form.quantity_rejects(class_="form-control") }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group pr-2">
+                                {{ form.start_time.label }}
+                                {{ form.start_time(class_="form-control") }}
+                            </div>
+
+                            <div class="form-group pr-2">
+                                {{ form.end_time.label }}
+                                {{ form.end_time(class_="form-control") }}
+                            </div>
+                        </div>
+                        <div id="pastProductionDates" hidden="hidden" class="form-row my-4">
+                            <div class="form-group pr-2">
+                                <label for="start-date">Start Date</label>
+                                <input class="form-control" id="start-date" name="start_date" required=""
+                                       type="date"
+                                       value="{{ date.strftime("%Y-%m-%d") }}">
+                            </div>
+                            <div class="form-group pr-2">
+                                <label for="end-date">End Date</label>
+                                <input class="form-control" id="end-date" name="end_date" required="" type="date"
+                                       value="{{ date.strftime("%Y-%m-%d") }}">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">
+                        <a onclick="showPastProductionDates()">Show Dates</a>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="recordPastProduction()" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function recordPastProduction() {
+            let formData = new FormData(document.getElementById("pastProductionForm"))
+            if (document.contains(document.getElementById("errorWarning"))){
+                document.getElementById("errorWarning").remove()
+            }
+            $.ajax({
+                url: '/api/past-production',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+
+                error: function (result) {
+                    let warning = document.createElement("div")
+                    warning.id = "errorWarning"
+                    warning.innerText = result.responseText
+                    warning.className = "alert alert-danger"
+                    document.getElementById("pastProductionForm").append(warning)
+                }
+            });
+        }
+    </script>
+
+    <script>
+        function showPastProductionDates() {
+            let dateInputs = document.getElementById("pastProductionDates")
+            dateInputs.hidden = false
+        }
+    </script>
+{% endmacro %}
