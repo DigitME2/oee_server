@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, time, timedelta, date
 from typing import Tuple
 
+from app.data_analysis.helpers import get_daily_values_dict
 from app.default.helpers import get_cropped_start_end_ratio, get_jobs, get_machine_activity_duration
 from app.default.models import Machine, ProductionQuantity
 from config import Config
@@ -65,17 +66,7 @@ def get_target_production_amount(machine, time_start: datetime, time_end: dateti
 
 def get_daily_target_production_amount_dict(requested_date: date = None, human_readable=True):
     """ Return a dictionary with every machine's ideal production amount on the given date """
-    if not requested_date:
-        requested_date = datetime.now().date()
-    # Use 00:00 and 24:00 on the selected day
-    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    period_end = period_start + timedelta(days=1)
-    # If the end is in the future, change to now
-    if period_end > datetime.now():
-        period_end = datetime.now()
-    amount_dict = {}
-    for machine in Machine.query.all():
-        amount_dict[machine.id] = get_target_production_amount(machine, period_start, period_end)
+    amount_dict = get_daily_values_dict(get_target_production_amount, requested_date)
     if human_readable:
         for k, v in amount_dict.items():
             amount_dict[k] = int(v)
@@ -84,17 +75,7 @@ def get_daily_target_production_amount_dict(requested_date: date = None, human_r
 
 def get_daily_performance_dict(requested_date: date = None, human_readable=False):
     """ Return a dictionary with every machine's performance on the given date """
-    if not requested_date:
-        requested_date = datetime.now().date()
-    # Use 00:00 and 24:00 on the selected day
-    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    period_end = period_start + timedelta(days=1)
-    # If the end is in the future, change to now
-    if period_end > datetime.now():
-        period_end = datetime.now()
-    performance_dict = {}
-    for machine in Machine.query.all():
-        performance_dict[machine.id] = get_machine_performance(machine, period_start, period_end)
+    performance_dict = get_daily_values_dict(get_machine_performance, requested_date)
     if human_readable:
         for k, v in performance_dict.items():
             v = v * 100

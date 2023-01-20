@@ -3,6 +3,7 @@ from datetime import datetime, date, time, timedelta
 
 from flask import current_app
 
+from app.data_analysis.helpers import get_daily_values_dict
 from app.default.helpers import get_jobs
 from app.default.models import Machine
 
@@ -33,17 +34,7 @@ def get_machine_quality(machine: Machine, time_start: datetime, time_end: dateti
 
 def get_daily_quality_dict(requested_date: date = None, human_readable=False):
     """ Return a dictionary with every machine's performance on the given date """
-    if not requested_date:
-        requested_date = datetime.now().date()
-    # Use 00:00 and 24:00 on the selected day
-    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    period_end = period_start + timedelta(days=1)
-    # If the end is in the future, change to now
-    if period_end > datetime.now():
-        period_end = datetime.now()
-    quality_dict = {}
-    for machine in Machine.query.all():
-        quality_dict[machine.id] = get_machine_quality(machine, period_start, period_end)
+    quality_dict = get_daily_values_dict(get_machine_quality, requested_date)
     if human_readable:
         for k, v in quality_dict.items():
             v = v * 100

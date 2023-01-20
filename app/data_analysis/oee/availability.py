@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, date, time
 
 import humanize as humanize
 
+from app.data_analysis.helpers import get_daily_values_dict
 from app.default.helpers import get_user_activities, get_machine_activities, get_cropped_start_end_ratio, \
     get_machine_activity_duration
 from app.default.models import Activity, ActivityCode, Machine
@@ -31,17 +32,7 @@ def get_machine_availability(machine: Machine, time_start: datetime, time_end: d
 
 def get_daily_machine_availability_dict(requested_date: date = None, human_readable=False):
     """ Return a dictionary with every machine's availability on the given date """
-    if not requested_date:
-        requested_date = datetime.now().date()
-    # Use 00:00 and 24:00 on the selected day
-    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    period_end = period_start + timedelta(days=1)
-    # If the end is in the future, change to now
-    if period_end > datetime.now():
-        period_end = datetime.now()
-    availability_dict = {}
-    for machine in Machine.query.all():
-        availability_dict[machine.id] = get_machine_availability(machine, period_start, period_end)
+    availability_dict = get_daily_values_dict(get_machine_availability, requested_date)
     if human_readable:
         for k, v in availability_dict.items():
             v = v * 100

@@ -39,14 +39,19 @@
                 {% set current_act_colour =  colours_dict[machine.current_activity.activity_code.id] %}
                 <div class="my-3 pl-5 py-2"
                      style="border-style: solid; border-color: {{ current_act_colour }}; border-width: medium">
-                    <div class="row">
-                        <h2>{{ machine.name }}</h2>
-                        <div class="ml-2">
-                            <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
-                                <button class="btn btn-outline-dark">
-                                    View
-                                </button>
-                            </a>
+                    <div class="row mb-2">
+                        <div class="col">
+                            <div class="row">
+                                <h1>{{ machine.name }}</h1>
+                                <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
+                                    <button class="ml-3 btn btn-outline-dark">
+                                        View
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col align-self-end col-auto">
+                            <h1>OEE {{ oee_dict[machine.id] }}</h1>
                         </div>
                     </div>
                     <div class="row">

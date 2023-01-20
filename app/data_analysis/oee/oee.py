@@ -1,19 +1,19 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, date
 
 from flask import current_app
 
 from app.data_analysis import OEECalculationException
+from app.data_analysis.helpers import get_daily_values_dict
 from app.data_analysis.oee.availability import get_machine_availability
 from app.data_analysis.oee.models import DailyOEE
 from app.data_analysis.oee.performance import get_machine_performance
 from app.data_analysis.oee.quality import get_machine_quality
-from app.default.models import MachineGroup
+from app.default.models import MachineGroup, Machine
 from app.extensions import db
 
 
 def calculate_machine_oee(machine, time_start: datetime, time_end: datetime):
-    """ Takes a machine id and two times, and returns the machine's OEE figure as a percent
-    Note: currently only calculates availability, not performance and quality which are part of the oee calculation"""
+    """ Takes a machine id and two times, and returns the machine's OEE figure as a percent"""
 
     if time_end > datetime.now():
         current_app.logger.warn(f"Machine oee requested for future date {time_end.strftime(('%Y-%m-%d'))}")
@@ -62,3 +62,13 @@ def get_daily_group_oee(group_id, date):
         return 0
     mean_oee = sum(machine_oees) / len(machine_oees)
     return mean_oee
+
+
+def get_daily_oee_dict(requested_date: date = None, human_readable=False):
+    """ Return a dictionary with every machine's oee on the given date """
+    oee_dict = get_daily_values_dict(calculate_machine_oee, requested_date)
+    if human_readable:
+        for k, v in oee_dict.items():
+            v = v * 100
+            oee_dict[k] = f"{round(v, 1)}%"
+    return oee_dict

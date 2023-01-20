@@ -5,8 +5,10 @@ from flask_login import current_user, login_required
 from sqlalchemy import desc
 
 from app.admin.helpers import admin_required
+from app.data_analysis.helpers import get_daily_values_dict
 from app.data_analysis.oee.availability import get_daily_machine_availability_dict, \
-    get_daily_activity_duration_dict, get_daily_scheduled_runtime_dicts
+    get_daily_activity_duration_dict, get_daily_scheduled_runtime_dicts, get_machine_availability
+from app.data_analysis.oee.oee import calculate_machine_oee, get_daily_oee_dict
 from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict, \
     get_daily_production_dict
 from app.data_analysis.oee.quality import get_daily_quality_dict
@@ -47,31 +49,28 @@ def status_page():
     production_dict = {}
     for k, v in good_dict.items():
         production_dict[k] = good_dict[k] + rejects_dict[k]
-    # Availability figure for each machine
+    # Dicts with values for each machine
     availability_dict = get_daily_machine_availability_dict(requested_date, human_readable=True)
-    # Scheduled uptime for each machine
-    schedule_dict = get_daily_scheduled_runtime_dicts(requested_date, human_readable=True)
-    # Performance figure for each machine
     performance_dict = get_daily_performance_dict(requested_date, human_readable=True)
-    # Target production amount for each machine
-    target_production_dict = get_daily_target_production_amount_dict(requested_date)
-    # Quality figure for each machine
     quality_dict = get_daily_quality_dict(requested_date, human_readable=True)
-    # Total time spent in each activity for each machine
+    oee_dict = get_daily_oee_dict(requested_date, human_readable=True)
+    schedule_dict = get_daily_scheduled_runtime_dicts(requested_date, human_readable=True)
+    target_production_dict = get_daily_target_production_amount_dict(requested_date)
     activity_durations_dict = get_daily_activity_duration_dict(requested_date, human_readable=True)
     return render_template("default/status.html",
+                           current_user=current_user,
                            activity_codes=activity_codes,
                            colours_dict=colours_dict,
                            machines=machines,
                            start_job_form=start_job_form,
                            end_job_form=end_job_form,
-                           production_form=production_form,
-                           current_user=current_user,
                            availability_dict=availability_dict,
+                           production_form=production_form,
+                           quality_dict=quality_dict,
+                           oee_dict=oee_dict,
                            schedule_dict=schedule_dict,
                            performance_dict=performance_dict,
                            target_production_dict=target_production_dict,
-                           quality_dict=quality_dict,
                            activity_durations_dict=activity_durations_dict,
                            good_dict=good_dict,
                            production_dict=production_dict,
