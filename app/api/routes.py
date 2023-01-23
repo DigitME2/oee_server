@@ -224,7 +224,7 @@ def end_job():
                         quantity_rejects=end_job_form.quantity_rejects.data,
                         job_id=job.id,
                         machine_id=machine.id)
-        events.end_job(now, job=job)
+        events.end_job(now, job=job, user_id=current_user.id)
     return make_response("", 200)
 
 

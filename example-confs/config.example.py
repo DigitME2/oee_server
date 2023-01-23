@@ -3,6 +3,7 @@ from distutils.util import strtobool
 
 
 class Config(object):
+    """General settings and configuration"""
 
     """ ------- Run mode ------- """
     # Set during testing
@@ -28,7 +29,7 @@ class Config(object):
     # Set this to use postgres or sql-server string if needed (example code at bottom of this file)
     SQLALCHEMY_DATABASE_URI = SQLITE_STRING
 
-    """ ------- Job Validation settings ------- """
+    """ ----------- Job Validation settings ------- """
     # Allow job numbers to be checked against a database when being entered into the tablet. Prompts the user if wrong
     USE_JOB_VALIDATION = False
     # If two columns are given here, jobs will be checked against the first column. The second column will be displayed
@@ -36,29 +37,31 @@ class Config(object):
     # SECOND_DATABASE_ODBC_STRING = SQLITE_STRING
     # JOB_VALIDATION_SQL_STRING = "SELECT job_number, description FROM active_jobs;"
 
-    """ ------- Misc settings ------- """
+    """ ------------ Misc settings ------- """
     SECRET_KEY = os.environ.get('SECRET_KEY') or "change-this-secret-key"
     UPLOAD_FOLDER = os.path.realpath(os.path.join('app', 'static', 'uploads'))
     EXTERNAL_PORT = "80"
     REDIS_HOST = "localhost"
     REDIS_PORT = "6379"
 
-    """ ------- Kafka settings ------- """
+    """ ------------ Kafka settings ------- """
     ENABLE_KAFKA = True
     KAFKA_ADDRESS = "localhost"
     KAFKA_PORT = "9092"
 
-    """ OEE server settings"""
+    """ ------------ OEE server settings ---------"""
     WORKFLOW_TYPES = ["default", "pausable", "running_total"]
-
-    # The database IDs for activity codes
-    UPTIME_CODE_ID = 1
-    UNEXPLAINED_DOWNTIME_CODE_ID = 2
-    PLANNED_DOWNTIME_CODE_ID = 3
 
     DASHBOARD_UPDATE_INTERVAL = 10
     # Allow a user to start a job and say it actually started 5 minutes (or whatever) ago
     ALLOW_DELAYED_JOB_START = True
+
+    # The database IDs for activity codes
+    UPTIME_CODE_ID = 1
+    UNEXPLAINED_DOWNTIME_CODE_ID = 2
+    CLOSED_CODE_ID = 3
+    OVERTIME_CODE_ID = 4
+
 
     # Categories for activity codes
     DOWNTIME_CATEGORIES = [("none", "None"),

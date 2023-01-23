@@ -122,7 +122,7 @@
                             <h4>Current User: </h4>
                             {% if machine.active_user %}
                                 {{ machine.active_user.username }}
-                                <button class="btn btn-dark"
+                                <button class="btn btn-outline-dark"
                                         onclick="forceLogout({{ machine.input_device.id }})">
                                     Force Logout
                                 </button>

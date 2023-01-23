@@ -46,8 +46,7 @@ class Workflow:
                            "state": self.state,
                            "machine_name": self.machine.name,
                            "user_name": self.user_session.user.username,
-                           "requested_data": get_job_start_data(input_type=input_type,
-                                                                input_autofill=input_autofill)})
+                           "requested_data": get_job_start_data(self.machine)})
 
     def active_job_response(self):
         activity_codes_dicts = [{"activity_code_id": ac.id,

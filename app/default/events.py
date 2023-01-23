@@ -3,7 +3,6 @@ from operator import attrgetter
 from typing import Optional
 
 from flask import current_app
-from flask_login import current_user
 
 from app.default.helpers import get_jobs
 from app.extensions import db
@@ -107,7 +106,7 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
     return job
 
 
-def end_job(dt, job: Job):
+def end_job(dt, job: Job, user_id):
     # Set the activity to down
     new_activity_code = Config.UNEXPLAINED_DOWNTIME_CODE_ID
     if job.machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
@@ -117,7 +116,7 @@ def end_job(dt, job: Job):
     change_activity(dt=dt,
                     machine=job.machine,
                     new_activity_code_id=new_activity_code,
-                    user_id=current_user.id)
+                    user_id=user_id)
     job.end_time = dt
     job.active = False
     db.session.commit()

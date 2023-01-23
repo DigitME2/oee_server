@@ -3,6 +3,7 @@ from datetime import datetime
 
 import redis
 from flask import request, current_app, abort
+from flask_login import current_user
 
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
@@ -191,7 +192,7 @@ def android_end_job():
     current_job = input_device.machine.active_job
     if current_job is None:
         abort(400, message="No active job")
-    events.end_job(now, current_job)
+    events.end_job(now, current_job, user_session.user_id)
     db.session.commit()
     events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
     return json.dumps({"success": True})

@@ -15,7 +15,7 @@ def get_machine_status(machine: Machine):
         machine_user_text = User.query.get(machine_user_id).username
     activity_text = machine.current_activity.activity_code.short_description
     if machine.active_job:
-        job_text = machine.current_activity.job.job_number
+        job_text = machine.active_job.job_number
     else:
         job_text = "No job"
     duration = get_legible_duration(time_start=machine.current_activity.start_time,

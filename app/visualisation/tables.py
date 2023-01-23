@@ -142,6 +142,8 @@ class WOTable(Table):
 
 
 def get_work_order_table(start_date: date, end_date: date) -> str:
+    # todo This is an old table we don't use anymore. The jobs are grouped together by job number. Should be merged
+    #  into the other job table as an option somehow
     start_time = datetime.combine(start_date, time(0, 0, 0, 0))
     end_time = datetime.combine(end_date + timedelta(days=1), time(0, 0, 0, 0))
     jobs = get_jobs(start_time, end_time)

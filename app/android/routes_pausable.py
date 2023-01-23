@@ -40,7 +40,7 @@ def pausable_resume_job():
     user_session = input_device.active_user_session
     if user_session is None:
         return json.dumps({"success": False, "reason": "User is logged out"})
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
+    current_job = input_device.machine.active_job
     time = datetime.now().strftime("%H:%M")
     if not current_job.notes:
         current_job.notes = ""  # Initialise the string if null
