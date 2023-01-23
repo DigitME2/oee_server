@@ -42,16 +42,15 @@
                     <div class="row mb-2">
                         <div class="col">
                             <div class="row">
-                                <h1>{{ machine.name }}</h1>
-                                <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
-                                    <button class="ml-3 btn btn-outline-dark">
-                                        View
-                                    </button>
-                                </a>
+                                <h1>{{ machine.name }} OEE {{ oee_dict[machine.id] }}</h1>
                             </div>
                         </div>
-                        <div class="col align-self-end col-auto">
-                            <h1>OEE {{ oee_dict[machine.id] }}</h1>
+                        <div class="col col-auto mr-2">
+                            <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
+                                <button class="btn btn-outline-dark">
+                                    Edit Activity
+                                </button>
+                            </a>
                         </div>
                     </div>
                     <div class="row">
@@ -66,8 +65,8 @@
                                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                     {% set i = 0 %}
                                     {% for code in activity_codes %}
-                                        {#Don't show 'up' if there's no job#}
-                                        {% if code.id != uptime_code or machine.active_job %}
+                                        {#Don't show uptime codes if there's no job#}
+                                        {% if code.machine_state not in uptime_states or machine.active_job %}
                                             <button class="dropdown-item"
                                                     onclick="postActivity({{ machine.id }}, {{ code.id }}, {{ current_user.id }})">
                                                 {{ code.short_description }}
@@ -84,16 +83,16 @@
                                 <p>{{ machine.active_job.job_number }}</p>
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-outline-dark" data-toggle="modal"
-                                            data-target="#recordProductionModal">
+                                            data-target="#recordProductionModal{{ machine.active_job.id }}">
                                         Add Qty
                                     </button>
+                                    {{ production_modals.record_production_modal(production_form, machine.active_job) }}
                                     <button type="button" class="btn btn-outline-dark" data-toggle="modal"
                                             data-target="#endJobModal{{ machine.active_job.id }}">
                                         End
                                     </button>
+                                    {{ job_modals.end_job_modal(machine.active_job, end_job_form) }}
                                 </div>
-                                {{ production_modals.record_production_modal(production_form, machine.active_job) }}
-                                {{ job_modals.end_job_modal(machine.active_job, end_job_form) }}
                             {% else %}
                                 <!-- Open set job modal -->
                                 <button type="button" class="btn btn-outline-dark" data-toggle="modal"
@@ -197,6 +196,7 @@
     </script>
 
     {# Refresh periodically #}
+    {% if refresh %}
     <script>
         setTimeout("refresh()", 60000)
 
@@ -207,6 +207,7 @@
             }
         }
     </script>
+    {% endif %}
 
 {% endblock %}
 

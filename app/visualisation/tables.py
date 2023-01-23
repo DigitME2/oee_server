@@ -25,7 +25,7 @@ def get_oee_table(start_date: date, end_date: date) -> str:
     for machine in machines:
         item = {"machine": machine.name}
         for d in dates:
-            oee = get_daily_machine_oee(machine=machine, date=d)
+            oee = (get_daily_machine_oee(machine=machine, date=d) * 100)
             column_header = d.strftime("%Y/%m/%d")
             OEETable.add_column(column_header, Col(column_header))
             item[column_header] = ("%.1f" % oee)

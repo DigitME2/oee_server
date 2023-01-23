@@ -19,7 +19,7 @@ def get_machine_performance(machine: Machine, time_start: datetime, time_end: da
         job_start, job_end, ratio_of_job_in_time_range = get_cropped_start_end_ratio(job, time_start, time_end)
         good_qty, reject_qty = get_production_amount(time_start, time_end, job_id=job.id)
         amount_produced = good_qty + reject_qty
-        ideal_machine_runtime_s += job.ideal_cycle_time_s * (amount_produced * ratio_of_job_in_time_range)
+        ideal_machine_runtime_s += job.ideal_cycle_time_s * amount_produced
         machine_uptime_during_jobs_s += get_machine_activity_duration(machine, job_start, job_end,
                                                                       machine_state=Config.MACHINE_STATE_UPTIME)
         machine_uptime_during_jobs_s += get_machine_activity_duration(machine, job_start, job_end,

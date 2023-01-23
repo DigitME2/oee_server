@@ -57,6 +57,8 @@ def status_page():
     schedule_dict = get_daily_scheduled_runtime_dicts(requested_date, human_readable=True)
     target_production_dict = get_daily_target_production_amount_dict(requested_date)
     activity_durations_dict = get_daily_activity_duration_dict(requested_date, human_readable=True)
+    # Refresh the page periodically if it's today's date
+    refresh = requested_date == datetime.now().date()
     return render_template("default/status.html",
                            current_user=current_user,
                            activity_codes=activity_codes,
@@ -76,7 +78,9 @@ def status_page():
                            production_dict=production_dict,
                            rejects_dict=rejects_dict,
                            uptime_code=Config.UPTIME_CODE_ID,
-                           date=requested_date)
+                           uptime_states=[Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME],
+                           date=requested_date,
+                           refresh=refresh)
 
 
 @bp.route('/machine')

@@ -24,6 +24,13 @@ def add_past_activity(start_time, end_time, activity_code_id, machine_id):
 
 def modify_activity(modified_act: Activity, new_start: datetime, new_end: datetime, new_activity_code):
     """ Modify an existing activity in the past, as well as other activities affected by the times being changed """
+    # Don't modify the times if everything matches but the seconds. (e.g. to stop 12:12:34 getting set to 12:12:00)
+    # The user doesn't enter seconds in the web form
+    everything_but_seconds = "%Y%m%d%H%M"
+    if new_end.strftime(everything_but_seconds) == modified_act.end_time.strftime(everything_but_seconds):
+        new_end = modified_act.end_time
+    if new_start.strftime(everything_but_seconds) == modified_act.start_time.strftime(everything_but_seconds):
+        new_start = modified_act.start_time
     # Check for uptime being created without a job
     jobs = get_jobs(new_start, new_end, modified_act.machine)
     activity_is_up = (new_activity_code.machine_state in [Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME])
@@ -116,6 +123,15 @@ def add_past_job(start, end, machine, ideal_cycle_time, job_number, quantity_goo
 
 def modify_job(job: Job, new_start, new_end, ideal_cycle_time, job_number, quantity_good,
                quantity_rejects):
+    # Don't modify the times if everything matches but the seconds. (e.g. to stop 12:12:34 getting set to 12:12:00)
+    everything_but_seconds = "%Y%m%d%H%M"
+    if new_end and new_end.strftime(everything_but_seconds) == job.end_time.strftime(everything_but_seconds):
+        new_end = job.end_time
+    if new_start and new_start.strftime(everything_but_seconds) == job.start_time.strftime(everything_but_seconds):
+        new_start = job.start_time
+
+    if new_end and new_end.hour == job.start_time.hour and new_end.minute == job.start_time.minute:
+        new_start = job.new_start
     if new_end is None:
         existing_jobs = get_jobs(new_start, datetime.now(), job.machine)
     else:

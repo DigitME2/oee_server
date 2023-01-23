@@ -83,7 +83,7 @@ def edit_activity(activity_id=None):
         new_start = datetime.combine(form.start_date.data, form.start_time.data)
         new_end = datetime.combine(form.end_date.data, form.end_time.data)
         if new_start > new_end:
-            return abort(Response(status=400, response="End time greater than start time"))
+            return abort(Response(status=400, response="End time before start time"))
         new_activity_code_id = form.activity_code.data
         new_activity_code = ActivityCode.query.get_or_404(new_activity_code_id)
         try:
@@ -251,7 +251,7 @@ def edit_past_job():
         else:
             new_end = datetime.combine(form.end_date.data, form.end_time.data)
             if new_start > new_end:
-                return abort(Response(status=400, response="End time greater than start time"))
+                return abort(Response(status=400, response="End time before start time"))
     try:
         app.default.edit_events.modify_job(job=job, new_start=new_start, new_end=new_end,
                                            ideal_cycle_time=form.ideal_cycle_time.data,
@@ -353,3 +353,6 @@ def edit_production(production_quantity_id):
         return make_response("", 200)
     else:
         return make_response("Form error", 400)
+
+
+# TODO Allow deleting production record

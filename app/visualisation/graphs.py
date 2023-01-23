@@ -261,7 +261,7 @@ def create_oee_line(graph_start_date: date, graph_end_date: date, machines):
     for machine in machines:
         machine_oee_figures = []
         for d in dates:
-            machine_oee_figures.append(get_daily_machine_oee(machine=machine, date=d))
+            machine_oee_figures.append((get_daily_machine_oee(machine=machine, date=d) * 100))
         fig.add_trace(go.Scatter(x=dates, y=machine_oee_figures, name=machine.name, mode='lines+markers'))
 
     layout = Layout()

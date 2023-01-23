@@ -1,10 +1,10 @@
 {% macro record_production_modal(form, job) %}
-    <div class="modal fade" id="recordProductionModal" tabindex="-1" role="dialog"
-         aria-labelledby="recordProductionModalLabel" aria-hidden="true">
+    <div class="modal fade" id="recordProductionModal{{ job.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="recordProductionModal{{ job.id }}Label" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="recordProductionLabel">
+                    <h5 class="modal-title" id="recordProductionLabel{{ job.id }}">
                         Record Production
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -12,7 +12,7 @@
                     </button>
                 </div>
 
-                <form id="recordProductionForm" class="form-group">
+                <form id="recordProductionForm{{ job.id }}" class="form-group">
                     <div class="modal-body">
                         {{ form.hidden_tag() }}
                         <input type="hidden" name="job_id" value="{{ job.id }}">
@@ -25,7 +25,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
                     </button>
-                    <button onclick="recordProduction()" class="btn btn-success">Set
+                    <button onclick="recordProduction({{ job.id }})" class="btn btn-success">Set
                     </button>
                 </div>
             </div>
@@ -33,8 +33,8 @@
     </div>
 
     <script>
-        function recordProduction() {
-            let formData = new FormData(document.getElementById("recordProductionForm"))
+        function recordProduction(jobId) {
+            let formData = new FormData(document.getElementById("recordProductionForm" + jobId))
             if (document.contains(document.getElementById("errorWarning"))) {
                 document.getElementById("errorWarning").remove()
             }
@@ -52,7 +52,7 @@
                     warning.id = "errorWarning"
                     warning.innerText = result.responseText
                     warning.className = "alert alert-danger"
-                    document.getElementById("recordProductionForm").append(warning)
+                    document.getElementById("recordProductionForm" + jobId).append(warning)
                 }
             });
         }
