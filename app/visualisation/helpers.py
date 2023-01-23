@@ -40,7 +40,7 @@ def parse_requested_machine_list(requested_machines) -> list[Machine]:
     # If the argument begins with m_ it represents just one machine
     elif requested_machines[0:2] == "m_":
         machine_id = int(requested_machines[2:])
-        return list(Machine.query.get_or_404(machine_id))
+        return [Machine.query.get_or_404(machine_id)]
     else:
         return []
 

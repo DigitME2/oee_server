@@ -356,3 +356,4 @@ def edit_production(production_quantity_id):
 
 
 # TODO Allow deleting production record
+# TODO Allow deleting uptime

@@ -5,6 +5,7 @@ from wtforms import DateField, SubmitField, SelectField
 from wtforms.validators import DataRequired, NoneOf
 from wtforms_components import TimeField
 
+from app.default.models import Settings
 from app.visualisation.helpers import tomorrow, today, yesterday, a_week_ago
 
 TIME_FORMAT = "%H:%M"
@@ -26,7 +27,6 @@ the forms use a template stub from form_templates.html. These can be set with fo
 
 
 class BaseDatesForm(FlaskForm):
-
     def __init__(self):
         super().__init__()
         # Set the ID differently per class, so they don't have the same ID on the web page (this breaks datepicker)
@@ -38,8 +38,23 @@ class BaseDatesForm(FlaskForm):
         return cls.__name__.lower()
 
     form_template = "date"
-    start_date = DateField(validators=[DataRequired()], label="Start Date (YYYY-MM-DD)", default=a_week_ago)
-    end_date = DateField(validators=[DataRequired()], label="End Date (YYYY-MM-DD)", default=yesterday)
+    start_date = DateField(validators=[DataRequired()], label="Start Date", default=a_week_ago)
+    end_date = DateField(validators=[DataRequired()], label="End Date", default=yesterday)
+    submit = SubmitField('Submit')
+
+
+class BaseSingleDateForm(FlaskForm):
+    def __init__(self):
+        super().__init__()
+        # Set the ID differently per class, so they don't have the same ID on the web page (this breaks datepicker)
+        self.date.id = self.get_class_name() + "-date"
+
+    @classmethod
+    def get_class_name(cls):
+        return cls.__name__.lower()
+
+    form_template = "single_date"
+    date = DateField(validators=[DataRequired()], label="Date", default=today)
     submit = SubmitField('Submit')
 
 
@@ -54,20 +69,25 @@ class BaseTimeAndDatesForm(FlaskForm):
     def get_class_name(cls):
         return cls.__name__.lower()
 
-    start_date = DateField(validators=[DataRequired()], label="Start Date (YYYY-MM-DD)", default=today)
-    end_date = DateField(validators=[DataRequired()], label="End Date (YYYY-MM-DD)", default=tomorrow)
+    start_date = DateField(validators=[DataRequired()], label="Start Date", default=today)
+    end_date = DateField(validators=[DataRequired()], label="End Date", default=tomorrow)
     start_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_start_time")
     end_time = TimeField(validators=[DataRequired()], format=TIME_FORMAT, default=midnight, id="gantt_end_time")
     submit = SubmitField('Submit')
 
 
-class OeeTableForm(BaseDatesForm):
-    graph_name = "OEE Table"
+class OeeTableForm(BaseSingleDateForm):
+    graph_name = "OEE Report"
+    description = "A table showing the a report for each machine on a specified day"
+
+
+class OeeDateRangeForm(BaseDatesForm):
+    graph_name = "Daily OEE Table"
     description = "A table showing the daily OEE figure of all machines between two dates"
 
 
 class ProdTableForm(BaseDatesForm):
-    graph_name = "Production Table"
+    graph_name = "Daily Production"
     description = "A table showing daily production numbers for each machine"
 
 
@@ -104,7 +124,7 @@ class DowntimeBarForm(BaseTimeAndDatesForm):
 
 class JobTableForm(BaseDatesForm):
     form_template = "key_date"
-    graph_name = "Job Table"
+    graph_name = "Jobs"
     key = SelectField(validators=[NoneOf(MACHINES_CHOICES_HEADERS, message="Pick a machine or group")],
                       id="job_machines")
 
@@ -116,12 +136,6 @@ class WOTableForm(BaseDatesForm):
 
 class ActivityDurationsTableForm(BaseTimeAndDatesForm):
     form_template = "key_date_time"
-    graph_name = "Activity Durations Table"
+    graph_name = "Activity Durations"
+    description = "A table showing the total durations of each machine"
     key = SelectField(validators=[DataRequired()], choices=[("users", "Users"), ("machines", "Machines")])
-
-
-class RawDatabaseTableForm(FlaskForm):
-    form_template = "key"
-    graph_name = "Raw Database Table"
-    key = SelectField(label="Table name", validators=[DataRequired()],
-                      choices=[("users", "Users"), ("machines", "Machines")])

@@ -4,14 +4,79 @@ import pandas as pd
 from flask import current_app
 from flask_table import Table, Col, create_table
 
-from app.data_analysis.oee.availability import get_activity_duration_dict
-from app.data_analysis.oee.oee import get_daily_machine_oee
-from app.default.helpers import get_jobs
+from app.data_analysis.helpers import get_daily_values_dict
+from app.data_analysis.oee.availability import get_activity_duration_dict, get_daily_machine_availability_dict, \
+    get_daily_scheduled_runtime_dicts, get_daily_activity_duration_dict, get_daily_machine_state_dicts
+from app.data_analysis.oee.oee import get_daily_machine_oee, get_daily_oee_dict
+from app.data_analysis.oee.performance import get_daily_performance_dict, get_daily_target_production_amount_dict, \
+    get_daily_production_dict
+from app.data_analysis.oee.quality import get_daily_quality_dict
+from app.default.helpers import get_jobs, get_machine_activities
 from app.default.models import Job, ActivityCode, Machine
 from app.extensions import db
 from app.login.models import User
 from app.visualisation.helpers import get_daily_machine_production
 from config import Config
+
+
+class OEEReportTable(Table):
+    def sort_url(self, col_id, reverse=False):
+        pass
+
+    table_id = "daily-oee-table"
+    classes = ["dataTable table table-striped table-bordered"]
+    machine = Col('Machine')
+    total_time = Col('Total Duration (min)')
+    scheduled_downtime = Col('Scheduled Downtime (min)')
+    unscheduled_downtime = Col('Unscheduled Downtime (min)')
+    uptime = Col('Uptime Duration (min)')
+    target = Col('Expected Qty')
+    total_qty = Col('Actual Qty')
+    rejects = Col('Rejects Qty')
+    availability = Col('Availability (%)')
+    performance = Col('Performance (%)')
+    quality = Col('Quality (%)')
+    oee = Col('OEE (%)')
+
+
+def get_oee_report_table(requested_date: date) -> str:
+    good_dict, rejects_dict = get_daily_production_dict(requested_date, human_readable=False)
+    production_dict = {}
+    for k, v in good_dict.items():
+        production_dict[k] = good_dict[k] + rejects_dict[k]
+    availability_dict = get_daily_machine_availability_dict(requested_date, human_readable=False)
+    performance_dict = get_daily_performance_dict(requested_date, human_readable=False)
+    quality_dict = get_daily_quality_dict(requested_date, human_readable=False)
+    oee_dict = get_daily_oee_dict(requested_date, human_readable=False)
+    scheduled_runtime_dict = get_daily_scheduled_runtime_dicts(requested_date, human_readable=False)
+    state_dict = get_daily_machine_state_dicts(requested_date, human_readable=False)
+    target_production_dict = get_daily_target_production_amount_dict(requested_date)
+    activity_durations_dict = get_daily_activity_duration_dict(requested_date, human_readable=False)
+
+    table_rows = []
+    for machine in Machine.query.all():
+        total_runtime = state_dict[machine.id][Config.MACHINE_STATE_UPTIME] + state_dict[machine.id][Config.MACHINE_STATE_OVERTIME]
+        total_time = total_runtime + state_dict[machine.id][Config.MACHINE_STATE_PLANNED_DOWNTIME] + \
+                     state_dict[machine.id][Config.MACHINE_STATE_UNPLANNED_DOWNTIME]
+        table_row = {'machine': machine.name,
+                     'total_time': round(total_time / 60),
+                     'scheduled_downtime': round(state_dict[machine.id][Config.MACHINE_STATE_PLANNED_DOWNTIME] / 60),
+                     'unscheduled_downtime': round(state_dict[machine.id][Config.MACHINE_STATE_UNPLANNED_DOWNTIME] / 60),
+                     'uptime': round(total_runtime / 60),
+                     'target': round(target_production_dict[machine.id]),
+                     'total_qty': round(production_dict[machine.id]),
+                     'rejects': round(rejects_dict[machine.id]),
+                     'availability': round(availability_dict[machine.id] * 100, 1),
+                     'performance': round(performance_dict[machine.id] * 100, 1),
+                     'quality': round(quality_dict[machine.id] * 100, 1),
+                     'oee': round(oee_dict[machine.id] * 100, 1)}
+        table_rows.append(table_row)
+    table = OEEReportTable(table_rows)
+    table_html = f"<h1 id=\"table-title\">" \
+                 f"OEE Report" \
+                 f"</h1>" \
+                 + table.__html__()
+    return table_html
 
 
 def get_oee_table(start_date: date, end_date: date) -> str:
@@ -62,9 +127,6 @@ def get_machine_production_table(start_date: date, end_date: date):
                  + table.__html__()
 
     return table_html
-
-
-
 
 
 class WOTable(Table):
@@ -124,14 +186,15 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
         end_time = max([woj.end_time for woj in job_number_jobs if woj.end_time is not None])
         if end_time is None:
             work_order["end"] = ""
-            work_order["actual_run_time"] = (datetime.now() - start_time).total_seconds()/60
+            work_order["actual_run_time"] = (datetime.now() - start_time).total_seconds() / 60
         else:
             work_order["end"] = end_time.strftime("%d-%m-%y %H:%M")
             work_order["actual_run_time"] = end_time - start_time
 
         # FIXME what is the line below
         # work_order["actual_run_time"] = sum(j.quantity_good for j in job_number_jobs if j.quantity_good is not None)
-        work_order["ideal_cycle_time_s"] = sum(j.ideal_cycle_time_s for j in job_number_jobs if j.ideal_cycle_time_s is not None)
+        work_order["ideal_cycle_time_s"] = sum(
+            j.ideal_cycle_time_s for j in job_number_jobs if j.ideal_cycle_time_s is not None)
         work_order["quantity_good"] = sum(j.quantity_good for j in job_number_jobs if j.quantity_good is not None)
         items.append(work_order)
     table = WOTable(items=items)
@@ -139,7 +202,7 @@ def get_work_order_table(start_date: date, end_date: date) -> str:
     # Add a title manually to the table html
     table_html = f"<h1 id=\"table-title\">" \
                  f"Work Orders {start_date.strftime('%d-%b-%y')} to {end_date.strftime('%d-%b-%y')}" \
-                 f"</h1>"\
+                 f"</h1>" \
                  + table.__html__()
 
     return table_html
@@ -160,7 +223,7 @@ def get_job_table(start_date: date, end_date: date, machines) -> str:
                 "part_number": job.part_number,
                 "ideal_cycle_time_s": job.ideal_cycle_time_s,
                 "quantity_good": job.get_total_good_quantity(),
-                "rejects": job.quantity_rejects}
+                "rejects": job.get_total_reject_quantity()}
         try:
             item["operator"] = str(job.user.username)
         except:
@@ -175,9 +238,9 @@ def get_job_table(start_date: date, end_date: date, machines) -> str:
             item["end"] = ""
         try:
             if job.end_time is not None:
-                item["actual_run_time"] = (job.end_time - job.start_time).total_seconds()/60
+                item["actual_run_time"] = (job.end_time - job.start_time).total_seconds() / 60
             else:
-                item["actual_run_time"] = str((datetime.now() - job.start_time).total_seconds()/60)
+                item["actual_run_time"] = str((datetime.now() - job.start_time).total_seconds() / 60)
         except:
             item["actual_run_time"] = ""
 
@@ -187,7 +250,7 @@ def get_job_table(start_date: date, end_date: date, machines) -> str:
     # Add a title manually to the table html
     table_html = f"<h1 id=\"table-title\">" \
                  f"Jobs {start_date.strftime('%d-%b-%y')} to {end_date.strftime('%d-%b-%y')}<" \
-                 f"/h1>"\
+                 f"/h1>" \
                  + table.__html__()
 
     return table_html
@@ -197,23 +260,12 @@ class JobTable(Table):
     table_id = "jobTable"
     classes = ["dataTable table table-striped table-bordered"]
     job_id = Col("Job ID")
-    job_number = Col('WO Number')
-    part_number = Col('Part Number')
+    job_number = Col('Job Number')
     start = Col('Start')
     end = Col('End')
-    operator = Col('Operator')
     ideal_cycle_time_s = Col(f"Ideal Cycle Time (s)")  #
     quantity_good = Col("Good Qty")
     rejects = Col("Rejects Qty")
-
-
-def get_raw_database_table(table_name):
-    statement = f"SELECT * FROM {table_name};"
-    df = pd.read_sql(statement, db.engine)
-    table_html = f"<h1 id=\"table-title\"> Database Table {table_name}</h1>" + \
-                 df.to_html(classes="dataTable table table-striped table-bordered")
-
-    return table_html
 
 
 def get_user_activity_table(time_start: datetime, time_end: datetime):
@@ -250,7 +302,7 @@ def get_user_activity_table(time_start: datetime, time_end: datetime):
     table = Tbl(items=items)
     table_html = f"<h1 id=\"table-title\">" \
                  f"Activity Durations {time_start.strftime('%H.%M %d-%b-%y')} to {time_end.strftime('%H.%M %d-%b-%y')}<" \
-                 f"/h1>"\
+                 f"/h1>" \
                  + table.__html__()
     return table_html
 
@@ -265,7 +317,6 @@ def get_machine_activity_table(time_start: datetime, time_end: datetime):
     activity_code_descriptions = [code.short_description for code in act_codes]
     for activity_description in activity_code_descriptions:
         Tbl.add_column(activity_description, Col(activity_description))
-
 
     # Add the class to the table so it's picked up by datatables
     Tbl.classes = ["dataTable table table-striped table-bordered"]

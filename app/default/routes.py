@@ -16,7 +16,7 @@ from app.default import bp
 from app.default.forms import StartJobForm, RecordProductionForm, EditActivityForm, FullJobForm, \
     RecordPastProductionForm, ModifyProductionForm
 from app.default.helpers import get_machine_activities, get_jobs
-from app.default.models import ActivityCode, Activity, Machine, ProductionQuantity
+from app.default.models import ActivityCode, Activity, Machine, ProductionQuantity, MachineGroup
 from app.login.models import User
 from config import Config
 
@@ -35,12 +35,19 @@ def status_page():
         requested_date = datetime.strptime(requested_date, "%Y-%m-%d").date()
     else:
         requested_date = datetime.now().date()
-    machines = Machine.query.all()
+    group = request.args.get("group")
+    if group:
+        group = MachineGroup.query.get_or_404(group)
+        machines = group.machines
+    else:
+        machines = Machine.query.all()
+
     start_job_form = StartJobForm()
     end_job_form = RecordProductionForm()
     production_form = RecordProductionForm()
     # All activity codes
     activity_codes = ActivityCode.query.all()
+    groups = MachineGroup.query.all()
     colours_dict = {}
     for ac in activity_codes:
         colours_dict[ac.id] = ac.graph_colour
@@ -62,6 +69,7 @@ def status_page():
     return render_template("default/status.html",
                            current_user=current_user,
                            activity_codes=activity_codes,
+                           groups=groups,
                            colours_dict=colours_dict,
                            machines=machines,
                            start_job_form=start_job_form,

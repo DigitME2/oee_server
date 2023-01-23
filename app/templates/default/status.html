@@ -22,6 +22,20 @@
                             <label for="selectDate">Set Date: </label>
                             <input class="form-control flex-shrink-1" id="selectDate" name="select-date"
                                    onchange="changeDate(this)" type="date" value="{{ date }}">
+
+                            <label for="selectGroup">Group: </label>
+                            <select class="form-control" id="selectGroup" onchange="changeGroup(this)">
+
+                                <option value="0">All</option>
+                                {% for group in groups %}
+                                    <option value="{{ group.id }}"
+                                            {% if request.args.get('group')|int == group.id %}
+                                            selected="selected"
+                                            {% endif %}
+                                    >
+                                        {{ group.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </form>
                 </div>
@@ -42,13 +56,14 @@
                     <div class="row mb-2">
                         <div class="col">
                             <div class="row">
-                                <h1>{{ machine.name }} OEE {{ oee_dict[machine.id] }}</h1>
+                                <h1>{{ machine.name }}</h1>
+                                <h2 class="ml-3"> OEE {{ oee_dict[machine.id] }}</h2>
                             </div>
                         </div>
                         <div class="col col-auto mr-2">
                             <a href="{{ url_for("default.machine_report", machine_id=machine.id, date=date) }}">
                                 <button class="btn btn-outline-dark">
-                                    Edit Activity
+                                    View Activity
                                 </button>
                             </a>
                         </div>
@@ -158,10 +173,23 @@
     </div>
 
     <script>
-        {#    Reload the page for a different date when the date select box changes #}
+        {#    Reload the page for a different date or group when the selected #}
+
+        let url = new URL(document.URL)
 
         function changeDate(selectDate) {
-            window.location.replace("{{ url_for("default.status_page")}}" + "?date=" + selectDate.value)
+            url.searchParams.set('date', selectDate.value)
+            window.location.replace(url)
+        }
+
+        function changeGroup(selectGroup) {
+            console.log(selectGroup.value)
+            if (selectGroup.value === "0") {
+                url.searchParams.delete('group')
+            } else{
+                url.searchParams.set('group', selectGroup.value)
+            }
+            window.location.replace(url)
         }
     </script>
 
@@ -197,16 +225,17 @@
 
     {# Refresh periodically #}
     {% if refresh %}
-    <script>
-        setTimeout("refresh()", 60000)
+        <script>
+            setTimeout("refresh()", 60000)
 
-        function refresh() {
-            // Don't refresh if a modal is open
-            if (document.querySelectorAll('.modal.in').length > 0) {
-                location.reload()
+            function refresh() {
+                // Don't refresh if a modal is open
+                console.log(document.querySelectorAll('.modal.in'))
+                if (!document.querySelectorAll('.modal.in').length > 0) {
+                    location.reload()
+                }
             }
-        }
-    </script>
+        </script>
     {% endif %}
 
 {% endblock %}

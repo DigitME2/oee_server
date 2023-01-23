@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, date, time
 
 import humanize as humanize
 
-from app.data_analysis.helpers import get_daily_values_dict
+from app.data_analysis.helpers import get_daily_values_dict, durations_dict_to_human_readable
 from app.default.helpers import get_user_activities, get_machine_activities, get_cropped_start_end_ratio, \
     get_machine_activity_duration
 from app.default.models import Activity, ActivityCode, Machine
@@ -113,28 +113,17 @@ def get_daily_activity_duration_dict(requested_date: date = None, human_readable
 
 
 def get_daily_scheduled_runtime_dicts(requested_date: date = None, human_readable=False):
-    """ Return a dictionary of schedule dicts returned by get_schedule_dict for every machine for a date"""
-    if not requested_date:
-        requested_date = datetime.now().date()
-    # Use 00:00 and 24:00 on the selected day
-    period_start = datetime.combine(date=requested_date, time=time(hour=0, minute=0, second=0, microsecond=0))
-    period_end = period_start + timedelta(days=1)
-    # If the end is in the future, change to now
-    if period_end > datetime.now():
-        period_end = datetime.now()
-    runtime_dict = {}
-    for machine in Machine.query.all():
-        scheduled_runtime = get_scheduled_machine_runtime(machine, period_start, period_end)
-        if human_readable:
-            if scheduled_runtime < 60:
+    """ Return a dictionary of scheduled runtime for every machine for a date"""
+    scheduled_runtime_dict = get_daily_values_dict(get_scheduled_machine_runtime, requested_date)
+    if human_readable:
+        for k, v in scheduled_runtime_dict.items():
+            if v < 60:
                 humanize_format = "%0.1f"
             else:
                 humanize_format = "%0.0f"
-            runtime_dict[machine.id] = humanize.precisedelta(
-                timedelta(seconds=scheduled_runtime), minimum_unit="minutes", format=humanize_format)
-        else:
-            runtime_dict[machine.id] = scheduled_runtime
-    return runtime_dict
+            v = humanize.precisedelta(timedelta(seconds=v), minimum_unit="minutes", format=humanize_format)
+            scheduled_runtime_dict[k] = v
+    return scheduled_runtime_dict
 
 
 def get_scheduled_machine_runtime(machine: Machine, time_start: datetime, time_end: datetime):
@@ -144,3 +133,34 @@ def get_scheduled_machine_runtime(machine: Machine, time_start: datetime, time_e
     total_duration = get_machine_activity_duration(machine, time_start, time_end)
     scheduled_runtime = total_duration - planned_downtime_duration
     return scheduled_runtime
+
+
+def get_daily_machine_state_dicts(requested_date: date = None, human_readable=False):
+    """ Return a dictionary with every machine's state dict on the given date """
+    state_dict = get_daily_values_dict(get_machine_state_dict, requested_date)
+    if human_readable:
+        state_dict = durations_dict_to_human_readable(state_dict)
+    return state_dict
+
+
+def get_machine_state_dict(machine: Machine, time_start: datetime, time_end: datetime):
+    """ Return a dictionary with the duration of a machine's states between two times"""
+    state = {
+        Config.MACHINE_STATE_UPTIME: 0,
+        Config.MACHINE_STATE_UNPLANNED_DOWNTIME: 0,
+        Config.MACHINE_STATE_PLANNED_DOWNTIME: 0,
+        Config.MACHINE_STATE_OVERTIME: 0,
+    }
+    activity_codes = ActivityCode.query.all()
+    activity_duration_dict = get_activity_duration_dict(time_start, time_end, machine)
+    for ac in activity_codes:
+        duration = activity_duration_dict[ac.id]
+        if ac.machine_state == Config.MACHINE_STATE_UPTIME:
+            state[Config.MACHINE_STATE_UPTIME] += duration
+        elif ac.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
+            state[Config.MACHINE_STATE_UNPLANNED_DOWNTIME] += duration
+        elif ac.machine_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
+            state[Config.MACHINE_STATE_PLANNED_DOWNTIME] += duration
+        elif ac.machine_state == Config.MACHINE_STATE_OVERTIME:
+            state[Config.MACHINE_STATE_OVERTIME] += duration
+    return state

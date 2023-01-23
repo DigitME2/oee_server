@@ -82,7 +82,7 @@
             </div>
         {% endif %}
 
-        {#    DATE ONLY  #}
+        {#    DATE RANGE ONLY  #}
 
         {% if (form.form_template == "date") %}
 
@@ -109,6 +109,23 @@
         {% endif %}
 
 
+        {#    SINGLE DATE ONLY  #}
+
+        {% if (form.form_template == "single_date") %}
+
+            <div class="form-row">
+                {{ form.description }}
+            </div>
+            <div class="form-row mt-2">
+                <div class="form-group pr-2">
+                    {{ form.date.label }}
+                    {{ form.date(class_="form-control datepicker") }}
+                    {% for error in form.date.errors %}
+                        <span class="text-danger">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
         {# KEY ONLY #}
 
         {% if form.form_template == "key" %}

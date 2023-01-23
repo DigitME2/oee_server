@@ -1,5 +1,7 @@
 from datetime import date, datetime, timedelta, time
 
+import humanize
+
 from app.default.models import Machine
 
 
@@ -17,3 +19,14 @@ def get_daily_values_dict(func, requested_date: date = None):
     for machine in Machine.query.all():
         values[machine.id] = func(machine, period_start, period_end)
     return values
+
+
+def durations_dict_to_human_readable(d):
+    """Given a dict of durations, formats all the values to a human-readable format"""
+    for k, v in d.items():
+        if v < 60:
+            humanize_format = "%0.1f"
+        else:
+            humanize_format = "%0.0f"
+        v = humanize.precisedelta(timedelta(seconds=v), minimum_unit="minutes", format=humanize_format)
+        d[k] = v

@@ -252,8 +252,10 @@ def create_downtime_pie(machine_id, graph_start, graph_end):
 def create_oee_line(graph_start_date: date, graph_end_date: date, machines):
     """ Takes two times and creates a line graph of the OEE for each machine between these times
     The graph contains values for all time, but zooms in on the given dates. This allows scrolling once the graph is made"""
-    d = Settings.query.get(1).first_start.date()
-    dates = [d + timedelta(days=x) for x in range((graph_end_date - d).days + 1)]
+    first_start_date = Settings.query.get(1).first_start.date()
+    if graph_start_date < first_start_date:
+        graph_start_date = first_start_date
+    dates = [first_start_date + timedelta(days=x) for x in range((graph_end_date - first_start_date).days + 1)]
     if len(dates) == 0:
         return 0
     fig = go.Figure()
@@ -270,6 +272,7 @@ def create_oee_line(graph_start_date: date, graph_end_date: date, machines):
     layout.xaxis.showgrid = False
     layout.xaxis.dtick = 86400000  # Space between ticks = 1 day
     fig.layout = layout
+    fig.update_yaxes(range=[0, 100])
 
     return plot(fig,
                 output_type="div",
