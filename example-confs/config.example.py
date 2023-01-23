@@ -54,14 +54,13 @@ class Config(object):
 
     DASHBOARD_UPDATE_INTERVAL = 10
     # Allow a user to start a job and say it actually started 5 minutes (or whatever) ago
-    ALLOW_DELAYED_JOB_START = True
+    ALLOW_DELAYED_JOB_START = False
 
     # The database IDs for activity codes
     UPTIME_CODE_ID = 1
     UNEXPLAINED_DOWNTIME_CODE_ID = 2
     CLOSED_CODE_ID = 3
     OVERTIME_CODE_ID = 4
-
 
     # Categories for activity codes
     DOWNTIME_CATEGORIES = [("none", "None"),
