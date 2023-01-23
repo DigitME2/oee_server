@@ -9,7 +9,7 @@ from app.default.schedule_tasks import add_shift_schedule_tasks
 from app.extensions import db, migrate, login_manager, scheduler
 from config import Config
 
-VERSION = "v7.3"
+VERSION = "v8.0"
 
 # Set up logging handlers
 Path('logs').mkdir(parents=True, exist_ok=True)
