@@ -1,11 +1,9 @@
 {% extends "default/base.html" %}
-{% import "oee_displaying/form_templates.html" as form_templates %}
+{% import "visualisation/form_templates.html" as form_templates %}
 
 {% block content %}
 
     <div class="container mt-2">
-        <label for="graphType">Graph type</label>
-
         <select id="graphType" class="form-control">
             {% for form in forms %}
 
@@ -31,7 +29,7 @@
     </div>
 
     <div class="mt-5">
-        <div class="main_graph" id="main_graph">
+        <div class="main_graph mx-2" id="main_graph">
             {{ graph|safe }}
         </div>
     </div>
@@ -107,13 +105,16 @@
     })
     </script>
 
+    {#  Disabled datepicker as it seems flaskform now labels datefields as date, so browsers will show their own
+        Haven't tested this with multiple browsers #}
+
 {#    Datepicker#}
-    <script src="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.js')}}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.css') }}">
-    <script>
-        $( function() {
-            $( ".datepicker" ).datepicker({ dateFormat: "yy-mm-dd"});
-        } );
-    </script>
+{#    <script src="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.js')}}"></script>#}
+{#    <link rel="stylesheet" href="{{ url_for('static', filename='node_modules/jquery-ui-dist/jquery-ui.min.css') }}">#}
+{#    <script>#}
+{#        $( function() {#}
+{#            $( ".datepicker" ).datepicker({ dateFormat: "yy-mm-dd"});#}
+{#        } );#}
+{#    </script>#}
 
 {% endblock %}
