@@ -39,6 +39,7 @@ class Machine(db.Model):
     active_job = db.relationship('Job', foreign_keys=[active_job_id])
     active_user = db.relationship('User', foreign_keys=[active_user_id])
     input_device = db.relationship('InputDevice', uselist=False, back_populates="machine")
+    machine_group = db.relationship('MachineGroup', uselist=False)
     shift = db.relationship('Shift')
 
     def __repr__(self):
@@ -54,6 +55,7 @@ class InputDevice(db.Model):
     active_user_session_id = db.Column(db.Integer, db.ForeignKey('user_session.id'))
 
     machine = db.relationship("Machine", uselist=False, back_populates="input_device")
+    active_user = db.relationship("User", uselist=False)
     active_user_session = db.relationship(
         "UserSession", foreign_keys=[active_user_session_id], uselist=False)
 
@@ -62,7 +64,7 @@ class MachineGroup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
 
-    machines = db.relationship('Machine', backref='machine_group')
+    machines = db.relationship('Machine', back_populates='machine_group')
 
 
 class Job(db.Model):
@@ -123,6 +125,8 @@ class Activity(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     machine = db.relationship("Machine", foreign_keys="[Activity.machine_id]", uselist=False)
+    user = db.relationship("User", uselist=False)
+    activity_code = db.relationship("ActivityCode", uselist=False)
 
     def __repr__(self):
         return f"<Activity machine:{self.machine_id} (ID {self.id})>"
@@ -165,7 +169,7 @@ class ActivityCode(db.Model):
     graph_colour = db.Column(db.String(100))
     active = db.Column(db.Boolean, default=True)
 
-    activities = db.relationship('Activity', backref='activity_code')
+    activities = db.relationship('Activity', back_populates='activity_code')
 
     def __repr__(self):
         return f"<ActivityCode code:'{self.code}' (ID {self.id})>"

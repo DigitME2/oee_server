@@ -16,9 +16,9 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128))
     admin = db.Column(db.Boolean)
 
-    active_input_devices = db.relationship('InputDevice', backref="active_user")
-    sessions = db.relationship('UserSession', backref="user")
-    activities = db.relationship('Activity', backref="user")
+    active_input_devices = db.relationship('InputDevice', back_populates="active_user")
+    sessions = db.relationship('UserSession', back_populates="user")
+    activities = db.relationship('Activity', back_populates="user")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -40,6 +40,7 @@ class UserSession(db.Model):
     active = db.Column(db.Boolean)
 
     input_device = db.relationship("InputDevice", foreign_keys=[input_device_id])
+    user = db.relationship("User", uselist=False)
 
     def end_session(self):
         self.time_logout = datetime.now()
