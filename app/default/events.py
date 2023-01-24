@@ -19,6 +19,7 @@ def android_log_in(dt, user, input_device) -> bool:
         current_app.logger.info(f"No machine assigned to {input_device}")
         return False
     input_device.machine.active_user_id = user.id
+    input_device.active_user_id = user.id
     # Create the new user session
     new_us = UserSession(user_id=user.id,
                          input_device_id=input_device.id,
