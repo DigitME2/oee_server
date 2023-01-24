@@ -20,16 +20,12 @@ def get_machine_quality(machine: Machine, time_start: datetime, time_end: dateti
         good_qty = job.get_total_good_quantity()
         total_machine_quantity_produced += (good_qty + rejects_qty)
         total_machine_rejects_produced += rejects_qty
-    try:
-        quality = (total_machine_quantity_produced - total_machine_rejects_produced) / total_machine_quantity_produced
-        if quality > 1:
-            logging.warning(f"Quality of >1 calculated for machine {machine.name} on {time_start.date()}")
-        return quality
-    except ZeroDivisionError:
-        current_app.logger.warning(f"0 quantity produced for machine {machine.name} "
-                                   f"while calculating OEE on {time_start}."
-                                   f"Skipping quality calculation...")
-        return 1
+    if total_machine_quantity_produced == 0:
+        return 0
+    quality = (total_machine_quantity_produced - total_machine_rejects_produced) / total_machine_quantity_produced
+    if quality > 1:
+        logging.warning(f"Quality of >1 calculated for machine {machine.name} on {time_start.date()}")
+    return quality
 
 
 def get_daily_quality_dict(requested_date: date = None, human_readable=False):

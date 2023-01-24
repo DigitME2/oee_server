@@ -1,9 +1,8 @@
 from datetime import time
 
 from flask_wtf import FlaskForm
-from wtforms import DateField, SubmitField, SelectField
+from wtforms import DateField, SubmitField, SelectField, TimeField
 from wtforms.validators import DataRequired, NoneOf
-from wtforms_components import TimeField
 
 from app.default.models import Settings
 from app.visualisation.helpers import tomorrow, today, yesterday, a_week_ago

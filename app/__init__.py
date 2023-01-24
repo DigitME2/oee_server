@@ -5,8 +5,7 @@ from pathlib import Path
 from flask import Flask, request
 from sqlalchemy import inspect
 
-from app.default.schedule_tasks import add_shift_schedule_tasks
-from app.extensions import db, migrate, login_manager, scheduler
+from app.extensions import db, migrate, login_manager, celery_app
 from config import Config
 
 VERSION = "v8.0"
@@ -32,7 +31,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    scheduler.init_app(app)
+    celery_app.conf.update(app.config)
 
     from app.admin import bp as admin_bp
     from app.api import bp as api_bp
@@ -58,9 +57,6 @@ def create_app(config_class=Config):
         if not inspector.has_table("user"):
             from app.setup_database import setup_database
             setup_database()
-        # Set up APScheduler
-        scheduler.start()
-        add_shift_schedule_tasks()
 
     # Function to log requests
     @app.after_request

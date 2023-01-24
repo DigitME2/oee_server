@@ -1,9 +1,8 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField, \
-    FieldList, FloatField
+    FieldList, FloatField, TimeField
 from wtforms.validators import DataRequired, EqualTo, Optional
 from wtforms.widgets import TextArea
-from wtforms_components import TimeField
 
 from config import Config
 

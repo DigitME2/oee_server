@@ -13,9 +13,9 @@ from app.admin.helpers import admin_required, fix_colour_code
 from app.default.helpers import get_current_machine_shift_period
 from app.default.helpers import save_shift_form, load_shift_form_values, ModifiedShiftException
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, Shift
-from app.default.schedule_tasks import add_all_jobs_to_scheduler
 from app.extensions import db
 from app.login.models import User
+from app.scheduler import add_shift_schedule_tasks
 from config import Config
 
 
@@ -106,7 +106,7 @@ def edit_shift():
     if form.validate_on_submit() and form.validate_disabled_days():
         # Save the data from the form to the database
         save_shift_form(form, shift)
-        add_all_jobs_to_scheduler()
+        add_shift_schedule_tasks()
         return redirect(url_for('admin.admin_home'))
 
     if not new_shift:

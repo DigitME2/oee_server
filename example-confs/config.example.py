@@ -43,6 +43,7 @@ class Config(object):
     EXTERNAL_PORT = "80"
     REDIS_HOST = "localhost"
     REDIS_PORT = "6379"
+    CELERY_BROKER = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
     """ ------------ Kafka settings ------- """
     ENABLE_KAFKA = True
