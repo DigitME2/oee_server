@@ -15,7 +15,4 @@ login_manager = LoginManager()
 login_manager.login_view = 'login.login'
 celery_app = Celery('tasks', broker=Config.CELERY_BROKER, backend=Config.CELERY_BROKER)
 if Config.ENABLE_KAFKA:
-    try:
-        kafka_producer = KafkaProducer(bootstrap_servers=Config.KAFKA_ADDRESS + ":" + Config.KAFKA_PORT)
-    except NoBrokersAvailable:
-        logging.error("Could not start Kafka producer")
+    kafka_producer = KafkaProducer(bootstrap_servers=Config.KAFKA_ADDRESS + ":" + Config.KAFKA_PORT)

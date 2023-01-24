@@ -1,12 +1,10 @@
 from datetime import datetime
 from operator import attrgetter
-from typing import Optional
 
 from flask import current_app
 
-from app.default.helpers import get_jobs
-from app.extensions import db
 from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity, ActivityCode
+from app.extensions import db
 from app.login.models import UserSession, User
 from config import Config
 
@@ -115,14 +113,12 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
                     new_activity_code_id=starting_activity_code,
                     user_id=user_id)
     db.session.commit()
-    return job
-                    user_id=user_id,
-                    job_id=machine.active_job_id)
     if Config.ENABLE_KAFKA:
         user = User.query.get(user_id)
         kafka_events.start_job(job_number=job_number,
                                user_name=user.username,
                                ideal_cycle_time_s=ideal_cycle_time_s)
+    return job
 
 
 def end_job(dt, job: Job, user_id):
@@ -139,6 +135,10 @@ def end_job(dt, job: Job, user_id):
     job.end_time = dt
     job.active = False
     db.session.commit()
+    if Config.ENABLE_KAFKA:
+        user = User.query.get(user_id)
+        kafka_events.end_job(job_number=job.job_number,
+                             user_name=user.username)
 
 
 def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time_start=None):
@@ -162,11 +162,6 @@ def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time
                                              machine_id=machine_id)
     db.session.add(production_quantity)
     db.session.commit()
-    if Config.ENABLE_KAFKA:
-        kafka_events.end_job(job_number=job.job_number,
-                             user_name=user.username,
-                             quantity=quantity_produced,
-                             rejects=quantity_rejects)
 
 
 def start_shift(dt: datetime, machine):
