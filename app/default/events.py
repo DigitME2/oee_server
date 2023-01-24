@@ -7,8 +7,11 @@ from flask import current_app
 from app.default.helpers import get_jobs
 from app.extensions import db
 from app.default.models import InputDevice, Activity, Machine, Job, ProductionQuantity, ActivityCode
-from app.login.models import UserSession
+from app.login.models import UserSession, User
 from config import Config
+
+if Config.ENABLE_KAFKA:
+    from app.kafka import events as kafka_events
 
 
 def android_log_in(dt, user, input_device) -> bool:
@@ -34,12 +37,15 @@ def android_log_in(dt, user, input_device) -> bool:
                     new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
                     user_id=user.id)
     current_app.logger.info(f"Started user session {new_us}")
+    if Config.ENABLE_KAFKA:
+        kafka_events.android_login(user_name=user.username, station_name=input_device.machine.name)
     return True
 
 
 def android_log_out(input_device: InputDevice, dt: datetime):
     current_app.logger.info(f"Logging out user_id:{input_device.active_user}")
     input_device.machine.active_user_id = -1
+    user_name = input_device.active_user.username
 
     change_activity(dt,
                     input_device.machine,
@@ -53,6 +59,8 @@ def android_log_out(input_device: InputDevice, dt: datetime):
     input_device.active_user_session_id = None
     input_device.active_user_id = None
     db.session.commit()
+    if Config.ENABLE_KAFKA:
+        kafka_events.android_logout(user_name=user_name, machine_name=input_device.machine.name)
 
 
 def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int):
@@ -84,6 +92,10 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     machine.current_activity_id = new_activity.id
     current_app.logger.debug(f"Starting {new_activity} on {machine}")
     db.session.commit()
+    if Config.ENABLE_KAFKA:
+        kafka_events.set_machine_activity(new_activity_name=new_activity.activity_code.short_description,
+                                          machine_name=machine.name,
+                                          user_name=getattr(new_activity.user, "username", None))
 
 
 def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s) -> Job:
@@ -104,6 +116,13 @@ def start_job(dt, machine: Machine, user_id: int, job_number, ideal_cycle_time_s
                     user_id=user_id)
     db.session.commit()
     return job
+                    user_id=user_id,
+                    job_id=machine.active_job_id)
+    if Config.ENABLE_KAFKA:
+        user = User.query.get(user_id)
+        kafka_events.start_job(job_number=job_number,
+                               user_name=user.username,
+                               ideal_cycle_time_s=ideal_cycle_time_s)
 
 
 def end_job(dt, job: Job, user_id):
@@ -143,6 +162,11 @@ def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time
                                              machine_id=machine_id)
     db.session.add(production_quantity)
     db.session.commit()
+    if Config.ENABLE_KAFKA:
+        kafka_events.end_job(job_number=job.job_number,
+                             user_name=user.username,
+                             quantity=quantity_produced,
+                             rejects=quantity_rejects)
 
 
 def start_shift(dt: datetime, machine):
