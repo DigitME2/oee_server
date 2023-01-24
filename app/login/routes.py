@@ -23,7 +23,7 @@ def login():
     if current_user.is_authenticated:
         # Send admins and non-admins to different pages
         if current_user.admin:
-            return redirect(url_for('admin.admin_home'))
+            return redirect(url_for('default.status_page'))
         else:
             return redirect(url_for('default.view_activities'))
     form = LoginForm()
@@ -39,7 +39,7 @@ def login():
         if not next_page or url_parse(next_page).netloc != '':
             # If no next page given, default to these pages
             if user.admin:
-                next_page = url_for('admin.admin_home')
+                next_page = url_for('default.status_page')
             else:
                 next_page = url_for('default.view_activities')
         return redirect(next_page)

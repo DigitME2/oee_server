@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, time, timedelta
 
 from app.data_analysis.oee.availability import get_machine_availability
-from app.default.db_helpers import create_all_scheduled_activities
+from app.default.helpers import create_all_scheduled_activities
 from app.default.models import Machine, Activity
 from app.extensions import db
 from app.testing.base import BaseTest
@@ -21,7 +21,6 @@ class OEETests(BaseTest):
             create_all_scheduled_activities()
             act = Activity(machine_id=machine.id,
                            activity_code_id=Config.UPTIME_CODE_ID,
-                           machine_state=Config.MACHINE_STATE_RUNNING,
                            time_start=day_start + timedelta(hours=9),
                            time_end=day_start + timedelta(hours=18))
             db.session.add(act)

@@ -26,11 +26,12 @@
                                 accounts, creating new users and changing passwords via this interface.
                                 For users that log in via the Android app, a numerical password must be used.</p>
 
-                            <p>The <b>Schedules</b> tab controls the planned production time of your equipment. A
-                                schedule is assigned to each machine, allowing multiple to be changed at once. Planned
-                                production time is used to calculate availability in the OEE calculation. These
-                                schedules are computed at midnight each day, so changing a schedule will not affect any
-                                calculations in the past. </p>
+                            <p>The <b>Shifts</b> tab controls the planned production time of your equipment.
+                                This allows the system to distinguish between planned downtime and unplanned downtime.
+                                When a shift starts, the system will change all "down" machines from planned to
+                                unplanned downtime and vice versa when the shift ends. If you have a more complex shift
+                                pattern (e.g. 2 shifts in one day or a shift that continues past midnight) the shift can
+                                be modified manually by accessing the "shift_period" table in the database</p>
 
                             <p>The <b>Tablets</b> tab lists the tablets that have been connected to the server. Once a
                                 tablet is discovered, it can be assigned to a machine here.

@@ -13,7 +13,6 @@ def admin_required(function):
             return function(*args, **kwargs)
         else:
             return abort(403)
-
     return wrapper
 
 

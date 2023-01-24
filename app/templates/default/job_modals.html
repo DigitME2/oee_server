@@ -1,0 +1,371 @@
+{% macro set_job_modal(machine, form) %}
+    <div class="modal fade" id="setJobModal{{ machine.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="setJobModal{{ machine.id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="setJobModal{{ machine.id }}Label">Set job
+                        for {{ machine.name }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="setJobForm{{ machine.id }}" class="form-group">
+                    <div class="modal-body">
+                        <input type="hidden" name="machine_id" value="{{ machine.id }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.job_number.label }}
+                        {{ form.job_number(class_="form-control") }}
+                        {{ form.ideal_cycle_time.label }}
+                        {{ form.ideal_cycle_time(class_="form-control") }}
+
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="setJob({{ machine.id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function setJob(machineId) {
+            let formData = new FormData(document.getElementById("setJobForm" + machineId))
+            $.ajax({
+                url: '/api/start-job',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+{% endmacro %}
+
+{% macro end_job_modal(job, form) %}
+    <div class="modal fade" id="endJobModal{{ job.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="endJobModal{{ job.id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="endJobModal{{ job.id }}Label">End job {{ job.job_number }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="endJobForm{{ job.id }}" action="{{ url_for("api.start_job") }}"
+                      method="post" class="form-group">
+                    <div class="modal-body">
+                        <input type="hidden" name="job_id" value="{{ job.id }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.quantity_good.label }}
+                        {{ form.quantity_good(class_="form-control") }}
+                        {{ form.quantity_rejects.label }}
+                        {{ form.quantity_rejects(class_="form-control") }}
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="endJob({{ job.id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function endJob(jobId) {
+            let formData = new FormData(document.getElementById("endJobForm" + jobId))
+            if (document.contains(document.getElementById("errorWarning"))){
+                document.getElementById("errorWarning").remove()
+            }
+            $.ajax({
+                url: '/api/end-job',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    let warning = document.createElement("div")
+                    warning.id = "errorWarning"
+                    warning.innerText = result.responseText
+                    warning.className = "alert alert-danger"
+                    document.getElementById("endJobForm" + jobId).append(warning)
+                }
+            });
+        }
+    </script>
+{% endmacro %}
+
+{% macro edit_job(form, job, good_qty, reject_qty) %}
+    <div class="modal fade" id="editJobModal{{ job.id }}" tabindex="-1" role="dialog"
+         aria-labelledby="editJobModal{{ job.id }}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editJobTitle{{ job.id }}">Edit Job {{ job.job_number }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="editJobForm{{ job.id }}" class="form-group">
+                    <div class="modal-body">
+                        <input type="hidden" name="job_id" value="{{ job.id }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.job_number.label }}
+                        <input class="form-control" id="job_number" name="job_number" required="" type="text"
+                               value="{{ job.job_number }}">
+                        <div class="form-row my-4">
+                            <div class="form-group col-4">
+                                {{ form.ideal_cycle_time.label }}
+                                <input class="form-control" id="ideal_cycle_time" name="ideal_cycle_time" type="text"
+                                       value="{{ job.ideal_cycle_time_s }}">
+                                {% for error in form.ideal_cycle_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.quantity_good.label }}
+                                <input autocomplete="off" class="form-control" id="quantity_good" name="quantity_good"
+                                       size="32" type="number" value="{{ good_qty }}">
+                                {% for error in form.quantity_good.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.quantity_rejects.label }}
+                                <input class="form-control" id="quantity_rejects" name="quantity_rejects" type="number"
+                                       value="{{ reject_qty }}">
+                                {% for error in form.quantity_rejects.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group pr-2">
+                                {{ form.start_time.label }}
+                                <input class="form-control" id="start_time" name="start_time" required="" type="time"
+                                       value="{{ job.start_time.strftime("%H:%M") }}">
+                                {% for error in form.start_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            {% if not job.active %}
+                                <div class="form-group pr-2">
+                                    {{ form.end_time.label }}
+                                    <input class="form-control" id="end_time" name="end_time" required="" type="time"
+                                            {% if job.end_time %}
+                                           value="{{ job.end_time.strftime("%H:%M") }}"
+                                            {% endif %}
+                                    >
+                                    {% for error in form.end_date.errors %}
+                                        <span class="text-danger">[{{ error }}]</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div id="editJobDates{{ job.id }}" hidden="hidden" class="form-row my-4">
+                            <div class="form-group pr-2">
+                                <label for="start-date">Start Date</label>
+                                <input class="form-control" id="start-date" name="start_date" required="" type="date"
+                                       value="{{ job.start_time.strftime("%Y-%m-%d") }}">
+                                {% for error in form.start_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            {% if not job.active %}
+                                <div class="form-group pr-2">
+                                    <label for="end-date">End Date</label>
+                                    <input class="form-control" id="end-date" name="end_date" required="" type="date"
+                                            {% if job.end_time %}
+                                           value="{{ job.end_time.strftime("%Y-%m-%d") }}"
+                                            {% endif %}
+                                    >
+                                    {% for error in form.end_date.errors %}
+                                        <span class="text-danger">[{{ error }}]</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">
+                        <a onclick="showEditJobDates()">Show Dates</a>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="editJob({{ job.id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function editJob(jobId) {
+            let formData = new FormData(document.getElementById("editJobForm" + jobId))
+            $.ajax({
+                url: '/api/edit-past-job',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    console.log(result)
+                    let title = document.getElementById("editJobTitle" + jobId)
+                    title.innerText = result.responseText
+                    title.className = "text-danger"
+                    console.log(title)
+                }
+            });
+        }
+    </script>
+
+    <script>
+        function showEditJobDates() {
+            let dateInputs = document.getElementById("editJobDates{{ job.id }}")
+            dateInputs.hidden = false
+        }
+    </script>
+{% endmacro %}
+{% macro add_past_job(form, machine, date) %}
+
+    <div class="modal fade" id="createPastJobModal" tabindex="-1" role="dialog"
+         aria-labelledby="createPastJobModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPastJobModalLabel">Create Past Job For {{ machine.name }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="createPastJobForm" class="form-group">
+                    <div class="modal-body">
+                        <input type="hidden" name="machine_id" value="{{ machine.id }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.job_number.label }}
+                        {{ form.job_number(class_="form-control") }}
+                        <div class="form-row my-4">
+                            <div class="form-group col-4">
+                                {{ form.ideal_cycle_time.label }}
+                                {{ form.ideal_cycle_time(class_="form-control") }}
+                                {% for error in form.ideal_cycle_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.quantity_good.label }}
+                                {{ form.quantity_good(size=32, autocomplete="off", class_="form-control") }}
+                                {% for error in form.quantity_good.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.quantity_rejects.label }}
+                                {{ form.quantity_rejects(class_="form-control") }}
+                                {% for error in form.quantity_rejects.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group pr-2">
+                                {{ form.start_time.label }}
+                                {{ form.start_time(class_="form-control") }}
+                                {% for error in form.start_time.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="form-group pr-2">
+                                {{ form.end_time.label }}
+                                {{ form.end_time(class_="form-control") }}
+                                {% for error in form.end_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div id="pastJobDates" hidden="hidden" class="form-row my-4">
+                            <div class="form-group pr-2">
+                                <label for="start-date">Start Date</label>
+                                <input class="form-control" id="start-date" name="start_date" required=""
+                                       type="date"
+                                       value="{{ date.strftime("%Y-%m-%d") }}">
+                                {% for error in form.start_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group pr-2">
+                                <label for="end-date">End Date</label>
+                                <input class="form-control" id="end-date" name="end_date" required="" type="date"
+                                       value="{{ date.strftime("%Y-%m-%d") }}">
+                                {% for error in form.end_date.errors %}
+                                    <span class="text-danger">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">
+                        <a onclick="showPastJobDates()">Show Dates</a>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button onclick="addPastJob({{ machine_id }})" class="btn btn-success">Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addPastJob(machineId) {
+            let formData = new FormData(document.getElementById("createPastJobForm"))
+            if (document.contains(document.getElementById("errorWarning"))){
+                document.getElementById("errorWarning").remove()
+            }
+            $.ajax({
+                url: '/api/new-past-job',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    window.location.reload();
+                },
+                error: function (result) {
+                    let warning = document.createElement("div")
+                    warning.id = "errorWarning"
+                    warning.innerText = result.responseText
+                    warning.className = "alert alert-danger"
+                    document.getElementById("createPastJobForm").append(warning)
+                }
+
+            });
+        }
+    </script>
+
+    <script>
+        function showPastJobDates(activityId) {
+            let dateInputs = document.getElementById("pastJobDates")
+            dateInputs.hidden = false
+        }
+    </script>
+{% endmacro %}

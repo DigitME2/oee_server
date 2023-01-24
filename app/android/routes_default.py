@@ -3,11 +3,13 @@ from datetime import datetime
 
 import redis
 from flask import request, current_app, abort
+from flask_login import current_user
 
 from app.android.helpers import parse_cycle_time
 from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
 from app.default import events
-from app.default.models import Job, InputDevice, Settings, ProductionQuantity
+from app.default.helpers import add_new_input_device
+from app.default.models import Job, InputDevice, Settings, Machine
 from app.extensions import db
 from app.login import bp
 from app.login.helpers import end_all_user_sessions
@@ -26,12 +28,7 @@ def android_check_state():
     input_device = InputDevice.query.filter_by(uuid=uuid).first()
     if not input_device:
         # Add the new device if it doesn't exist in the database
-        new_input = InputDevice(uuid=uuid, name=uuid)
-        db.session.add(new_input)
-        db.session.flush()
-        new_input.name = "Tablet " + str(new_input.id)
-        db.session.commit()
-        input_device = InputDevice.query.filter_by(uuid=uuid).first()
+        input_device = add_new_input_device(uuid)
     user_session = input_device.active_user_session
 
     # Get the machine assigned to this device
@@ -98,31 +95,12 @@ def android_login():
         return json.dumps(response), 401, {'ContentType': 'application/json'}
 
     current_settings = Settings.query.get_or_404(1)
-    if len(user.active_input_devices) > 0 and not current_settings.allow_concurrent_user_jobs:
-        # Warn if the user is already logged in (and this is not allowed)
-        job = Job.query.filter_by(user_id=user_id, active=True).first()
-        # If this is the second attempt, end the job and log in the user
-        redis_key = f"login_attempted_user_{user_id}"
-        previous_login_attempt = r.get(redis_key)
-        if previous_login_attempt:
-            events.android_log_out(input_device, now)
-            r.delete(redis_key)
-        else:
-            response["success"] = False
-            response["reason"] = f"User already has an active job on machine {job.machine.name}. " \
-                                 f"Log in again to end this job."
-            r.set(redis_key, "True", 600)
-            return json.dumps(response), 200, {'ContentType': 'application/json'}
-
     # Check the password and log in if successful
     if not user.check_password(request.get_json()["password"]):
         response["success"] = False
         response["reason"] = "Wrong password"
         print("authentication failure")
         return json.dumps(response), 400, {'ContentType': 'application/json'}
-    if not current_settings.allow_concurrent_user_jobs:
-        # Log out sessions on the same user if concurrent sessions not allowed
-        end_all_user_sessions(user.id)
     current_app.logger.info(f"Logged in {user} (Android)")
     success = events.android_log_in(now, user, input_device)
     if success:
@@ -177,6 +155,8 @@ def android_update_activity():
     now = datetime.now()
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
+    if not input_device.active_user_session:
+        return json.dumps({"success": False})
     try:
         activity_code_id = request.json["activity_code_id"]
     except KeyError:
@@ -186,8 +166,7 @@ def android_update_activity():
     events.change_activity(now,
                            input_device.machine,
                            new_activity_code_id=activity_code_id,
-                           user_id=input_device.active_user_session.user_id,
-                           job_id=input_device.machine.active_job_id)
+                           user_id=input_device.active_user_session.user_id)
 
     current_app.logger.info(f"Set activity_code to {activity_code_id}")
     return json.dumps({"success": True})
@@ -202,7 +181,7 @@ def android_end_job():
     if user_session is None:
         abort(401)
     try:
-        quantity_produced = float(request.json["quantity_produced"])
+        quantity_good = float(request.json["quantity_good"])
         quantity_rejects = float(request.json["rejects"])
     except KeyError:
         current_app.logger.error(f"Received incorrect data from {user_session} while ending job")
@@ -213,21 +192,7 @@ def android_end_job():
     current_job = input_device.machine.active_job
     if current_job is None:
         abort(400, message="No active job")
-    events.end_job(now, current_job, quantity_produced, quantity_rejects)
-    input_device.machine.active_job_id = None
+    events.end_job(now, current_job, user_session.user_id)
     db.session.commit()
-    # Set the activity to downtime
-    events.change_activity(dt=now,
-                           machine=input_device.machine,
-                           new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                           user_id=user_session.user_id,
-                           job_id=current_job.id)
-
-    # Record quantity
-    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
-                                             time=now,
-                                             quantity_rejects=quantity_rejects,
-                                             job_id=current_job.id)
-    db.session.add(production_quantity)
-    db.session.commit()
+    events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
     return json.dumps({"success": True})

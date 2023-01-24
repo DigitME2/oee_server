@@ -1,18 +1,14 @@
 import logging
-import os
-from logging.handlers import RotatingFileHandler
 import logging.config
 from pathlib import Path
-from time import strftime
 
 from flask import Flask, request
-from flask.logging import default_handler
-from werkzeug.middleware.proxy_fix import ProxyFix
+from sqlalchemy import inspect
 
 from app.extensions import db, migrate, login_manager, celery_app
 from config import Config
 
-VERSION = "v7.3"
+VERSION = "v8.0"
 
 # Set up logging handlers
 Path('logs').mkdir(parents=True, exist_ok=True)
@@ -35,7 +31,6 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    app.wsgi_app = ProxyFix(app.wsgi_app)  # To get client IP when using a proxy
     celery_app.conf.update(app.config)
 
     from app.admin import bp as admin_bp
@@ -44,7 +39,7 @@ def create_app(config_class=Config):
     from app.documentation import bp as doc_bp
     from app.errors import bp as errors_bp
     from app.login import bp as users_bp
-    from app.visualisation import bp as oee_displaying_bp
+    from app.visualisation import bp as visualisation_bp
     from app.android import bp as android_bp
 
     app.register_blueprint(admin_bp)
@@ -53,23 +48,15 @@ def create_app(config_class=Config):
     app.register_blueprint(doc_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(users_bp)
-    app.register_blueprint(oee_displaying_bp)
+    app.register_blueprint(visualisation_bp)
     app.register_blueprint(android_bp)
 
-    @app.before_first_request
-    def initial_setup():
-        with app.app_context():
-            # Fill the database with default values
+    with app.app_context():
+        # Setup database if not initialised
+        inspector = inspect(db.engine)
+        if not inspector.has_table("user"):
             from app.setup_database import setup_database
-            if not Config.TESTING:
-                setup_database()
-
-            from app.default.db_helpers import backfill_missed_schedules
-            backfill_missed_schedules()
-
-            if Config.DEMO_MODE:
-                from app.demo.machine_simulator import backfill_missed_simulations
-                backfill_missed_simulations()
+            setup_database()
 
     # Function to log requests
     @app.after_request

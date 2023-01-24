@@ -1,0 +1,330 @@
+{% extends "default/base.html" %}
+{% import "default/activity_modals.html" as activity_modals %}
+{% import "default/job_modals.html" as job_modals %}
+{% import "default/production_modals.html" as production_modals %}
+
+{% block content %}
+    {% set ns = namespace(date=None) %}
+    <div class="container">
+        <div class="row">
+            <div class="col col-auto">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label for="selectDate">Set Date: </label>
+                        <input class="form-control flex-shrink-1" id="selectDate" name="select-date"
+                               onchange="changeDate(this)" type="date" value="{{ date }}">
+                    </div>
+                </form>
+            </div>
+            <div class="container">
+                <div class="row my-2 align-middle">
+                    <div class="col col-auto">
+                        <h1>
+                            {{ machine.name }} - {{ date.strftime("%a %d %b %Y") }}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <h2>Jobs</h2>
+                    </div>
+
+                    <button type="button" class="btn btn-dark" data-toggle="modal"
+                            data-target="#createPastJobModal">
+                        Add Past Job
+                    </button>
+                    {{ job_modals.add_past_job(job_form, machine, date) }}
+                </div>
+                <table id="jobTable" class="dataTable table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th scope="col">Job Number</th>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col">Ideal Cycle Time (s)</th>
+                        <th scope="col">Good Qty</th>
+                        <th scope="col">Reject Qty</th>
+                        <th scope="col" class="no-export"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for job in jobs %}
+                        <tr>
+                            <td>
+                                {{ job.job_number }}
+                            </td>
+                            <td>
+                                {% if job.start_time.date() == date %}
+                                    {{ job.start_time.strftime("%H:%M") }}
+                                {% else %}
+                                    {{ job.start_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.end_time %}
+                                    {% if job.end_time.date() == date %}
+                                        {{ job.end_time.strftime("%H:%M") }}
+                                    {% else %}
+                                        {{ job.end_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ job.ideal_cycle_time_s }}
+                            </td>
+                            <td>
+                                {{ good_production_dict[job.id] }}
+                            </td>
+                            <td>
+                                {{ reject_production_dict[job.id] }}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
+                                        data-target="#editJobModal{{ job.id }}">
+                                    Edit
+                                </button>
+                                {{ job_modals.edit_job(job_form, job, good_production_dict[job.id],
+                                 reject_production_dict[job.id]) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <h2>Activity</h2>
+                    </div>
+                    <button type="button" class="btn btn-dark" data-toggle="modal"
+                            data-target="#createActivityModal">
+                        Add Past Activity
+                    </button>
+
+                    {{ activity_modals.create_past_activity_macro(machine.id, date, activity_form) }}
+                </div>
+                <table id="activityTable" class="dataTable table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col">State</th>
+                        <th scope="col" class="no-export"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for act in activities %}
+                        <tr>
+                            <td>
+                                {% if act.start_time.date() == date %}
+                                    {{ act.start_time.strftime("%H:%M") }}
+                                {% else %}
+                                    {{ act.start_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if act.end_time %}
+                                    {% if act.end_time.date() == date %}
+                                        {{ act.end_time.strftime("%H:%M") }}
+                                    {% else %}
+                                        {{ act.end_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ act.activity_code.short_description }}
+                            </td>
+                            <td>
+                                <div class="col col-2 text-right">
+                                    {% if act.end_time %}
+                                        <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
+                                                data-target="#editActivityModal{{ act.id }}">
+                                            Edit
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {{ activity_modals.edit_activity_modal(act, activity_form) }}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <h2>Production</h2>
+                    </div>
+
+                    <button type="button" class="btn btn-dark" data-toggle="modal"
+                            data-target="#pastProductionModal">
+                        Add Past Production Qty
+                    </button>
+                    {{ production_modals.record_past_production_modal(production_form, date) }}
+
+                </div>
+                <table id="productionTable" class="dataTable table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col">Qty Good</th>
+                        <th scope="col">Qty Reject</th>
+                        <th scope="col" class="no-export"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for pq in production_quantities %}
+                        <tr>
+                            <td>
+                                {% if pq.start_time.date() == date %}
+                                    {{ pq.start_time.strftime("%H:%M") }}
+                                {% else %}
+                                    {{ pq.start_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pq.end_time %}
+                                    {% if pq.end_time.date() == date %}
+                                        {{ pq.end_time.strftime("%H:%M") }}
+                                    {% else %}
+                                        {{ pq.end_time.strftime("%H:%M (%d/%m/%Y)") }}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ pq.quantity_good }}
+                            </td>
+                            <td>
+                                {{ pq.quantity_rejects }}
+                            </td>
+
+                            <td>
+                                <div class="col col-2 text-right">
+                                    {% if pq.end_time %}
+                                        <button type="button" class="btn btn-sm btn-dark" data-toggle="modal"
+                                                data-target="#editProductionModal{{ pq.id }}">
+                                            Edit
+                                        </button>
+                                        {{ production_modals.edit_production_modal(edit_production_form, pq, date) }}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        {#    Reload the page for a different date when the date select box changes #}
+
+        function changeDate(selectDate) {
+            window.location.replace("{{ url_for("default.machine_report", machine_id=machine.id)}}" + "&date=" + selectDate.value)
+        }
+    </script>
+
+
+
+    {# Datatables core libraries #}
+    <script src="{{ url_for('static', filename='node_modules/datatables.net/js/jquery.dataTables.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"
+            type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}"
+          type="text/css" rel="stylesheet">
+
+    {# To make the table size responsive for mobile #}
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-responsive/js/dataTables.responsive.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"
+            type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}"
+          type="text/css" rel="stylesheet">
+
+    {#  Buttons to download the table #}
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons/js/dataTables.buttons.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/datatables.net-buttons/js/buttons.html5.min.js') }}"
+            type="text/javascript"></script>
+    <link href="{{ url_for('static', filename='node_modules/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css') }}"
+          type="text/css" rel="stylesheet">
+
+    {# Table download format options #}
+    <script src="{{ url_for('static', filename='node_modules/pdfmake/build/pdfmake.min.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/pdfmake/build/vfs_fonts.js') }}"
+            type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='node_modules/jszip/dist/jszip.min.js') }}"></script>
+
+
+    <script>
+        {# Script to add the datatable library to the table. #}
+        let dataTablesButtons = [
+            {
+                extend: 'copy',
+                text: 'Copy',
+                className: 'btn btn-default',
+                exportOptions: {
+                    columns: ':not(.no-export)'
+                }
+            },
+            {
+                extend: 'excel',
+                text: 'Excel',
+                className: 'btn btn-default',
+                exportOptions: {
+                    columns: ':not(.no-export)'
+                }
+            },
+            {
+                extend: 'csv',
+                text: 'CSV',
+                className: 'btn btn-default',
+                exportOptions: {
+                    columns: ':not(.no-export)'
+                }
+            },
+            {
+                extend: 'pdf',
+                text: 'PDF',
+                className: 'btn btn-default',
+                exportOptions: {
+                    columns: ':not(.no-export)'
+                }
+            }
+        ]
+        $(document).ready(function () {
+                $('.dataTable').DataTable({
+                    dom: 'Bfrtip',
+                    responsive: true,
+                    scrollY: '200px',
+                    paging: false,
+                    searching: false,
+                    order: [],
+                    buttons: dataTablesButtons
+                });
+            }
+        )
+
+    </script>
+
+
+    {# Set the page title. This will also set the title of any downloaded file #}
+    <script>
+        $(document).ready(function () {
+            document.title = "{{ machine.name }} report - {{ date }}"
+        })
+    </script>
+{% endblock %}
+

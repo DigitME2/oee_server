@@ -3,13 +3,13 @@ import logging
 from flask import current_app
 from sqlalchemy import create_engine, text
 
-from app.default.models import Settings
+from app.default.models import Settings, Machine
 from config import Config
 
 logger = logging.getLogger('flask.app')
 
 
-def get_job_start_data(input_type: str, input_autofill) -> dict:
+def get_job_start_data(machine: Machine) -> dict:
     """ Returns a dict for the data requested at the start of a job,
     allowing the android device to build a start job form.
 
@@ -19,19 +19,20 @@ def get_job_start_data(input_type: str, input_autofill) -> dict:
     Don't send an empty validation list or nothing will be allowed. Omit the validation entry if none required.
     A "warning" key can be sent if retrieval fails, this will be shown to the user underneath the data entry.
     """
-    current_settings = Settings.query.get_or_404(1)
+    input_type = machine.job_start_input_type
+    ideal_cycle_time_autofill = machine.autofill_job_start_amount or ""
     job_start_data = {"job_number": {"title": "Job Number",
-                                    "type": current_settings.job_number_input_type,
-                                    "autofill": ""},
+                                     "type": input_type,
+                                     "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
-                                           "autofill": input_autofill}}
+                                           "autofill": ideal_cycle_time_autofill}}
     if Config.USE_JOB_VALIDATION:
         try:
             job_start_data["job_number"]["validation"] = get_job_validation_dict()
         except Exception as e:
             job_start_data["job_number"]["warning"] = "Could not get job validation data from database."
             current_app.logger.exception("Failed to get job validation data")
-    if current_settings.allow_delayed_job_start:
+    if Config.ALLOW_DELAYED_JOB_START:
         job_start_data["start_time"] = {"title": "Start Time",
                                         "type": "time",
                                         "autofill": "current"}
@@ -123,9 +124,9 @@ def get_job_validation_dict() -> dict:
     return job_numbers
 
 
-REQUESTED_DATA_JOB_END = {"quantity_produced": {"title": "Quantity Produced",
-                                                "type": "number",
-                                                "autofill": ""},
-                          "rejects": {"title": "Rejects",
+REQUESTED_DATA_JOB_END = {"quantity_good": {"title": "Good Qty",
+                                            "type": "number",
+                                            "autofill": ""},
+                          "rejects": {"title": "Rejects Qty",
                                       "type": "number",
                                       "autofill": ""}}

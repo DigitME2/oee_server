@@ -1,32 +1,33 @@
-from datetime import datetime, time
+from datetime import datetime
 from distutils.util import strtobool
 
-from flask import render_template, url_for, redirect, request, abort, current_app
+from flask import render_template, url_for, redirect, request, abort, current_app, flash
 from flask_login import login_required, current_user
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 from wtforms.validators import NoneOf, DataRequired
 
 from app.admin import bp
-from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, SettingsForm, \
-    ScheduleForm, MachineGroupForm, InputDeviceForm
+from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, \
+    ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, Schedule, InputDevice
-from app.default.models import SHIFT_STRFTIME_FORMAT
+from app.default.helpers import get_current_machine_shift_period
+from app.default.helpers import save_shift_form, load_shift_form_values, ModifiedShiftException
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, Shift
 from app.extensions import db
 from app.login.models import User
+from app.scheduler import add_shift_schedule_tasks
 from config import Config
 
 
-@bp.route('/adminhome', methods=['GET'])
+@bp.route('/admin-home', methods=['GET'])
 @login_required
 @admin_required
 def admin_home():
     """ The default page for a logged-in user"""
     # Create default database entries
-    return render_template('admin/adminhome.html',
+    return render_template('admin/admin_home.html',
                            users=User.query.all(),
-                           schedules=Schedule.query.all(),
+                           shifts=Shift.query.all(),
                            machines=Machine.query.all(),
                            input_devices=InputDevice.query.all(),
                            machine_groups=MachineGroup.query.all(),
@@ -34,34 +35,7 @@ def admin_home():
                            jobs=Job.query.all())
 
 
-@bp.route('/settings', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def settings():
-    # Get the current settings. There can only be one row in the settings table.
-    current_settings = Settings.query.get_or_404(1)
-    form = SettingsForm()
-    if form.validate_on_submit():
-        # Save the new settings
-        current_settings.dashboard_update_interval_s = form.dashboard_update_interval.data
-        current_settings.job_number_input_type = form.job_number_input_type.data
-        current_settings.allow_delayed_job_start = form.allow_delayed_job_start.data
-        current_settings.allow_concurrent_user_jobs = form.allow_concurrent_user_jobs.data
-        db.session.add(current_settings)
-        db.session.commit()
-        current_app.logger.info(f"Changed settings: {current_settings}")
-        return redirect(url_for('admin.admin_home'))
-
-    # Set the form data to show the existing settings
-    form.dashboard_update_interval.data = current_settings.dashboard_update_interval_s
-    form.job_number_input_type.data = current_settings.job_number_input_type
-    form.allow_delayed_job_start.data = current_settings.allow_delayed_job_start
-    form.allow_concurrent_user_jobs.data = current_settings.allow_concurrent_user_jobs
-    return render_template('admin/settings.html',
-                           form=form)
-
-
-@bp.route('/newuser', methods=['GET', 'POST'])
+@bp.route('/new-user', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def new_user():
@@ -83,12 +57,12 @@ def new_user():
         current_app.logger.info(f"Created new user: {u}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "New User"
-    return render_template("admin/newuser.html", title="Register",
+    return render_template("admin/new_user.html", title="Register",
                            nav_bar_title=nav_bar_title,
                            form=form)
 
 
-@bp.route('/changepassword', methods=['GET', 'POST'])
+@bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def change_password():
@@ -104,52 +78,47 @@ def change_password():
         current_app.logger.info(f"Changed password for {user}")
         return redirect(url_for('admin.admin_home'))
     nav_bar_title = "Change password for " + str(user.username)
-    return render_template("admin/changepassword.html",
+    return render_template("admin/change_password.html",
                            nav_bar_title=nav_bar_title,
                            user=user,
                            form=form)
 
 
-@bp.route('/schedule', methods=['GET', 'POST'])
+@bp.route('/edit-shift', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def machine_schedule():
-    form = ScheduleForm()
+def edit_shift():
+    form = ShiftForm()
 
-    schedule_id = request.args.get("schedule_id", None)
+    shift_id = request.args.get("shift_id", None)
 
-    if schedule_id is None or 'new' in request.args and request.args['new'] == "True":
-        # Create a new schedule
-        schedule = Schedule(name="")
-        db.session.add(schedule)
+    if shift_id is None or 'new' in request.args and request.args['new'] == "True":
+        new_shift = True
+        # Create a new shift
+        shift = Shift(name="")
+        db.session.add(shift)
+        db.session.flush()
+        db.session.refresh(shift)
     else:
-        schedule = Schedule.query.get_or_404(schedule_id)
+        new_shift = False
+        shift = Shift.query.get_or_404(shift_id)
 
-    if form.validate_on_submit():
+    if form.validate_on_submit() and form.validate_disabled_days():
         # Save the data from the form to the database
-        schedule.name = form.name.data
-        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-            start = getattr(form, day + "_start").data.strftime(SHIFT_STRFTIME_FORMAT)
-            end = getattr(form, day + "_end").data.strftime(SHIFT_STRFTIME_FORMAT)
-            if end < start:
-                db.session.rollback()
-                return abort(400)
-            setattr(schedule, day + "_start", start)
-            setattr(schedule, day + "_end", end)
-        db.session.commit()
+        save_shift_form(form, shift)
+        add_shift_schedule_tasks()
         return redirect(url_for('admin.admin_home'))
 
-    # Set the form data to show data from the database
-    form.name.data = schedule.name
-    blank_time = time().strftime(SHIFT_STRFTIME_FORMAT)  # Replace empty times with 00:00
-    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        start_form = getattr(form, day + "_start")
-        start_form.data = datetime.strptime(getattr(schedule, day + "_start", blank_time) or blank_time,
-                                            SHIFT_STRFTIME_FORMAT)
-        end_form = getattr(form, day + "_end")
-        end_form.data = datetime.strptime(getattr(schedule, day + "_end", blank_time) or blank_time,
-                                          SHIFT_STRFTIME_FORMAT)
-    return render_template("admin/schedule.html",
+    if not new_shift:
+        # Set the form data to show data from the database
+        form.name.data = shift.name
+        try:
+            form = load_shift_form_values(form, shift)
+        except ModifiedShiftException:
+            flash(f"Shift pattern \"{shift.name}\" has been modified manually and cannot be edited here."
+                  " Edit values directly in the database or create a new shift pattern.")
+            return redirect(url_for('admin.admin_home'))
+    return render_template("admin/shift.html",
                            form=form)
 
 
@@ -188,7 +157,7 @@ def edit_input_device():
                            form=form)
 
 
-@bp.route('/editmachine', methods=['GET', 'POST'])
+@bp.route('/edit-machine', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_machine():
@@ -197,7 +166,7 @@ def edit_machine():
     to be changed for existing machines."""
     form = MachineForm()
 
-    form.schedule.choices = [(str(s.id), str(s.name)) for s in Schedule.query.all()]
+    form.shift_pattern.choices = [(str(s.id), str(s.name)) for s in Shift.query.all()]
 
     # Create machine group dropdown
     groups = [("0", "No group")] + [(str(g.id), str(g.name)) for g in MachineGroup.query.all()]
@@ -210,7 +179,7 @@ def edit_machine():
 
     if creating_new_machine:
         # Create a new machine
-        machine = Machine(name="", active=True)
+        machine = Machine(name="", job_number_input_type="number", active=True)
 
     # Otherwise, get the machine to be edited
     elif 'machine_id' in request.args:
@@ -229,12 +198,12 @@ def edit_machine():
         return abort(400, error_message)
 
     # Get downtime codes for exclusion checkboxes
-    non_excludable_codes = [Config.NO_USER_CODE_ID, Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID]
+    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID, Config.CLOSED_CODE_ID]
     optional_activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(non_excludable_codes)).all()
 
     # Create first activity dropdown
     activity_code_choices = []
-    for ac in ActivityCode.query.filter(ActivityCode.id != Config.NO_USER_CODE_ID).all():
+    for ac in ActivityCode.query.all():
         activity_code_choices.append((str(ac.id), str(ac.short_description)))
     form.group.choices = groups
     form.job_start_activity.choices = activity_code_choices
@@ -259,8 +228,10 @@ def edit_machine():
         machine.job_start_input_type = form.job_start_input_type.data
         machine.autofill_job_start_input = form.autofill_input_bool.data
         machine.autofill_job_start_amount = form.autofill_input_amount.data
-        machine.schedule_id = form.schedule.data
+        machine.shift_id = form.shift_pattern.data
         machine.job_start_activity_id = form.job_start_activity.data
+        machine.job_number_input_type = form.job_number_input_type.data
+
 
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
         for ac in optional_activity_codes:
@@ -276,37 +247,39 @@ def edit_machine():
             machine.group_id = None
         else:
             machine.group_id = form.group.data
-        try:
-            db.session.add(machine)
-            db.session.commit()
 
-        except IntegrityError as e:
-            return str(e)
         # If creating a new machine, save the ID and start an activity on the machine
         if creating_new_machine:
+            machine.current_activity_id = -1  # Temporary to prevent integrity while we create the activity
+            db.session.add(machine)
+            db.session.flush()
+            db.session.refresh(machine)
             current_app.logger.info(f"{machine} created by {current_user}")
-            first_act = Activity(time_start=datetime.now(),
+            first_act = Activity(start_time=datetime.now(),
                                  machine_id=machine.id,
-                                 machine_state=Config.MACHINE_STATE_OFF,
-                                 activity_code_id=Config.NO_USER_CODE_ID)
+                                 activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
             db.session.add(first_act)
             db.session.flush()
             db.session.refresh(first_act)
             machine.current_activity_id = first_act.id
-            db.session.commit()
             current_app.logger.debug(f"{first_act} started on machine creation")
 
+        # Set current machine state according to current shift
+        current_shift_period = get_current_machine_shift_period(machine)
+        machine.schedule_state = current_shift_period.shift_state
+        db.session.commit()
         return redirect(url_for('admin.admin_home'))
 
     # Fill out the form with existing values to display on the page
     form.active.data = machine.active
-    form.schedule.data = str(machine.schedule_id)
+    form.shift_pattern.data = str(machine.shift_id)
     form.group.data = str(machine.group_id)
     form.workflow_type.data = str(machine.workflow_type)
     form.job_start_input_type.data = str(machine.job_start_input_type)
     form.autofill_input_bool.data = bool(machine.autofill_job_start_input)
     form.autofill_input_amount.data = machine.autofill_job_start_amount
     form.job_start_activity.data = str(machine.job_start_activity_id)
+    form.job_number_input_type.data = machine.job_number_input_type
 
     if not creating_new_machine:
         form.name.data = machine.name
@@ -317,7 +290,7 @@ def edit_machine():
                            activity_codes=optional_activity_codes)
 
 
-@bp.route('/editmachinegroup', methods=['GET', 'POST'])
+@bp.route('/edit-machine-group', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_machine_group():
@@ -383,12 +356,11 @@ def edit_machine_group():
                            group_machines=machine_group.machines)
 
 
-@bp.route('/editactivitycode', methods=['GET', 'POST'])
+@bp.route('/edit-activity-code', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_activity_code():
     """The page to edit an activity code"""
-
     # Get the activity code to be edited (If no code is given we will create a new one)
     if 'ac_id' in request.args:
         try:
@@ -400,19 +372,26 @@ def edit_activity_code():
             return abort(400, error_message)
         # Show a warning to the user depending on the code being edited.
         if activity_code_id == Config.UPTIME_CODE_ID:
-            message = f"Warning: This entry (ID {activity_code_id}) should always represent uptime"
+            message = f'Warning: This entry (ID={activity_code_id})' \
+                      f' is a default code and must always represent uptime'
         elif activity_code_id == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
-            message = f"Warning: This entry (ID {activity_code_id}) should always represent unexplained downtime"
-        elif activity_code_id == Config.NO_USER_CODE_ID:
-            message = f"Warning: This entry (ID {activity_code_id}) should always represent no user"
+            message = f'Warning: This entry (ID={activity_code_id})' \
+                      f' is a default code and must always represent generic downtime'
+        elif activity_code_id == Config.CLOSED_CODE_ID:
+            message = f'Warning: This entry (ID={activity_code_id})' \
+                      f' is a default code and must always represent time outside of shift hours'
+        elif activity_code_id == Config.OVERTIME_CODE_ID:
+            message = f"Warning This entry (ID={activity_code_id})" \
+                      f"is a default code and must always represent overtime"
         else:
             message = "Changes to these values will be reflected in " \
-                      "past readings with this activity code.<br> \
+                      "past data. Major changes are not recommended. \
                       If this code is no longer needed, deselect \"Active\" for this code " \
                       "and create another activity code instead."
     else:
         activity_code = None
-        message = "Create new activity code"
+        activity_code_id = None
+        message = ""
 
     form = ActivityCodeForm()
     # Get a list of existing activity codes to use for form validation to prevent repeat codes
@@ -429,11 +408,12 @@ def edit_activity_code():
             # These issues occur because we manually assigned the IDs of the first 3 activity codes
             activity_code_id = db.session.query(func.max(ActivityCode.id)).first()[0] + 1
             activity_code = ActivityCode(id=activity_code_id, active=True)
-        message = "Create new activity code"
-        activity_code.code = form.code.data
         activity_code.active = form.active.data
         activity_code.short_description = form.short_description.data
         activity_code.long_description = form.long_description.data
+        activity_code.machine_state = form.machine_state.data
+        if int(form.machine_state.data) == Config.UNEXPLAINED_DOWNTIME_CODE_ID:
+            activity_code.downtime_category = form.downtime_category.data
         activity_code.graph_colour = fix_colour_code(form.graph_colour.data)
         db.session.add(activity_code)
         db.session.commit()
@@ -443,11 +423,16 @@ def edit_activity_code():
     if activity_code:
         # Fill out the form with existing values
         form.active.data = activity_code.active
-        form.code.data = activity_code.code
         form.short_description.data = activity_code.short_description
         form.long_description.data = activity_code.long_description
         form.graph_colour.data = activity_code.graph_colour
+        form.machine_state.data = str(activity_code.machine_state)
+        form.downtime_category.data = activity_code.downtime_category
 
+    default_codes = [Config.UPTIME_CODE_ID, Config.CLOSED_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID,
+                     Config.OVERTIME_CODE_ID]
     return render_template("admin/edit_activity_code.html",
                            form=form,
-                           message=message)
+                           message=message,
+                           activity_code_id=activity_code_id,
+                           default_codes=default_codes)

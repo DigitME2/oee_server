@@ -46,8 +46,7 @@ class Workflow:
                            "state": self.state,
                            "machine_name": self.machine.name,
                            "user_name": self.user_session.user.username,
-                           "requested_data": get_job_start_data(input_type=input_type,
-                                                                input_autofill=input_autofill)})
+                           "requested_data": get_job_start_data(self.machine)})
 
     def active_job_response(self):
         activity_codes_dicts = [{"activity_code_id": ac.id,
@@ -59,14 +58,13 @@ class Workflow:
                            "state": self.state,
                            "job_number": self.job.job_number,
                            "current_activity_code_id": self.current_activity_code.id,
-                           "current_machine_state": self.current_activity.machine_state,
+                           "current_machine_state": self.current_activity.activity_code.machine_state,
                            "activity_codes": activity_codes_dicts,
                            "colour": self.current_activity_code.graph_colour,
                            "requested_data_on_end": REQUESTED_DATA_JOB_END})
 
     def get_activity_codes(self):
-        codes_to_show = ActivityCode.query.filter(ActivityCode.active,
-                                                  ActivityCode.id != Config.NO_USER_CODE_ID).all()
+        codes_to_show = ActivityCode.query.filter(ActivityCode.active).all()
         # Exclude excluded codes for the particular machine
         for code in codes_to_show:
             if code in self.machine.excluded_activity_codes:
@@ -96,9 +94,9 @@ class PausableWorkflow(Workflow):
     def build_server_response(self):
         if self.state == "no_job":
             response = self.no_job_response()
-        elif self.machine_state == Config.MACHINE_STATE_RUNNING:
+        elif self.machine_state == Config.MACHINE_STATE_UPTIME:
             response = self.active_job_response()
-        elif self.machine_state == Config.MACHINE_STATE_OFF:
+        elif self.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
             self.state = "paused"
             response = self.active_job_response()
         else:
@@ -108,9 +106,9 @@ class PausableWorkflow(Workflow):
 
     def get_machine_state(self):
         if hasattr(self, "current_activity"):
-            return self.current_activity.machine_state
+            return self.current_activity.activity_code.machine_state
         else:
-            return Config.MACHINE_STATE_OFF
+            return Config.MACHINE_STATE_UNPLANNED_DOWNTIME
 
 
 class RunningTotalWorkflow(Workflow):
@@ -127,7 +125,8 @@ class RunningTotalWorkflow(Workflow):
             response["last_update"] = r.get(f"job_{self.job.id}_last_update")
         else:
             response["last_update"] = self.job.start_time.timestamp()
-        response["current_quantity"] = self.job.quantity_produced
+        #todo clarify total or good
+        response["current_quantity"] = self.job.get_total_good_quantity()
         response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
 
         current_app.logger.debug(f"last update timestamp = {response['last_update']}")

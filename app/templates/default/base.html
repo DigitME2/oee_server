@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 
-    {# JS Needed for Bootstrap #}
+    {# JS Needed for Bootstrap 4#}
     <script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}"
             type="text/javascript"></script>
     <script src="{{ url_for('static', filename='node_modules/popper.js/dist/umd/popper.js') }}"
@@ -40,9 +40,13 @@
             <ul class="navbar-nav">
                 {% if current_user.admin %}
                     <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
+                                            href="{{ url_for('default.status_page') }}">Status</a></li>
+                    <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
                                             href="{{ url_for('admin.admin_home') }}">Admin</a></li>
                     <li class="nav-item"><a id="nav_data_btn" class="nav-link"
-                                            href="{{ url_for('visualisation.data') }}">Visualisation</a></li>
+                                            href="{{ url_for('visualisation.graphs') }}">Graphs</a></li>
+                    <li class="nav-item"><a id="nav_data_btn" class="nav-link"
+                                            href="{{ url_for('visualisation.tables') }}">Tables</a></li>
                     <li class="nav-item">
                         <a id="nav_dashboard_btn"
                            class="nav-link"
@@ -50,10 +54,6 @@
                             Dashboard
                         </a>
                     </li>
-                    <li class="nav-item"><a id="nav_settings_btn" class="nav-link"
-                                            href="{{ url_for('admin.settings') }}">Settings</a></li>
-                    <li class="nav-item"><a id="nav_activities" class="nav-link"
-                                            href="{{ url_for('default.view_activities') }}">Activity</a>
                     <li class="nav-item"><a id="nav_help_btn" class="nav-link"
                                             href="{{ url_for('documentation.help_home') }}">Help</a>
                     </li>

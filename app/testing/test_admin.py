@@ -12,7 +12,7 @@ class AdminTest(BaseTest):
                           "/settings",
                           "/newuser",
                           "/changepassword?user_id=1",
-                          "/schedule",
+                          "/edit-shift",
                           "/editmachine?machine_id=1",
                           "/editmachinegroup?machine_group_id=1",
                           "/editactivitycode?ac_id=1"]:

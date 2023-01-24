@@ -4,8 +4,7 @@ from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import login_manager
-from app.extensions import db
+from app.extensions import db, login_manager
 from config import Config
 
 logger = logging.getLogger('flask.app')

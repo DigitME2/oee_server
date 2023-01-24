@@ -23,8 +23,7 @@ def pausable_pause_job():
     change_activity(now,
                     input_device.machine,
                     new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                    user_id=input_device.active_user_session.user_id,
-                    job_id=input_device.machine.active_job_id)
+                    user_id=input_device.active_user_session.user_id)
     return json.dumps({"success": True})
 
 
@@ -41,7 +40,7 @@ def pausable_resume_job():
     user_session = input_device.active_user_session
     if user_session is None:
         return json.dumps({"success": False, "reason": "User is logged out"})
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
+    current_job = input_device.machine.active_job
     time = datetime.now().strftime("%H:%M")
     if not current_job.notes:
         current_job.notes = ""  # Initialise the string if null
@@ -50,8 +49,7 @@ def pausable_resume_job():
     change_activity(now,
                     input_device.machine,
                     new_activity_code_id=Config.UPTIME_CODE_ID,
-                    user_id=input_device.active_user_session.user_id,
-                    job_id=input_device.machine.active_job_id)
+                    user_id=input_device.active_user_session.user_id)
     return json.dumps({"success": True})
 
 

@@ -43,15 +43,15 @@
                     </small>
                 </div>
                 <div class="form-group col-md-6">
-                    {{ form.schedule.label }}
-                    {{ form.schedule(class_="form-control") }}
-                    {% for error in form.schedule.errors %}
+                    {{ form.shift_pattern.label }}
+                    {{ form.shift_pattern(class_="form-control") }}
+                    {% for error in form.shift_pattern.errors %}
                         <span class="text-danger">[{{ error }}]</span>
                     {% endfor %}
                     <small id="scheduleHelp" class="form-text text-muted">
                         The planned working schedule for this machine.
-                        <a href="{{ url_for('admin.machine_schedule', new=True) }}">
-                            Click here to create a new schedule
+                        <a href="{{ url_for('admin.edit_shift', new=True) }}">
+                            Click here to create a new shift pattern
                         </a>
                     </small>
                 </div>
@@ -117,7 +117,7 @@
                                     <div class="col-auto form-check my-1">
                                         <input type="checkbox" id="{{ code.short_description + "id" }}"
                                                name="{{ code.short_description }}" value="True"
-                                               {% if code.id not in excluded_activity_code_ids %}
+                                                {% if code.id not in excluded_activity_code_ids %}
                                                checked="checked"
                                                 {% endif %}
                                         >
@@ -141,8 +141,15 @@
                     </small>
                 </div>
                 <div class="form-group col-6">
-
+                    <div class="form-group form-check form-check-inline">
+                        {{ form.job_number_input_type.label(class_="form-check-label") }}
+                        {{ form.job_number_input_type(class_="form-check-input") }}
+                        {% for error in form.job_number_input_type.errors %}
+                            <span class="text-danger">[{{ error }}]</span>
+                        {% endfor %}
+                    </div>
                 </div>
+
             </div>
 
             <div class="form-row my-4">
@@ -165,7 +172,15 @@
         function disableAutofillInput() {
             document.getElementById("autofill_input_amount").disabled = !document.getElementById("autofill_input_bool").checked;
         }
+
         disableAutofillInput()
     </script>
+
+    <style>
+        {#    To stop the extra dot appearing on the radio button list #}
+        ul {
+            list-style-type: none;
+        }
+    </style>
 
 {% endblock %}

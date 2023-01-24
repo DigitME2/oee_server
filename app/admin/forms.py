@@ -1,9 +1,15 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField, SubmitField, IntegerField, SelectField, RadioField, \
-    FieldList, FloatField
+    FieldList, FloatField, TimeField
 from wtforms.validators import DataRequired, EqualTo, Optional
 from wtforms.widgets import TextArea
-from wtforms_components import TimeField
+
+from config import Config
+
+MACHINE_STATE_CHOICES = [(Config.MACHINE_STATE_UPTIME, "Uptime"),
+                         (Config.MACHINE_STATE_UNPLANNED_DOWNTIME, "Unplanned downtime"),
+                         (Config.MACHINE_STATE_PLANNED_DOWNTIME, "Planned downtime"),
+                         (Config.MACHINE_STATE_OVERTIME, "Overtime")]
 
 
 class ChangePasswordForm(FlaskForm):
@@ -15,31 +21,55 @@ class ChangePasswordForm(FlaskForm):
 
 class ActivityCodeForm(FlaskForm):
     active = BooleanField()
-    code = StringField()
     short_description = StringField(validators=[DataRequired()])
     long_description = StringField(widget=TextArea())
-    graph_colour = StringField(validators=[DataRequired()])
+    machine_state = SelectField(choices=MACHINE_STATE_CHOICES, default=Config.MACHINE_STATE_UNPLANNED_DOWNTIME)
+    downtime_category = SelectField(choices=Config.DOWNTIME_CATEGORIES)
+    graph_colour = StringField(label="Colour", validators=[DataRequired()])
     submit = SubmitField('Save')
 
 
-class ScheduleForm(FlaskForm):
-    error_message = "Enter 00:00 if no shift on this day"
-    name = StringField(label="Schedule Name", validators=[DataRequired(message=error_message)])
-    mon_start = TimeField(validators=[DataRequired(message=error_message)])
-    mon_end = TimeField(validators=[DataRequired(message=error_message)])
-    tue_start = TimeField(validators=[DataRequired(message=error_message)])
-    tue_end = TimeField(validators=[DataRequired(message=error_message)])
-    wed_start = TimeField(validators=[DataRequired(message=error_message)])
-    wed_end = TimeField(validators=[DataRequired(message=error_message)])
-    thu_start = TimeField(validators=[DataRequired(message=error_message)])
-    thu_end = TimeField(validators=[DataRequired(message=error_message)])
-    fri_start = TimeField(validators=[DataRequired(message=error_message)])
-    fri_end = TimeField(validators=[DataRequired(message=error_message)])
-    sat_start = TimeField(validators=[DataRequired(message=error_message)])
-    sat_end = TimeField(validators=[DataRequired(message=error_message)])
-    sun_start = TimeField(validators=[DataRequired(message=error_message)])
-    sun_end = TimeField(validators=[DataRequired(message=error_message)])
+class ShiftForm(FlaskForm):
+    name = StringField(label="Shift Name", validators=[DataRequired()])
+    mon_start = TimeField(validators=[Optional()])
+    mon_end = TimeField(validators=[Optional()])
+    mon_disable = BooleanField(label="No Shifts")
+    tue_start = TimeField(validators=[Optional()])
+    tue_end = TimeField(validators=[Optional()])
+    tue_disable = BooleanField(label="No Shifts")
+    wed_start = TimeField(validators=[Optional()])
+    wed_end = TimeField(validators=[Optional()])
+    wed_disable = BooleanField(label="No Shifts")
+    thu_start = TimeField(validators=[Optional()])
+    thu_end = TimeField(validators=[Optional()])
+    thu_disable = BooleanField(label="No Shifts")
+    fri_start = TimeField(validators=[Optional()])
+    fri_end = TimeField(validators=[Optional()])
+    fri_disable = BooleanField(label="No Shifts")
+    sat_start = TimeField(validators=[Optional()])
+    sat_end = TimeField(validators=[Optional()])
+    sat_disable = BooleanField(label="No Shifts")
+    sun_start = TimeField(validators=[Optional()])
+    sun_end = TimeField(validators=[Optional()])
+    sun_disable = BooleanField(label="No Shifts")
     submit = SubmitField('Save')
+
+    def validate_disabled_days(self):
+        """ Don't allow time fields to be empty, except for the days that are disabled"""
+        valid = True
+        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+            disable_day_input = getattr(self, day + "_disable")
+            if disable_day_input.data:
+                continue
+            start_time = getattr(self, day + "_start")
+            end_time = getattr(self, day + "_end")
+            if not start_time.data:
+                start_time.errors = ["Not a valid value"]
+                valid = False
+            if not end_time.data:
+                end_time.errors = ["Not a valid value"]
+                valid = False
+        return valid
 
 
 class MachineForm(FlaskForm):
@@ -56,12 +86,14 @@ class MachineForm(FlaskForm):
     name = StringField(validators=[DataRequired()])
     group = SelectField("Machine Group")
     workflow_type = SelectField("Workflow Type")
-    schedule = SelectField("Schedule")
-    job_start_input_type = SelectField("Job Start Input Type", choices=job_start_input_type_choices)
+    shift_pattern = SelectField("Shift Pattern")
+    job_start_input_type = SelectField("Cycle Time Input Type", choices=job_start_input_type_choices)
     autofill_input_bool = BooleanField("Enable Autofill", validators=[Optional()])
-    autofill_input_amount = FloatField("Job Start Input Autofill")
+    autofill_input_amount = FloatField("Cycle Time Input Autofill")
     activity_codes_checkboxes = FieldList(BooleanField())
     job_start_activity = SelectField("First Activity on Job Start")
+    job_number_input_type = RadioField("Job Code Input type", choices=[("text", "Alphanumeric"),
+                                                                       ("number", "Numbers only")])
     submit = SubmitField('Save')
 
 
@@ -85,12 +117,3 @@ class RegisterForm(FlaskForm):
                                                      EqualTo('confirm_password', message="Passwords do not match")])
     confirm_password = PasswordField('Confirm Password')
     submit = SubmitField('Register')
-
-
-class SettingsForm(FlaskForm):
-    dashboard_update_interval = IntegerField('Dashboard update frequency (Seconds)', validators=[DataRequired()])
-    job_number_input_type = RadioField("Job Code Input type", choices=[("text", "Alphanumeric"),
-                                                                       ("number", "Numbers only")])
-    allow_delayed_job_start = BooleanField("Allow operator to enter adjusted start time during job start")
-    allow_concurrent_user_jobs = BooleanField("Allow operators to have multiple active jobs/logons at once")
-    submit = SubmitField('Save')

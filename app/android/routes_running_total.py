@@ -4,6 +4,7 @@ from datetime import datetime
 import redis
 from flask import request, current_app
 
+from app.default import events
 from app.default.models import Job, InputDevice, ProductionQuantity
 from app.extensions import db
 from app.login import bp
@@ -14,33 +15,25 @@ r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses
 
 @bp.route('/android-update-quantity', methods=['POST'])
 def running_total_update_quantity():
+    now = datetime.now()
     device_uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=device_uuid).first()
     user_session = input_device.active_user_session
 
     try:
-        quantity_produced = int(request.json["quantity_produced"])
+        quantity_good = int(request.json["quantity_good"])
         quantity_rejects = int(request.json["rejects"])
     except KeyError:
         current_app.logger.error(f"Received incorrect data from {user_session} while updating quantity")
         return json.dumps({"success": False,
                            "reason": "Server error parsing data"})
 
-    # Update quantities for the current job
-    current_job = Job.query.filter_by(user_session_id=user_session.id, active=True).first()
-    production_quantity = ProductionQuantity(quantity_produced=quantity_produced,
-                                             time=datetime.now(),
-                                             quantity_rejects=quantity_rejects,
-                                             job_id=current_job.id)
-    db.session.add(production_quantity)
-    current_job.quantity_produced += quantity_produced
-    current_job.quantity_rejects += quantity_rejects
-    db.session.commit()
+    current_job = input_device.machine.active_job
+    events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
 
-    timestamp = datetime.now().timestamp()
-    r.set(f"job_{current_job.id}_last_update", timestamp, ex=86400)
+    r.set(f"job_{input_device.machine.active_job_id}_last_update", now.timestamp(), ex=86400)
 
     return json.dumps({"success": True,
-                       "quantity_produced": current_job.quantity_produced,
-                       "quantity_rejects": current_job.quantity_rejects,
-                       "last_update": timestamp})
+                       "quantity_produced": current_job.get_total_good_quantity(),
+                       "quantity_rejects": current_job.get_total_reject_quantity(),
+                       "last_update": now.timestamp()})
