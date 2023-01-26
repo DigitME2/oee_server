@@ -44,7 +44,7 @@ def android_log_in(dt, user, input_device) -> bool:
 def android_log_out(input_device: InputDevice, dt: datetime):
     current_app.logger.info(f"Logging out user_id:{input_device.active_user}")
     input_device.machine.active_user_id = -1
-    user_name = input_device.active_user.username
+    user_name = input_device.active_user.username if input_device.active_user else None
 
     change_activity(dt,
                     input_device.machine,
