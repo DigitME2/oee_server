@@ -1,10 +1,18 @@
-# OEE Monitoring Webapp
+# DigitME2 OEE Monitor
 
-This software was created to track Overall Equipment Effectiveness (OEE) using Android tablets and IOT devices.
+ ![image](images/screenshot-status.png)
+This system was created to track Overall Equipment Effectiveness (OEE) using Android tablets and IOT devices.
+The system is managed through a web browser.
 
-This constitutes the central server, which can receive live OEE data from clients and is accessed through a web browser.
+Data can be displayed in graphs or tables, which can be exported to Excel or CSV. ![image](images/screenshot-table.png) ![image](images/screenshot-gantt.png)
 
-This software is accompanied by an Android app, which connects to the server and takes manual input to set the state of its assigned machine. [The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
+
+This repository constitutes the central server, which is required to run the system. For recording shop floor data,
+it is intended for an IOT device or Android tablet to capture the state of the machine and send the data back to this server.
+
+[The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
+
+IOT Devices should send POST requests to this server's API. (Documentation below)
 
 ## Setup
 ### Quick Installation
@@ -73,4 +81,4 @@ When run with `DEMO_MODE=True` in the `config.py` file, the app will fake inputs
 
 ## API
 
-An external device can change the state of a machine by posting to /api/change-machine-state. The payload should be in the format {"machine_id": 1, "machine_state": 0}, where state=0 means the machine has gone down and 1 means back up. An activity code can be provided optionally, e.g. "activity_code_id": 1
+An external device can change the state of a machine by posting JSON to /api/change-machine-state. The payload should be in the format {"machine_id": 1, "machine_state": 0}, where state=0 means the machine has gone down and 1 means back up. An activity code can be provided optionally, e.g. "activity_code_id": 1, this must match the database ID of an entry from the activity_code table.
