@@ -5,6 +5,8 @@ This system was created to track Overall Equipment Effectiveness (OEE) using And
  capable of general data collection for uptime/downtime and production tracking.
 The system is managed through a web browser, and can be deployed in the cloud and/or configured for remote operation.
 
+A demonstration of the app in use can be found on [YouTube.](https://www.youtube.com/watch?v=DQbJFctLYT4) 
+
 Data can be displayed in graphs or tables, which can be exported to Excel or CSV. ![image](images/screenshot-table.png) ![image](images/screenshot-gantt.png)
 
 
