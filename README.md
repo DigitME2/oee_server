@@ -81,4 +81,4 @@ When run with `DEMO_MODE=True` in the `config.py` file, the app will fake inputs
 
 ## API
 
-An external device can change the state of a machine by posting JSON to /api/change-machine-state. The payload should be in the format {"machine_id": 1, "machine_state": 0}, where state=0 means the machine has gone down and 1 means back up. An activity code can be provided optionally, e.g. "activity_code_id": 1, this must match the database ID of an entry from the activity_code table.
+A

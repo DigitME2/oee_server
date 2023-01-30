@@ -1,0 +1,1 @@
+curl -X POST --header "Content-Type: application/json" --data '{"machine_id": 1, "machine_state": 1}' http://localhost:5000/api/machine-state-change
