@@ -96,6 +96,12 @@ def get_daily_production_dict(requested_date: date = None, human_readable=True) 
                                                                                      time_end=next_midnight,
                                                                                      machine_id=machine.id)
         if human_readable:
-            good_amounts[machine.id] = int(good_amounts[machine.id])
-            reject_amounts[machine.id] = int(reject_amounts[machine.id])
+            if good_amounts[machine.id] % 1 == 0:
+                good_amounts[machine.id] = int(good_amounts[machine.id])
+            else:
+                good_amounts[machine.id] = round(good_amounts[machine.id], 1)
+            if reject_amounts[machine.id] % 1 == 0:
+                reject_amounts[machine.id] = int(reject_amounts[machine.id])
+            else:
+                reject_amounts[machine.id] = round(reject_amounts[machine.id], 1)
     return good_amounts, reject_amounts
