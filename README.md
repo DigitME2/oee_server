@@ -1,14 +1,15 @@
 # DigitME2 OEE Monitor
 
  ![image](images/screenshot-status.png)
-This system was created to track Overall Equipment Effectiveness (OEE) using Android tablets and IOT devices.
-The system is managed through a web browser.
+This system was created to track Overall Equipment Effectiveness (OEE) using Android tablets and IOT devices, and is 
+ capable of general data collection for uptime/downtime and production tracking.
+The system is managed through a web browser, and can be deployed in the cloud and/or configured for remote operation.
 
 Data can be displayed in graphs or tables, which can be exported to Excel or CSV. ![image](images/screenshot-table.png) ![image](images/screenshot-gantt.png)
 
 
 This repository constitutes the central server, which is required to run the system. For recording shop floor data,
-it is intended for an IOT device or Android tablet to capture the state of the machine and send the data back to this server.
+it is intended for an IOT device or Android tablet to capture the state of the machine and send the data back to this server).
 
 [The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
 
@@ -81,4 +82,8 @@ When run with `DEMO_MODE=True` in the `config.py` file, the app will fake inputs
 
 ## API
 
-An external device can change the state of a machine by posting JSON to /api/change-machine-state. The payload should be in the format {"machine_id": 1, "machine_state": 0}, where state=0 means the machine has gone down and 1 means back up. An activity code can be provided optionally, e.g. "activity_code_id": 1, this must match the database ID of an entry from the activity_code table. Note that a machine cannot be set to uptime without a job and this will return a HTTP 400 error. An example script using cURL can be found in the example-confs directory
+An external device can change the state of a machine by posting JSON to /api/change-machine-state. The payload should be in the format `{"machine_id": 1, "machine_state": 0}`, where state=0 means the machine has gone down and 1 means back up. Instead of up/down, a specific activity can be provided instead, e.g. `"activity_code_id": 1`, this must match the database ID of an entry from the activity_code table. 
+
+Note that a machine cannot be set to uptime without a job and this will return a HTTP 400 error.
+
+An example script using cURL can be found in the example-confs directory
