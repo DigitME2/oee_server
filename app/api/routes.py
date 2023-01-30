@@ -54,8 +54,8 @@ def change_machine_state():
     """ Ends a machine's activity and starts a new one """
     post_data = MachineStateChange(**request.get_json())
     # If only the state is supplied (up/down), create the activity code id
-    if post_data.machine_state and not post_data.activity_code_id:
-        if post_data.machine_state == Config.MACHINE_STATE_UPTIME:
+    if post_data.machine_state is not None and post_data.activity_code_id is None:
+        if post_data.machine_state == 1:
             activity_code_id = Config.UPTIME_CODE_ID
         else:
             activity_code_id = Config.UNEXPLAINED_DOWNTIME_CODE_ID
