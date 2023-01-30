@@ -38,7 +38,8 @@ def modify_activity(modified_act: Activity, new_start: datetime, new_end: dateti
         if len(jobs) != 1:
             raise UptimeWithoutJobError
         else:
-            activity_runs_outside_job = (new_start < jobs[0].start_time or new_end > jobs[0].end_time)
+            latest_start_time = jobs[0].end_time or datetime.now()
+            activity_runs_outside_job = (new_start < jobs[0].start_time or new_end > latest_start_time)
             if activity_is_up and (len(jobs) != 1 or activity_runs_outside_job):
                 raise UptimeWithoutJobError
     # TODO Check that the indirect modifications don't cause uptime without a job
