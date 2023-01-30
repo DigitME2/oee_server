@@ -14,7 +14,8 @@ git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --bran
 cd ~/oee_server
 
 # Copy default config
-cp ./example-confs/config.py.example config.py
+cp ./example-confs/config.example.py config.py
+
 # Change the secret key to a random string
 SECRET_KEY=$(echo $RANDOM | md5sum | head -c 20)
 sed -i "s/change-this-secret-key/$SECRET_KEY/g" config.py
