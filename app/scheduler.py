@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import redis
 from celery.schedules import crontab
 from flask import current_app
 
@@ -11,8 +12,11 @@ from config import Config
 
 @celery_app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    current_app.logger.info("Setting up periodic tests")
+    current_app.logger.info("Setting up periodic tasks")
     add_shift_schedule_tasks()
+    celery_app.add_periodic_task(crontab('*', '*', '*', '*', '*', ),  # Every minute
+                                 check_for_shift_modification.s(),
+                                 name="modification-check")
     if Config.DEMO_MODE:
         sender.add_periodic_task(Config.DATA_SIMULATION_FREQUENCY_SECONDS, simulate_machine_action_task.s())
 
@@ -27,6 +31,16 @@ def add_shift_schedule_tasks():
         celery_app.add_periodic_task(crontab(hour=t.hour, minute=t.minute, day_of_week=day_number),
                                      shift_change.s(period.id),
                                      name=task_name)
+    pass
+
+
+@celery_app.task
+def check_for_shift_modification():
+    current_app.logger.debug("Checking for shift modification")
+    r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
+    if r.exists("shift-modification"):
+        add_shift_schedule_tasks()
+        r.delete("shift-modification")
 
 
 @celery_app.task

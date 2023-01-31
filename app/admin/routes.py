@@ -1,6 +1,7 @@
 from datetime import datetime
 from distutils.util import strtobool
 
+import redis
 from flask import render_template, url_for, redirect, request, abort, current_app, flash
 from flask_login import login_required, current_user
 from sqlalchemy import func
@@ -106,7 +107,9 @@ def edit_shift():
     if form.validate_on_submit() and form.validate_disabled_days():
         # Save the data from the form to the database
         save_shift_form(form, shift)
-        add_shift_schedule_tasks()
+        r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
+        r.set("shift-modification", 1)
+        # add_shift_schedule_tasks()
         return redirect(url_for('admin.admin_home'))
 
     if not new_shift:
