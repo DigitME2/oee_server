@@ -33,6 +33,9 @@ virtualenv --quiet venv
 # install gunicorn
 ./venv/bin/pip install gunicorn
 
+# Set up database
+./venv/bin/python3 setup_database.py
+
 # Copy systemd files
 echo "Configuring systemd services..."
 sudo cp ./example-confs/oee_celery_beat.service /etc/systemd/system
@@ -60,4 +63,3 @@ sudo nginx -s reload
 sudo ufw allow 'Nginx Full'
 
 echo "Installation Finished"
-

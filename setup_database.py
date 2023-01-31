@@ -76,3 +76,9 @@ def create_default_activity_codes():
     db.session.add(overtime_code)
     db.session.commit()
     current_app.logger.info("Created default activity codes on first startup")
+
+
+if __name__ == "__main__":
+    from app import create_app
+    # Just initialising the app will call setup_database()
+    app = create_app()

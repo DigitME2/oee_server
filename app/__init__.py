@@ -55,7 +55,7 @@ def create_app(config_class=Config):
         # Setup database if not initialised
         inspector = inspect(db.engine)
         if not inspector.has_table("user"):
-            from app.setup_database import setup_database
+            from setup_database import setup_database
             setup_database()
 
     # Function to log requests
