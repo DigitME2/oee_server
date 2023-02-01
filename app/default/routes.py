@@ -26,8 +26,8 @@ def default():
     return redirect(url_for('login.login'))
 
 
-@admin_required
 @bp.route('/status', methods=["GET", "POST"])
+@login_required
 def status_page():
     """ Show today's details for all machines"""
     requested_date = request.args.get("date")

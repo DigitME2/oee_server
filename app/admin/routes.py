@@ -200,7 +200,8 @@ def edit_machine():
         return abort(400, error_message)
 
     # Get downtime codes for exclusion checkboxes
-    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID, Config.CLOSED_CODE_ID]
+    non_excludable_codes = [Config.UPTIME_CODE_ID, Config.UNEXPLAINED_DOWNTIME_CODE_ID, Config.CLOSED_CODE_ID,
+                            Config.OVERTIME_CODE_ID]
     optional_activity_codes = ActivityCode.query.filter(ActivityCode.id.not_in(non_excludable_codes)).all()
 
     # Create first activity dropdown

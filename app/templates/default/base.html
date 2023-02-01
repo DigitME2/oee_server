@@ -38,26 +38,26 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
+                <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
+                                        href="{{ url_for('default.status_page') }}">Status</a></li>
                 {% if current_user.admin %}
                     <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
-                                            href="{{ url_for('default.status_page') }}">Status</a></li>
-                    <li class="nav-item"><a id="nav_admin_btn" class="nav-link"
                                             href="{{ url_for('admin.admin_home') }}">Admin</a></li>
-                    <li class="nav-item"><a id="nav_data_btn" class="nav-link"
-                                            href="{{ url_for('visualisation.graphs') }}">Graphs</a></li>
-                    <li class="nav-item"><a id="nav_data_btn" class="nav-link"
-                                            href="{{ url_for('visualisation.tables') }}">Tables</a></li>
-                    <li class="nav-item">
-                        <a id="nav_dashboard_btn"
-                           class="nav-link"
-                           href="{{ url_for('visualisation.create_dashboard') }}">
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item"><a id="nav_help_btn" class="nav-link"
-                                            href="{{ url_for('documentation.help_home') }}">Help</a>
-                    </li>
                 {% endif %}
+                <li class="nav-item"><a id="nav_data_btn" class="nav-link"
+                                        href="{{ url_for('visualisation.graphs') }}">Graphs</a></li>
+                <li class="nav-item"><a id="nav_data_btn" class="nav-link"
+                                        href="{{ url_for('visualisation.tables') }}">Tables</a></li>
+                <li class="nav-item">
+                    <a id="nav_dashboard_btn"
+                       class="nav-link"
+                       href="{{ url_for('visualisation.create_dashboard') }}">
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item"><a id="nav_help_btn" class="nav-link"
+                                        href="{{ url_for('documentation.help_home') }}">Help</a>
+                </li>
             </ul>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">

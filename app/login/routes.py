@@ -21,11 +21,7 @@ def login():
         create_default_users()
     # Redirect the user if already logged in
     if current_user.is_authenticated:
-        # Send admins and non-admins to different pages
-        if current_user.admin:
-            return redirect(url_for('default.status_page'))
-        else:
-            return redirect(url_for('default.view_activities'))
+        return redirect(url_for('default.status_page'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -37,11 +33,7 @@ def login():
         # If the user was redirected here, send the user back to the original page
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            # If no next page given, default to these pages
-            if user.admin:
-                next_page = url_for('default.status_page')
-            else:
-                next_page = url_for('default.view_activities')
+            next_page = url_for('default.status_page')
         return redirect(next_page)
     nav_bar_title = "Login"
     return render_template('login/login.html', title='Sign in', form=form, nav_bar_title=nav_bar_title)

@@ -12,7 +12,7 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {% for user in users %}
-                        <form action="{{ url_for('default.view_activities', user_id=user.id) }}" method="get">
+                        <form action="{{ url_for('default.status_page') }}" method="get">
                             <input type="hidden" name="user_id" value="{{ user.id }}">
                             <button class="dropdown-item">{{ user.username }}</button>
                         </form>
