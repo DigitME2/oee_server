@@ -5,7 +5,7 @@ from pathlib import Path
 from flask import Flask, request
 from sqlalchemy import inspect
 
-from app.extensions import db, migrate, login_manager, celery_app
+from app.extensions import db, migrate, login_manager
 from config import Config
 
 VERSION = "v8.0"
@@ -31,7 +31,6 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    celery_app.conf.update(app.config)
 
     from app.admin import bp as admin_bp
     from app.api import bp as api_bp

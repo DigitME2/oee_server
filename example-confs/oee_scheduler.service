@@ -1,11 +1,11 @@
 [Unit]
-Description=oee_celery
+Description=oee_celery_beat
 After=network.target
 
 [Service]
 User=(USERNAME)
 WorkingDirectory=/home/user/oee_server
-ExecStart=/home/user/oee_server/venv/bin/celery -A celery_worker.celery_app worker
+ExecStart=/home/user/oee_server/venv/bin/python schedule_tasks.py
 Restart=always
 
 [Install]

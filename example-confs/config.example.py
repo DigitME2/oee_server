@@ -46,6 +46,7 @@ class Config(object):
     CELERY_BROKER = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
     """ ------------ Kafka settings ------- """
+    # Requires package kafka-python (pip install kafka_python)
     ENABLE_KAFKA = False
     KAFKA_ADDRESS = "localhost"
     KAFKA_PORT = "9092"

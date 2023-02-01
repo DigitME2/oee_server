@@ -13,10 +13,9 @@ from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, 
 from app.admin.helpers import admin_required, fix_colour_code
 from app.default.helpers import get_current_machine_shift_period
 from app.default.helpers import save_shift_form, load_shift_form_values, ModifiedShiftException
-from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, Settings, InputDevice, Shift
+from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, InputDevice, Shift
 from app.extensions import db
 from app.login.models import User
-from app.scheduler import add_shift_schedule_tasks
 from config import Config
 
 
@@ -108,7 +107,7 @@ def edit_shift():
         # Save the data from the form to the database
         save_shift_form(form, shift)
         r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, decode_responses=True)
-        r.set("shift-modification", 1)
+        r.set("schedule-modified", 1)
         # add_shift_schedule_tasks()
         return redirect(url_for('admin.admin_home'))
 
@@ -234,7 +233,6 @@ def edit_machine():
         machine.shift_id = form.shift_pattern.data
         machine.job_start_activity_id = form.job_start_activity.data
         machine.job_number_input_type = form.job_number_input_type.data
-
 
         # Process the checkboxes outside wtforms because it doesn't like lists of boolean fields for some reason
         for ac in optional_activity_codes:

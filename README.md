@@ -35,7 +35,6 @@ bash <(curl -sL https://raw.githubusercontent.com/DigitME2/oee_server/production
 ```
 
 
-
 This will download the software and set it to run on startup. The software can be reached by opening a browser and entering "localhost" into the address bar. The default user is "admin" and the default password is "digitme2".
 This can also be accessed on another PC on the network by entering the host PC's IP address into the address bar of a browser.
 
@@ -56,16 +55,14 @@ The app uses redis as a Celery broker, which is needed for periodic tasks. Redis
 
 Run `pip install -r requirements.txt` in a virtual environment if necessary.
 
-Change `start.sh` to be executable `chmod 755 start.sh` and run it.
-(This requires gunicorn to be installed)
+The server can now be started by running webapp.py. `python3 webapp.py` For production usage, schedule_tasks.py and device_discovery.py also need to be run.
+schedule_tasks handles scheduled tasks (e.g. setting machine state at the start/end of shifts) and device_discovery.py allows tablets to discover the server automatically.
 
-`start.sh` runs 3 processes: The server (using gunicorn), a Celery worker and a Celery beat.
-
-To run at startup, the three processes can be run by systemd. Example configs are provided in the `example-confs` folder. Copy these to `/etc/systemd/system` and run `sudo systemctl daemon-reload` then `sudo systemctl enable oee_server oee_discovery oee_celery oee_celery_beat`. Make sure to edit the paths/user in the service config files.
+To run at startup, the three processes can be run by systemd. Example configs are provided in the `example-confs` folder. Copy these to `/etc/systemd/system` and run `sudo systemctl daemon-reload` then `sudo systemctl enable oee_server oee_discovery oee_scheduler`. Make sure to edit the paths/user in the service config files.
 
 For security, the app should be run by a different user. For example, create a user called oee `useradd oee` and give them ownership of the OEE app `chown -R oee /home/user/oee_server`. Ensure the app is started by the same user in your systemd service files.
 
-The software ideally uses nginx as a reverse proxy. This can be installed with `sudo apt install nginx`. An example config is included in this repo. In order for the android app to work correctly, the proxy server must pass on the IP address of the android client.
+The software ideally uses nginx as a reverse proxy. This can be installed with `sudo apt install nginx`. An example config is included in this repo.
 
 To upgrade the database when updating to a new version, run
 
@@ -77,10 +74,6 @@ To upgrade the database when updating to a new version, run
 ## Documentation
 
 Help files can be found in the app
-
-## Demo mode
-
-When run with `DEMO_MODE=True` in the `config.py` file, the app will fake inputs. On startup it will backfill missed data. The celery worker will fake inputs as long as the app is running.
 
 ## API
 

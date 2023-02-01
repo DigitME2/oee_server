@@ -38,19 +38,18 @@ virtualenv --quiet venv
 
 # Copy systemd files
 echo "Configuring systemd services..."
-sudo cp ./example-confs/oee_celery_beat.service /etc/systemd/system
 sudo cp ./example-confs/oee_server.service /etc/systemd/system
 sudo cp ./example-confs/oee_discovery.service /etc/systemd/system
-sudo cp ./example-confs/oee_celery.service /etc/systemd/system
+sudo cp ./example-confs/oee_scheduler.service /etc/systemd/system
 
 # Edit default values (user, working directory) in example systemd files
-sudo sed -i 's&(USERNAME)&'$USER'&g' /etc/systemd/system/oee_server.service /etc/systemd/system/oee_celery.service /etc/systemd/system/oee_celery_beat.service /etc/systemd/system/oee_discovery.service
-sudo sed -i 's&/home/user/oee_server&'$PWD'&g' /etc/systemd/system/oee_server.service /etc/systemd/system/oee_celery.service /etc/systemd/system/oee_celery_beat.service /etc/systemd/system/oee_discovery.service
+sudo sed -i 's&(USERNAME)&'$USER'&g' /etc/systemd/system/oee_server.service /etc/systemd/system/oee_scheduler.service /etc/systemd/system/oee_discovery.service
+sudo sed -i 's&/home/user/oee_server&'$PWD'&g' /etc/systemd/system/oee_server.service /etc/systemd/system/oee_scheduler.service /etc/systemd/system/oee_discovery.service
 
 # Enable & start services
 sudo systemctl daemon-reload
-sudo systemctl enable oee_server oee_discovery oee_celery oee_celery_beat
-sudo systemctl start oee_server oee_discovery oee_celery oee_celery_beat
+sudo systemctl enable oee_server oee_discovery oee_scheduler
+sudo systemctl start oee_server oee_discovery oee_scheduler
 
 # Set up Nginx
 echo "Setting up Nginx..."
