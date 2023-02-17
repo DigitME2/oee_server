@@ -11,7 +11,7 @@ Data can be displayed in graphs or tables, which can be exported to Excel or CSV
 
 
 This repository constitutes the central server, which is required to run the system. For recording shop floor data,
-it is intended for an IOT device or Android tablet to capture the state of the machine and send the data back to this server).
+it is intended for an IOT device or Android tablet to capture the state of the machine and send the data back to this server.
 
 [The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
 
