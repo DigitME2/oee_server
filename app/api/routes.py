@@ -70,7 +70,9 @@ def change_machine_state():
                                new_activity_code_id=activity_code_id,
                                user_id=post_data.user_id)
     except UptimeWithoutJobError:
-        return make_response("Cannot set a machine to up when there is no active job", 400)
+        current_app.logger.debug(f"Attempt to set {machine.name} to activity code {activity_code_id}"
+                                 f" which requires an active job")
+        return make_response("Cannot set a machine to up when there is no active job", 409)
     response = make_response("", 200)
     current_app.logger.debug(f"Activity set to id {activity_code_id}")
     return response
