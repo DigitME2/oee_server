@@ -64,10 +64,13 @@ def change_machine_state():
     machine = Machine.query.get_or_404(post_data.machine_id)
     if activity_code_id == Config.UPTIME_CODE_ID and not machine.active_job:
         return abort(400)
-    events.change_activity(datetime.now(),
-                           machine=machine,
-                           new_activity_code_id=activity_code_id,
-                           user_id=post_data.user_id)
+    try:
+        events.change_activity(datetime.now(),
+                               machine=machine,
+                               new_activity_code_id=activity_code_id,
+                               user_id=post_data.user_id)
+    except UptimeWithoutJobError:
+        return make_response("Cannot set a machine to up when there is no active job", 400)
     response = make_response("", 200)
     current_app.logger.debug(f"Activity set to id {activity_code_id}")
     return response
