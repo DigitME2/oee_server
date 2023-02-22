@@ -164,8 +164,8 @@ def input_device_updates():
     input_device = InputDevice.query.filter_by(uuid=uuid).first()
     # Send the client the current activity code
     ws.send(input_device.machine.current_activity.activity_code_id)
-    machine_activity_channel = "machine" + str(1) + "activity"
-    input_device_channel = "input_device" + str(1)
+    machine_activity_channel = "machine" + str(input_device.machine.id) + "activity"
+    input_device_channel = "input_device" + str(input_device.id)
     p.subscribe(machine_activity_channel)
     p.subscribe(input_device_channel)
     current_app.logger.debug(f"Device {input_device.name} websocket connected")
