@@ -49,6 +49,7 @@ class Workflow:
                            "requested_data": get_job_start_data(self.machine)})
 
     def active_job_response(self):
+        # TODO Don't allow user to set overtime during planned production hours
         activity_codes_dicts = [{"activity_code_id": ac.id,
                                  "colour": ac.graph_colour,
                                  "description": ac.short_description}
@@ -94,9 +95,9 @@ class PausableWorkflow(Workflow):
     def build_server_response(self):
         if self.state == "no_job":
             response = self.no_job_response()
-        elif self.machine_state == Config.MACHINE_STATE_UPTIME:
+        elif self.machine_state in [Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME]:
             response = self.active_job_response()
-        elif self.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
+        elif self.machine_state in [Config.MACHINE_STATE_UNPLANNED_DOWNTIME, Config.MACHINE_STATE_PLANNED_DOWNTIME]:
             self.state = "paused"
             response = self.active_job_response()
         else:
