@@ -6,7 +6,7 @@ from flask import request, current_app, abort
 from flask_login import current_user
 
 from app.android.helpers import parse_cycle_time
-from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow
+from app.android.workflow import PausableWorkflow, DefaultWorkflow, RunningTotalWorkflow, Custom1Workflow
 from app.default import events
 from app.default.helpers import add_new_input_device
 from app.default.models import Job, InputDevice, Settings, Machine
@@ -51,12 +51,12 @@ def android_check_state():
 
     if machine.workflow_type == "default":
         workflow = DefaultWorkflow(user_session)
-
     elif machine.workflow_type == "pausable":
         workflow = PausableWorkflow(user_session)
-
     elif machine.workflow_type == "running_total":
         workflow = RunningTotalWorkflow(user_session)
+    elif machine.workflow_type == "custom_1":
+        workflow = Custom1Workflow(user_session)
     else:
         current_app.logger.error(f"Incorrect workflow ({machine.workflow_type}) assigned to {machine}")
         return abort(400)

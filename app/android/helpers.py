@@ -19,10 +19,9 @@ def get_job_start_data(machine: Machine) -> dict:
     Don't send an empty validation list or nothing will be allowed. Omit the validation entry if none required.
     A "warning" key can be sent if retrieval fails, this will be shown to the user underneath the data entry.
     """
-    input_type = machine.job_start_input_type
     ideal_cycle_time_autofill = machine.autofill_job_start_amount or ""
     job_start_data = {"job_number": {"title": "Job Number",
-                                     "type": input_type,
+                                     "type": machine.job_number_input_type,
                                      "autofill": ""},
                       "ideal_cycle_time": {"type": "number",
                                            "autofill": ideal_cycle_time_autofill}}
@@ -36,7 +35,7 @@ def get_job_start_data(machine: Machine) -> dict:
         job_start_data["start_time"] = {"title": "Start Time",
                                         "type": "time",
                                         "autofill": "current"}
-    match input_type:
+    match machine.job_start_input_type:
         case "cycle_time_seconds":
             job_start_data["ideal_cycle_time"]["title"] = f"Ideal cycle time (sec)"
 
