@@ -24,6 +24,8 @@ fh.setLevel(logging.INFO)
 fh.setFormatter(logging.Formatter(style='{', fmt='{asctime} - {message}'))
 logger.addHandler(fh)
 
+aps_logger = logging.getLogger('apscheduler')
+aps_logger.setLevel(logging.ERROR)
 
 def add_all_jobs_to_scheduler(scheduler):
     scheduler.remove_all_jobs()
