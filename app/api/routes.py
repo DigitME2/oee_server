@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from time import sleep
 from typing import Optional
 
 import redis
@@ -148,6 +149,10 @@ def activity_updates():
                     ws.send(response["data"])
     except simple_websocket.ConnectionClosed:
         pass
+    except redis.exceptions.ConnectionError:
+        sleep(5) #  To slow down any repeated requests
+        ws.close()
+        current_app.logger.debug(f"Websocket disconnected due to redis disconnect")
     return ''
 
 
@@ -182,6 +187,10 @@ def input_device_updates():
     except simple_websocket.ConnectionClosed:
         pass
         current_app.logger.debug(f"Device {input_device.name} websocket disconnected")
+    except redis.exceptions.ConnectionError:
+        sleep(5) #  To slow down any repeated requests
+        ws.close()
+        current_app.logger.debug(f"Device {input_device.name} websocket disconnected due to redis disconnect")
     return ''
 
 
