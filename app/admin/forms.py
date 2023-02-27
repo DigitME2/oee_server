@@ -87,6 +87,7 @@ class MachineForm(FlaskForm):
     group = SelectField("Machine Group")
     workflow_type = SelectField("Workflow Type")
     shift_pattern = SelectField("Shift Pattern")
+    end_job_on_shift_end = BooleanField("Stop active jobs when shift ends")
     job_start_input_type = SelectField("Cycle Time Input Type", choices=job_start_input_type_choices)
     autofill_input_bool = BooleanField("Enable Autofill", validators=[Optional()])
     autofill_input_amount = FloatField("Cycle Time Input Autofill")
