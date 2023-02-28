@@ -11,7 +11,7 @@ from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.helpers import get_current_machine_shift_period
+from app.default.helpers import get_active_shift_period
 from app.default.helpers import save_shift_form, load_shift_form_values, ModifiedShiftException
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, InputDevice, Shift
 from app.extensions import db
@@ -268,7 +268,7 @@ def edit_machine():
             current_app.logger.debug(f"{first_act} started on machine creation")
 
         # Set current machine state according to current shift
-        current_shift_period = get_current_machine_shift_period(machine)
+        current_shift_period = get_active_shift_period(machine.shift)
         machine.schedule_state = current_shift_period.shift_state
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
