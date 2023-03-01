@@ -126,13 +126,14 @@ class RunningTotalWorkflow(Workflow):
             response["last_update"] = r.get(f"job_{self.job.id}_last_update")
         else:
             response["last_update"] = self.job.start_time.timestamp()
-        #todo clarify total or good
+        # todo clarify total or good
         response["current_quantity"] = self.job.get_total_good_quantity()
         response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
 
         current_app.logger.debug(f"last update timestamp = {response['last_update']}")
         current_app.logger.debug(f"now = {datetime.now().timestamp()}")
         return json.dumps(response)
+
 
 class Custom1Workflow(PausableWorkflow):
 
@@ -144,15 +145,26 @@ class Custom1Workflow(PausableWorkflow):
         default_response = json.loads(super().active_job_response())
         response = default_response
 
+        # Add parts specific to running total to the response
         if r.exists(f"job_{self.job.id}_last_update"):
             response["last_update"] = r.get(f"job_{self.job.id}_last_update")
         else:
             response["last_update"] = self.job.start_time.timestamp()
-        #todo clarify total or good
+        # todo clarify total or good
         response["current_quantity"] = self.job.get_total_good_quantity()
         response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
 
+        # Add parts specific to custom1 workflow
+        response["components"] = ["part1", "part2"]  # todo
+        response["categories"] = [{"category": c[0], "category_name": c[1]} for c in Config.DOWNTIME_CATEGORIES]
+
+        # Send the category along with the activity codes
+
+        response["activity_codes"] = [{"activity_code_id": ac.id,
+                                       "colour": ac.graph_colour,
+                                       "description": ac.short_description,
+                                       "category": ac.downtime_category}
+                                      for ac in self.activity_codes]
         current_app.logger.debug(f"last update timestamp = {response['last_update']}")
         current_app.logger.debug(f"now = {datetime.now().timestamp()}")
         return json.dumps(response)
-
