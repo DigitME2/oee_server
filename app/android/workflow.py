@@ -155,7 +155,11 @@ class Custom1Workflow(PausableWorkflow):
         response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
 
         # Add parts specific to custom1 workflow
-        response["components"] = ["part1", "part2"]  # todo
+        if self.machine.id in Config.COMPONENTS:
+            response["components"] = Config.COMPONENTS[self.machine.id]
+        else:
+            response["components"] = [""]
+
         response["categories"] = [{"category": c[0], "category_name": c[1]} for c in Config.DOWNTIME_CATEGORIES]
 
         # Send the category along with the activity codes

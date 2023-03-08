@@ -124,6 +124,7 @@ class Activity(db.Model):
     explanation_required = db.Column(db.Boolean)
     notes = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    component = db.Column(db.String(100))
 
     machine = db.relationship("Machine", foreign_keys="[Activity.machine_id]", uselist=False)
     user = db.relationship("User", uselist=False)

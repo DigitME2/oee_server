@@ -33,6 +33,7 @@ def pausable_resume_job():
     # Get the reason for the pause. The app will return the short_description of the activity code
     if "downtime_reason" not in request.json:
         return json.dumps({"success": False})
+    component = request.json.get("component", None)
     notes = request.json.get("notes", "")
     downtime_reason = request.json["downtime_reason"]
     device_uuid = request.json["device_uuid"]
@@ -49,7 +50,8 @@ def pausable_resume_job():
     change_activity(now,
                     input_device.machine,
                     new_activity_code_id=Config.UPTIME_CODE_ID,
-                    user_id=input_device.active_user_session.user_id)
+                    user_id=input_device.active_user_session.user_id,
+                    component=component)
     return json.dumps({"success": True})
 
 

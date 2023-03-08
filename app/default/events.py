@@ -62,7 +62,7 @@ def android_log_out(input_device: InputDevice, dt: datetime):
         kafka_events.android_logout(user_name=user_name, machine_name=input_device.machine.name)
 
 
-def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int):
+def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, user_id: int, component=None):
     new_activity_code = ActivityCode.query.get_or_404(new_activity_code_id)
     if not machine.active_job and \
             new_activity_code.machine_state in [Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME]:
@@ -89,7 +89,8 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     new_activity = Activity(machine_id=machine.id,
                             start_time=dt,
                             activity_code_id=new_activity_code_id,
-                            user_id=user_id)
+                            user_id=user_id,
+                            component=component)
     db.session.add(new_activity)
     db.session.flush()
     db.session.refresh(new_activity)
