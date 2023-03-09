@@ -135,7 +135,7 @@ class RunningTotalWorkflow(Workflow):
         return json.dumps(response)
 
 
-class Custom1Workflow(PausableWorkflow):
+class Custom1Workflow(PausableWorkflow, RunningTotalWorkflow):
 
     def __init__(self, user_session: UserSession):
         super().__init__(user_session)
@@ -144,15 +144,6 @@ class Custom1Workflow(PausableWorkflow):
     def active_job_response(self):
         default_response = json.loads(super().active_job_response())
         response = default_response
-
-        # Add parts specific to running total to the response
-        if r.exists(f"job_{self.job.id}_last_update"):
-            response["last_update"] = r.get(f"job_{self.job.id}_last_update")
-        else:
-            response["last_update"] = self.job.start_time.timestamp()
-        # todo clarify total or good
-        response["current_quantity"] = self.job.get_total_good_quantity()
-        response["update_frequency"] = Config.RUNNING_TOTAL_UPDATE_FREQUENCY_SECONDS
 
         # Add parts specific to custom1 workflow
         if self.machine.id in Config.COMPONENTS:
