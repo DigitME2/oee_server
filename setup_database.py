@@ -54,7 +54,8 @@ def create_default_activity_codes():
                                     short_description='Down',
                                     long_description="Downtime that doesn't have an explanation from the user",
                                     machine_state=Config.MACHINE_STATE_UNPLANNED_DOWNTIME,
-                                    graph_colour='#b22222')
+                                    graph_colour='#b22222',
+                                    downtime_category=Config.DOWNTIME_CATEGORIES[0][0])
     db.session.add(unexplained_code)
     uptime_code = ActivityCode(id=Config.UPTIME_CODE_ID,
                                short_description='Up',
