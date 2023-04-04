@@ -3,7 +3,7 @@ import unittest
 from app.extensions import db
 
 from app import create_app
-from app.setup_database import setup_database
+from setup_database import setup_database
 
 
 class BaseTest(unittest.TestCase):
@@ -15,9 +15,6 @@ class BaseTest(unittest.TestCase):
         if "test" not in Config.db_name:
             raise Exception("'Test' not in db_name. Are you running tests on a production database? Set TESTING=True")
         cls.app = create_app()
-        with cls.app.app_context():
-            db.drop_all()
-            setup_database()
 
     def setUp(self):
         self.app = create_app()

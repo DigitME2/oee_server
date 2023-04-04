@@ -14,18 +14,9 @@ class APITest(BaseTest):
             "activity_code_id": 2,
             "time_start": datetime.now().timestamp()
         }
-        response = self.test_client.post('/api/activity', json=data)
+        response = self.test_client.post('/api/machine-state-change', json=data)
         print(response)
         assert response.status_code == 200
-
-    def test_websocket(self):
-        ws = simple_websocket.Client('ws://localhost:5000/activity-updates')
-        try:
-            while True:
-                ws.send(1)
-                data = ws.receive()
-        except (KeyboardInterrupt, EOFError, simple_websocket.ConnectionClosed):
-            ws.close()
 
 
 if __name__ == '__main__':

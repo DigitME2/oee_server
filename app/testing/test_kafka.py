@@ -1,7 +1,8 @@
 import unittest
 
-from app.kafka import events as kafka_events
 from config import Config
+if Config.ENABLE_KAFKA:
+    from app.kafka import events as kafka_events
 
 
 class TestKafka(unittest.TestCase):
