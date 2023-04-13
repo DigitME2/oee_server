@@ -74,7 +74,7 @@ def android_login():
     uuid = request.json["device_uuid"]
     input_device = InputDevice.query.filter_by(uuid=uuid).first()
     if not input_device:
-        abort(400, message="Device not registered to server, try restarting")
+        abort(400, "Device not registered to server, try restarting")
 
     # Return failure if correct arguments not supplied
     if "user_id" not in request.get_json():
@@ -191,7 +191,7 @@ def android_end_job():
     # End the current job
     current_job = input_device.machine.active_job
     if current_job is None:
-        abort(400, message="No active job")
+        abort(400, "No active job")
     events.end_job(now, current_job, user_session.user_id)
     db.session.commit()
     events.produced(now, quantity_good, quantity_rejects, current_job.id, input_device.machine.id)
