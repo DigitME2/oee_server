@@ -9,7 +9,7 @@ from app.default.helpers import force_shift_change
 from app.extensions import db, migrate, login_manager
 from config import Config
 
-VERSION = "v8.0"
+VERSION = "v8.1"
 
 # Set up logging handlers
 Path('logs').mkdir(parents=True, exist_ok=True)
