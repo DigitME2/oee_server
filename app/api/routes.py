@@ -370,12 +370,6 @@ def edit_production(production_quantity_id):
         return make_response("Form error", 400)
 
 
-
-
-    for period in shift_periods:
-        job_id = f"shift_change for ShiftPeriod ID={period.id}"
-        t = datetime.strptime(period.start_time, SHIFT_STRFTIME_FORMAT).time()
-
 @bp.route('/api/force-manual-shift-change', methods=['POST'])
 def force_manual_shift_change():
     """ Run scheduled shift changes that are set at the current time (within 1 minute)"""
