@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 from typing import Optional
 
@@ -15,7 +15,8 @@ from app.default import events, edit_events
 from app.default.events import UptimeWithoutJobError
 from app.default.forms import StartJobForm, RecordProductionForm, EditActivityForm, FullJobForm, \
     RecordPastProductionForm, ModifyProductionForm
-from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job, ProductionQuantity
+from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job, ProductionQuantity, ShiftPeriod, \
+    SHIFT_STRFTIME_FORMAT
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -367,6 +368,41 @@ def edit_production(production_quantity_id):
         return make_response("", 200)
     else:
         return make_response("Form error", 400)
+
+
+
+
+    for period in shift_periods:
+        job_id = f"shift_change for ShiftPeriod ID={period.id}"
+        t = datetime.strptime(period.start_time, SHIFT_STRFTIME_FORMAT).time()
+
+@bp.route('/api/force-manual-shift-change', methods=['POST'])
+def force_manual_shift_change():
+    """ Run scheduled shift changes that are set at the current time (within 1 minute)"""
+    now = datetime.now()
+    shift_periods = ShiftPeriod.query.all()
+    current_time = datetime.now().time()
+    shift_periods_within_one_minute = []
+    for period in shift_periods:
+        period_start_time = datetime.strptime(period.start_time, SHIFT_STRFTIME_FORMAT).time()
+
+        # Calculate the time difference
+        period_time_difference = datetime.combine(datetime.min, current_time) - datetime.combine(datetime.min, period_start_time)
+        # Make sure the difference is always positive
+        period_time_difference = abs(period_time_difference)
+
+        if period_time_difference <= timedelta(minutes=1):
+            shift_periods_within_one_minute.append(period)
+
+    for period in shift_periods_within_one_minute:
+        shift_starting = (period.shift_state == Config.MACHINE_STATE_UPTIME)
+        for machine in period.shift.machines:
+            if shift_starting:
+                events.start_shift(now, machine)
+            else:
+                events.end_shift(now, machine)
+            current_app.logger.info(f"Shift {'starting' if shift_starting else 'ending'} ({period})")
+    return make_response("", 200)
 
 
 # TODO Allow deleting production record
