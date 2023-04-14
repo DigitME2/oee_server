@@ -120,8 +120,8 @@
                         </div>
                         <div class="col">
                             <h4>Current User: </h4>
-                            {% if machine.active_user %}
-                                {{ machine.active_user.username }}
+                            {% if machine.input_device and machine.input_device.active_user %}
+                                {{ machine.input_device.active_user.username }}
                                 <button class="btn btn-outline-dark"
                                         onclick="forceLogout({{ machine.input_device.id }})">
                                     Force Logout

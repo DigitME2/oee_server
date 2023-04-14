@@ -72,7 +72,12 @@ def change_activity(dt: datetime, machine: Machine, new_activity_code_id: int, u
     # If the activity is uptime during planned downtime, record it as overtime
     if machine.schedule_state == Config.MACHINE_STATE_PLANNED_DOWNTIME and \
             machine_state in [Config.MACHINE_STATE_UPTIME, Config.MACHINE_STATE_OVERTIME]:
-        new_activity_code = ActivityCode.query.get(Config.MACHINE_STATE_OVERTIME)
+        new_activity_code = ActivityCode.query.get(Config.OVERTIME_CODE_ID)
+        new_activity_code_id = new_activity_code.id
+    # If the activity is overtime during planned uptime, record as normal uptime
+    if machine.schedule_state == Config.MACHINE_STATE_UPTIME and \
+            machine_state == Config.MACHINE_STATE_OVERTIME:
+        new_activity_code = ActivityCode.query.get(Config.UPTIME_CODE_ID)
         new_activity_code_id = new_activity_code.id
 
     # End the current activity
@@ -184,19 +189,21 @@ def end_shift(dt: datetime, machine):
     """ Run a shift change on a machine"""
     machine.schedule_state = Config.MACHINE_STATE_PLANNED_DOWNTIME
     db.session.commit()
-    if not machine.active_job:
-        # If the machine is in unplanned downtime (as expected)
+    if machine.active_job:
+        if machine.end_job_on_shift_end:
+            end_job(dt, machine.active_job, machine.active_user_id)
+        else:
+            # Call change activity so that the system responds to the change in schedule_state
+            change_activity(dt, machine=machine, new_activity_code_id=machine.current_activity.activity_code_id,
+                            user_id=machine.active_user_id)
+    else:
+        # If the machine is in unplanned downtime set to closed
         if machine.current_activity.activity_code.machine_state == Config.MACHINE_STATE_UNPLANNED_DOWNTIME:
             change_activity(dt, machine=machine, new_activity_code_id=Config.CLOSED_CODE_ID,
                             user_id=machine.active_user_id)
-        # If machine is in planned downtime, make no change
-    # If there's a job active keep the same activity
-    else:
-        # Call change activity if the machine is up so that it changes to overtime
-        if machine.current_activity.activity_code.machine_state == Config.MACHINE_STATE_UPTIME:
-            change_activity(dt, machine=machine, new_activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID,
-                            user_id=machine.active_user_id)
-        # If machine is down during a job, make no change. The machine will be set to planned downtime on job end.
+        else:
+            # If machine is in planned downtime, make no change
+            pass
 
 
 class UptimeWithoutJobError(Exception):

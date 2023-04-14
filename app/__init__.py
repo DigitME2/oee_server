@@ -5,10 +5,11 @@ from pathlib import Path
 from flask import Flask, request
 from sqlalchemy import inspect
 
+from app.default.helpers import force_shift_change
 from app.extensions import db, migrate, login_manager
 from config import Config
 
-VERSION = "v8.0"
+VERSION = "v8.1"
 
 # Set up logging handlers
 Path('logs').mkdir(parents=True, exist_ok=True)
@@ -56,6 +57,7 @@ def create_app(config_class=Config):
         if not inspector.has_table("user"):
             from setup_database import setup_database
             setup_database()
+        force_shift_change()
 
     # Function to log requests
     @app.after_request

@@ -5,8 +5,9 @@ from typing import List, Union
 from flask import current_app, flash, abort
 from sqlalchemy import or_
 
+from app.default import events
 from app.default.models import Activity, Machine, Job, ProductionQuantity, InputDevice, SHIFT_STRFTIME_FORMAT, \
-    ShiftPeriod, ActivityCode
+    ShiftPeriod, ActivityCode, Shift
 from app.extensions import db
 from config import Config
 
@@ -147,15 +148,16 @@ def add_new_input_device(uuid):
     return new_input
 
 
-def get_current_machine_shift_period(machine: Machine) -> ShiftPeriod:
-    day = datetime.now().strftime("%A")[0:3].lower()  # day of the week in the format mon, tue etc
-    time_now = datetime.now().time()
+def get_active_shift_period(shift: Shift, dt: datetime=None):
+    """ Return the active shift period at a given time (or now)"""
+    dt = dt or datetime.now()
+    day = dt.strftime("%A")[0:3].lower()  # day of the week in the format mon, tue etc
     # Get a list of today's shifts that have already passed
     today_past_shifts = []
-    for p in machine.shift.shift_periods:
+    for p in shift.shift_periods:
         if p.day == day:
             shift_start_time = datetime.strptime(p.start_time, SHIFT_STRFTIME_FORMAT).time()
-            if shift_start_time < time_now:
+            if shift_start_time < dt.time():
                 today_past_shifts.append(p)
     # The most recent of today's past shifts is the current shift
     today_past_shifts.sort(key=lambda x: float(x.start_time), reverse=True)
@@ -241,3 +243,24 @@ def load_shift_form_values(form, shift):
 
 class ModifiedShiftException(Exception):
     pass
+
+
+def force_shift_change():
+    """ Check the shift state of all machines and call shift_change if incorrect. Could happen if the system has been
+    down when a shift change was supposed to occur."""
+    for shift in Shift.query.all():
+        now = datetime.now()
+        current_shift_period = get_active_shift_period(shift, now)
+        for machine in shift.machines:
+            if machine.schedule_state != current_shift_period.shift_state:
+                current_app.logger.info(f"Fixing incorrect shift state for {machine.name}")
+                # If the machine state doesn't match the shift state, start or end the shift
+                if current_shift_period.shift_state == Config.MACHINE_STATE_UPTIME:
+                    events.start_shift(now, machine)
+                elif current_shift_period.shift_state == Config.MACHINE_STATE_PLANNED_DOWNTIME:
+                    events.end_shift(now, machine)
+    db.session.commit()
+
+
+
+

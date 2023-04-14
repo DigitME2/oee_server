@@ -11,7 +11,7 @@ from app.admin import bp
 from app.admin.forms import ChangePasswordForm, ActivityCodeForm, RegisterForm, MachineForm, \
     ShiftForm, MachineGroupForm, InputDeviceForm
 from app.admin.helpers import admin_required, fix_colour_code
-from app.default.helpers import get_current_machine_shift_period
+from app.default.helpers import get_active_shift_period
 from app.default.helpers import save_shift_form, load_shift_form_values, ModifiedShiftException
 from app.default.models import Machine, MachineGroup, Activity, ActivityCode, Job, InputDevice, Shift
 from app.extensions import db
@@ -181,7 +181,7 @@ def edit_machine():
 
     if creating_new_machine:
         # Create a new machine
-        machine = Machine(name="", job_number_input_type="number", active=True)
+        machine = Machine(name="", job_number_input_type="number", active=True, end_job_on_shift_end=True)
 
     # Otherwise, get the machine to be edited
     elif 'machine_id' in request.args:
@@ -232,6 +232,7 @@ def edit_machine():
         machine.autofill_job_start_input = form.autofill_input_bool.data
         machine.autofill_job_start_amount = form.autofill_input_amount.data
         machine.shift_id = form.shift_pattern.data
+        machine.end_job_on_shift_end = form.end_job_on_shift_end.data
         machine.job_start_activity_id = form.job_start_activity.data
         machine.job_number_input_type = form.job_number_input_type.data
 
@@ -267,7 +268,7 @@ def edit_machine():
             current_app.logger.debug(f"{first_act} started on machine creation")
 
         # Set current machine state according to current shift
-        current_shift_period = get_current_machine_shift_period(machine)
+        current_shift_period = get_active_shift_period(machine.shift)
         machine.schedule_state = current_shift_period.shift_state
         db.session.commit()
         return redirect(url_for('admin.admin_home'))
@@ -275,6 +276,7 @@ def edit_machine():
     # Fill out the form with existing values to display on the page
     form.active.data = machine.active
     form.shift_pattern.data = str(machine.shift_id)
+    form.end_job_on_shift_end.data = machine.end_job_on_shift_end
     form.group.data = str(machine.group_id)
     form.workflow_type.data = str(machine.workflow_type)
     form.job_start_input_type.data = str(machine.job_start_input_type)

@@ -24,6 +24,7 @@ class Machine(db.Model):
     current_activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
     schedule_state = db.Column(db.Integer)
     shift_id = db.Column(db.Integer, db.ForeignKey('shift.id'))
+    end_job_on_shift_end = db.Column(db.Boolean, default=True)
     job_start_activity_id = db.Column(db.Integer, db.ForeignKey('activity_code.id'), default=Config.UPTIME_CODE_ID)
     autofill_job_start_input = db.Column(db.Boolean)
     autofill_job_start_amount = db.Column(db.Float)

@@ -42,7 +42,7 @@
                         </a>
                     </small>
                 </div>
-                <div class="form-group col-md-6">
+                <div class="form-group col-md-3">
                     {{ form.shift_pattern.label }}
                     {{ form.shift_pattern(class_="form-control") }}
                     {% for error in form.shift_pattern.errors %}
@@ -54,6 +54,12 @@
                             Click here to create a new shift pattern
                         </a>
                     </small>
+                </div>
+                <div class="form-group col-md-3 my-4">
+                    <div class="form-check" style="position: absolute; bottom: 5px">
+                        {{ form.end_job_on_shift_end(size=32, class_="") }}
+                        {{ form.end_job_on_shift_end.label(class_="mb-5") }}
+                    </div>
                 </div>
             </div>
 
