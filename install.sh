@@ -8,11 +8,11 @@ options=("master (latest)" "production (stable)")
 select opt in "${options[@]}"
 do
     case $opt in
-        "master")
+        "master (latest)")
             branch="master"
             break
             ;;
-        "production")
+        "production (stable)")
             branch="production"
             break
             ;;
