@@ -4,7 +4,7 @@ from flask import current_app
 
 from app.default.helpers import DAYS, create_shift_day
 from app.default.models import ActivityCode, Settings, Shift, MachineGroup, \
-    SHIFT_STRFTIME_FORMAT
+    SHIFT_STRFTIME_FORMAT, Machine, Activity
 from app.extensions import db
 from app.login.models import create_default_users
 from config import Config
@@ -19,6 +19,8 @@ def setup_database():
         create_default_activity_codes()
         create_default_group()
         create_default_shift()
+        if Config.TESTING:
+            create_default_machine()
 
 
 def create_default_settings():
@@ -77,6 +79,33 @@ def create_default_activity_codes():
     db.session.add(overtime_code)
     db.session.commit()
     current_app.logger.info("Created default activity codes on first startup")
+
+def create_default_machine():
+
+    machine1 = Machine(name="Machine 1",
+                       active=True,
+                       group_id=1,
+                       shift_id=1,
+                       current_activity_id=0,
+                       workflow_type="default",
+                       job_start_input_type="cycle_time_seconds",
+                       job_number_input_type="number",
+                       end_job_on_shift_end=True,
+                       autofill_job_start_amount=0)
+    db.session.add(machine1)
+    db.session.commit()
+    current_app.logger.info("Created default machine on first startup")
+
+    first_act = Activity(start_time=datetime.now(),
+                         machine_id=1,
+                         activity_code_id=Config.UNEXPLAINED_DOWNTIME_CODE_ID)
+    db.session.add(first_act)
+    db.session.add(first_act)
+    db.session.flush()
+    db.session.refresh(first_act)
+    machine1.current_activity_id = first_act.id
+    current_app.logger.info("Created activity on first startup")
+    db.session.commit()
 
 
 if __name__ == "__main__":

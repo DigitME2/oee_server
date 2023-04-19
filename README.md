@@ -77,7 +77,7 @@ Help files can be found in the app
 
 ## API
 
-An external device can change the state of a machine by posting JSON to /api/change-machine-state. The payload should be in the format `{"machine_id": 1, "machine_state": 0}`, where state=0 means the machine has gone down and 1 means back up. Instead of up/down, a specific activity can be provided instead, e.g. `"activity_code_id": 1`, this must match the database ID of an entry from the activity_code table. 
+An external device can change the state of a machine by posting JSON to /api/machine-state-change. The payload should be in the format `{"machine_id": 1, "machine_state": 0}`, where state=0 means the machine has gone down and 1 means back up. Instead of up/down, a specific activity can be provided instead, e.g. `"activity_code_id": 1`, this must match the database ID of an entry from the activity_code table. 
 
 Note that a machine cannot be set to uptime without a job and this will return a HTTP 400 error.
 
