@@ -2,7 +2,23 @@
 
 # Use sudo here to prompt the password straight away
 sudo echo "This script will install the DigitME2 OEE Server."
-read -p "Press enter to continue."
+echo "Select the branch you want to download:"
+PS3="Please enter your choice: "
+options=("master (latest)" "production (stable)")
+select opt in "${options[@]}"
+do
+    case $opt in
+        "master (latest)")
+            branch="master"
+            break
+            ;;
+        "production (stable)")
+            branch="production"
+            break
+            ;;
+        *) echo "Invalid option $REPLY";;
+    esac
+done
 
 # Install requirements
 echo "Installing apt packages..."
@@ -10,7 +26,7 @@ sudo apt-get update -qqq
 sudo apt-get install -qq -y git npm redis virtualenv nginx > /dev/null
 
 echo "Downloading from github..."
-git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --branch production --depth=1
+git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --branch $branch --depth=1
 cd ~/oee_server
 
 # Copy default config
@@ -60,5 +76,8 @@ sudo ln -s /etc/nginx/sites-available/oee-server /etc/nginx/sites-enabled
 sudo nginx -t
 sudo nginx -s reload
 sudo ufw allow 'Nginx Full'
+
+# Stamp database with version for flask-migrate
+.venv/bin/flask db stamp head
 
 echo "Installation Finished"
