@@ -40,6 +40,6 @@ class EndJob(BaseModel):
     user_name: str
     station_name: Optional[str]
     job_number: str
-    quantity: int
-    rejects: int
+    good_qty: int
+    reject_qty: int
     timestamp: datetime = datetime.now().timestamp()

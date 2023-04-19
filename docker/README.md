@@ -1,2 +1,0 @@
-This runs most of the processes in a single image. Multiple images started running into errors with device IP addresses. They often end up being 172.x when passed between docker containers.
-Nginx must be run on the host machine to pass the device IP, and the nginx conf must include proxy_params.

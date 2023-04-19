@@ -43,9 +43,9 @@ def start_job(job_number, user_name, ideal_cycle_time_s):
     publish_task.start()
 
 
-def end_job(job_number, user_name):
+def end_job(job_number, user_name, good_qty, reject_qty):
     """ Publish a Kafka message for a job end"""
-    msg = EndJob(job_number=job_number, user_name=user_name)
+    msg = EndJob(job_number=job_number, user_name=user_name, good_qty=good_qty, reject_qty=reject_qty)
     publish_task = BackgroundKafkaPublish(JOB_ACTIVITY_TOPIC, msg.json().encode("utf-8"))
     publish_task.start()
 
