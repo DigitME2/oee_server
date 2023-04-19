@@ -144,7 +144,9 @@ def end_job(dt, job: Job, user_id):
     if Config.ENABLE_KAFKA:
         user = User.query.get(user_id)
         kafka_events.end_job(job_number=job.job_number,
-                             user_name=user.username)
+                             user_name=user.username,
+                             good_qty=job.get_total_good_quantity(),
+                             reject_qty=job.get_total_reject_quantity())
 
 
 def produced(time_end, quantity_good, quantity_rejects, job_id, machine_id, time_start=None):
