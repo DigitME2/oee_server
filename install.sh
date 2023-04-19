@@ -27,6 +27,7 @@ sudo apt-get install -qq -y git npm redis virtualenv nginx > /dev/null
 
 echo "Downloading from github..."
 git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --branch $branch --depth=1
+cd ~/oee_server
 
 # Copy default config
 cp ./example-confs/config.example.py config.py
