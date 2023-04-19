@@ -9,9 +9,13 @@ A demonstration of the app in use can be found on [YouTube.](https://www.youtube
 
 Data can be displayed in graphs or tables, which can be exported to Excel or CSV. ![image](images/screenshot-table.png) ![image](images/screenshot-gantt.png)
 
-
-This repository constitutes the central server, which is required to run the system. For recording shop floor data,
+This repository contains the central server, which is required to run the system. For recording shop floor data,
 it is intended for an IOT device or Android tablet to capture the state of the machine and send the data back to this server.
+
+<img src="images/tablet-uptime.png" alt="image" height="200px" />
+
+
+
 
 [The app APK can be downloaded from here.](https://github.com/DigitME2/MachineMonitoring/releases) 
 
