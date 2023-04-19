@@ -64,9 +64,10 @@ For security, the app should be run by a different user. For example, create a u
 
 The software ideally uses nginx as a reverse proxy. This can be installed with `sudo apt install nginx`. An example config is included in this repo.
 
-To upgrade the database when updating to a new version, run
 
-`flask db migrate -m "your-migration-message"`
+This server uses flask-migrate for migrations. When the server is run for the first time, it will create the database with some default values. After this, run `flask db stamp head` to set the database to the latest version and allow future migrations.
+
+To upgrade the database when updating to a new version, run
 
 `flask db upgrade`
 
