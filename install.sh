@@ -3,22 +3,16 @@
 # Use sudo here to prompt the password straight away
 sudo echo "This script will install the DigitME2 OEE Server."
 echo "Select the branch you want to download:"
-PS3="Please enter your choice: "
-options=("master (latest)" "production (stable)")
-select opt in "${options[@]}"
-do
-    case $opt in
-        "master (latest)")
-            branch="master"
-            break
-            ;;
-        "production (stable)")
-            branch="production"
-            break
-            ;;
-        *) echo "Invalid option $REPLY";;
-    esac
-done
+read -p "Do you want to enable Kafka? (y/n): " choice
+
+enable_kafka=0
+
+if [ "$choice" == "y" ] || [ "$choice" == "Y" ]; then
+    echo "Server will publish to Kafka at localhost:9092. This can be changed in config.py"
+    enable_kafka=1
+else
+    echo "Kafka disabled"
+fi
 
 # Install requirements
 echo "Installing apt packages..."
@@ -26,7 +20,7 @@ sudo apt-get update -qqq
 sudo apt-get install -qq -y git npm redis virtualenv nginx > /dev/null
 
 echo "Downloading from github..."
-git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --branch $branch --depth=1
+git clone https://github.com/DigitME2/oee_server.git ~/oee_server --quiet --branch sdf_gen --depth=1
 cd ~/oee_server
 
 # Copy default config
@@ -45,6 +39,12 @@ npm --prefix ./app/static install ./app/static
 echo "Creating python virtual environment..."
 virtualenv --quiet venv
 ./venv/bin/pip install --quiet -r requirements.txt
+
+# If publishing to Kafka
+if [ "$enable_kafka" == "1" ]; then
+    sed -i 's/ENABLE_KAFKA = False/ENABLE_KAFKA = True/' config.py
+    ./venv/bin/pip install -r requirements-kafka.txt
+fi
 
 # install gunicorn
 ./venv/bin/pip install gunicorn
