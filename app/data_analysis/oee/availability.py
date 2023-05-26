@@ -89,9 +89,12 @@ def get_activity_duration_dict(requested_start: datetime, requested_end: datetim
             v = humanize.precisedelta(timedelta(seconds=v), minimum_unit="minutes", format=humanize_format)
             activities_dict[k] = v
     # Convert to minutes if requested
-    elif units == "minutes":
-        for n in activities_dict:
-            activities_dict[n] = activities_dict[n] / 60
+    else:
+        if units == "seconds":
+            pass
+        elif units == "minutes":
+            for n in activities_dict:
+                activities_dict[n] = activities_dict[n] / 60
     return activities_dict
 
 

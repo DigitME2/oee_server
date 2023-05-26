@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, time
 from time import sleep
 from typing import Optional
 
@@ -11,11 +11,13 @@ from pydantic import BaseModel
 
 import app.default.edit_events
 from app.api import bp
+from app.data_analysis.oee.availability import get_daily_activity_duration_dict, get_activity_duration_dict
 from app.default import events, edit_events
 from app.default.events import UptimeWithoutJobError
 from app.default.forms import StartJobForm, RecordProductionForm, EditActivityForm, FullJobForm, \
     RecordPastProductionForm, ModifyProductionForm
 from app.default.models import Activity, ActivityCode, Machine, InputDevice, Job, ProductionQuantity
+from app.data_analysis.oee.oee import get_daily_machine_oee, calculate_machine_oee
 from app.extensions import db
 from app.login.models import User
 from config import Config
@@ -367,6 +369,57 @@ def edit_production(production_quantity_id):
         return make_response("", 200)
     else:
         return make_response("Form error", 400)
+
+
+# Get OEE data
+@bp.route('/api/oee', methods=['GET'])
+def get_oee():
+    """ Get the OEE data for a machine"""
+    machine_id = request.args.get("machine_id")
+    date = request.args.get("date")
+    if date:
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        except:
+            abort(400, "Date must be in format YYYY-MM-DD")
+    else:
+        date = datetime.now().date()
+    machine = Machine.query.get(machine_id)
+    if not machine:
+        return abort(400)
+    start_time = datetime.combine(date, time(0, 0))
+    if date == datetime.now().date():
+        end_time = datetime.now()
+    else:
+        end_time = datetime.combine(date, time(23, 59, 59, 999999))
+    oee = calculate_machine_oee(machine, start_time, end_time)
+    return jsonify(oee)
+
+
+# Get activity durations
+@bp.route('/api/activity-durations', methods=['GET'])
+def get_activity_durations():
+    """ Get the activity durations for a machine"""
+    machine_id = request.args.get("machine_id")
+    date = request.args.get("date")
+    if date:
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        except:
+            abort(400, "Date must be in format YYYY-MM-DD")
+    else:
+        date = datetime.now().date()
+    machine = Machine.query.get(machine_id)
+    if not machine:
+        return abort(400)
+    start_time = datetime.combine(date, time(0, 0))
+    if date == datetime.now().date():
+        end_time = datetime.now()
+    else:
+        end_time = datetime.combine(date, time(23, 59, 59, 999999))
+    activity_duration_dict = get_activity_duration_dict(start_time, end_time, machine=machine,
+                                                                    units="seconds", human_readable=False)
+    return jsonify(activity_duration_dict)
 
 
 # TODO Allow deleting production record

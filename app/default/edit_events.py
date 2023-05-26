@@ -131,8 +131,6 @@ def modify_job(job: Job, new_start, new_end, ideal_cycle_time, job_number, quant
     if new_start and new_start.strftime(everything_but_seconds) == job.start_time.strftime(everything_but_seconds):
         new_start = job.start_time
 
-    if new_end and new_end.hour == job.start_time.hour and new_end.minute == job.start_time.minute:
-        new_start = job.new_start
     if new_end is None:
         existing_jobs = get_jobs(new_start, datetime.now(), job.machine)
     else:
